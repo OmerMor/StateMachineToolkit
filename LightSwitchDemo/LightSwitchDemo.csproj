@@ -1,7 +1,7 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3EDD52B7-DFCE-469A-80D1-971C4CD99487}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -97,7 +97,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
+    <ProjectReference Include="..\..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
       <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
       <Name>Sanford.StateMachineToolkit</Name>
     </ProjectReference>
