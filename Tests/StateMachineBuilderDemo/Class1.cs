@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using System.IO;
 using System.CodeDom.Compiler;
 using Microsoft.CSharp;
@@ -11,7 +10,7 @@ namespace StateMachineBuilderDemo
     class Class1
     {
         [STAThread]
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
