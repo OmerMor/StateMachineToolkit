@@ -1,20 +1,20 @@
 using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 //
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("State Machine Toolkit")]
-[assembly: AssemblyDescription("A toolkit for creating state machines.")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("Leslie Sanford")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]		
+
+[assembly : AssemblyTitle("State Machine Toolkit")]
+[assembly : AssemblyDescription("A toolkit for creating state machines.")]
+[assembly : AssemblyConfiguration("")]
+[assembly : AssemblyCompany("")]
+[assembly : AssemblyProduct("State Machine Toolkit")]
+[assembly : AssemblyCopyright("Leslie Sanford")]
+[assembly : AssemblyTrademark("")]
+[assembly : AssemblyCulture("")]
 
 //
 // Version information for an assembly consists of the following four values:
@@ -27,8 +27,8 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("6.0.0.0")]
-[assembly: AssemblyFileVersion("6.0.0.0")]
+[assembly : AssemblyVersion("6.0.0.0")]
+[assembly : AssemblyFileVersion("6.0.0.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -55,6 +55,5 @@ using System.Runtime.CompilerServices;
 //   (*) Delay Signing is an advanced option - see the Microsoft .NET Framework
 //       documentation for more information on this.
 //
-[assembly: AssemblyDelaySign(false)]
 
-[assembly: CLSCompliant(true)]
+[assembly : CLSCompliant(true)]
