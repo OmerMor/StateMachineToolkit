@@ -33,7 +33,7 @@ namespace Sanford.Collections.ImmutableCollections
         private readonly int count;
 
         // The top node in the stack.
-        private Node top = null;
+        private readonly Node top;
 
         #endregion
 
@@ -159,9 +159,9 @@ namespace Sanford.Collections.ImmutableCollections
         /// </summary>
         private class Node
         {
-            private Node next = null;
+            private readonly Node next;
 
-            private object value;
+            private readonly object value;
 
             public Node(object value, Node next)
             {
@@ -200,7 +200,7 @@ namespace Sanford.Collections.ImmutableCollections
             #region Instance Fields
 
             // The stack to iterate over.
-            private Stack owner;
+            private readonly Stack owner;
 
             // The current index into the stack.
             private int index;

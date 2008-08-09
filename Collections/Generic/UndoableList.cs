@@ -57,11 +57,9 @@ namespace Sanford.Collections.Generic
 
 		public void Clear()
 		{
-			if (Count != 0)
-			{
-				ClearCommand command = new ClearCommand(theList);
-				undoManager.Execute(command);
-			}
+			if (Count == 0) return;
+			ClearCommand command = new ClearCommand(theList);
+			undoManager.Execute(command);
 		}
 
 		public void ClearHistory()
@@ -456,26 +454,22 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					undoList = new List<T>(theList);
-					theList.Clear();
-					undone = false;
-				}
+				if (!undone) return;
+				undoList = new List<T>(theList);
+				theList.Clear();
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
+				if (undone) return;
+				Debug.Assert(theList.Count == 0);
+				foreach (T local in undoList)
 				{
-					Debug.Assert(theList.Count == 0);
-					foreach (T local in undoList)
-					{
-						theList.Add(local);
-					}
-					undoList.Clear();
-					undone = true;
+					theList.Add(local);
 				}
+				undoList.Clear();
+				undone = true;
 			}
 		}
 
@@ -497,26 +491,22 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					Debug.Assert((index >= 0) && (index <= theList.Count));
-					count = theList.Count;
-					theList.Insert(index, item);
-					undone = false;
-				}
+				if (!undone) return;
+				Debug.Assert((index >= 0) && (index <= theList.Count));
+				count = theList.Count;
+				theList.Insert(index, item);
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
-				{
-					Debug.Assert((index >= 0) && (index <= theList.Count));
-					T local = theList[index];
-					Debug.Assert(local.Equals(item));
-					theList.RemoveAt(index);
-					undone = true;
-					Debug.Assert(theList.Count == count);
-				}
+				if (undone) return;
+				Debug.Assert((index >= 0) && (index <= theList.Count));
+				T local = theList[index];
+				Debug.Assert(local.Equals(item));
+				theList.RemoveAt(index);
+				undone = true;
+				Debug.Assert(theList.Count == count);
 			}
 		}
 
@@ -537,22 +527,18 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					Debug.Assert((index >= 0) && (index <= theList.Count));
-					theList.InsertRange(index, insertList);
-					undone = false;
-				}
+				if (!undone) return;
+				Debug.Assert((index >= 0) && (index <= theList.Count));
+				theList.InsertRange(index, insertList);
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
-				{
-					Debug.Assert((index >= 0) && (index <= theList.Count));
-					theList.RemoveRange(index, insertList.Count);
-					undone = true;
-				}
+				if (undone) return;
+				Debug.Assert((index >= 0) && (index <= theList.Count));
+				theList.RemoveRange(index, insertList.Count);
+				undone = true;
 			}
 		}
 
@@ -573,25 +559,21 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					Debug.Assert((index >= 0) && (index < theList.Count));
-					item = theList[index];
-					count = theList.Count;
-					theList.RemoveAt(index);
-					undone = false;
-				}
+				if (!undone) return;
+				Debug.Assert((index >= 0) && (index < theList.Count));
+				item = theList[index];
+				count = theList.Count;
+				theList.RemoveAt(index);
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
-				{
-					Debug.Assert((index >= 0) && (index < theList.Count));
-					theList.Insert(index, item);
-					undone = true;
-					Debug.Assert(theList.Count == count);
-				}
+				if (undone) return;
+				Debug.Assert((index >= 0) && (index < theList.Count));
+				theList.Insert(index, item);
+				undone = true;
+				Debug.Assert(theList.Count == count);
 			}
 		}
 
@@ -614,23 +596,19 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					Debug.Assert((index >= 0) && (index < theList.Count));
-					Debug.Assert((index + count) <= theList.Count);
-					rangeList = new List<T>(theList.GetRange(index, count));
-					theList.RemoveRange(index, count);
-					undone = false;
-				}
+				if (!undone) return;
+				Debug.Assert((index >= 0) && (index < theList.Count));
+				Debug.Assert((index + count) <= theList.Count);
+				rangeList = new List<T>(theList.GetRange(index, count));
+				theList.RemoveRange(index, count);
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
-				{
-					theList.InsertRange(index, rangeList);
-					undone = true;
-				}
+				if (undone) return;
+				theList.InsertRange(index, rangeList);
+				undone = true;
 			}
 		}
 
@@ -660,34 +638,30 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
+				if (!undone) return;
+				if (reverseRange)
 				{
-					if (reverseRange)
-					{
-						theList.Reverse(index, count);
-					}
-					else
-					{
-						theList.Reverse();
-					}
-					undone = false;
+					theList.Reverse(index, count);
 				}
+				else
+				{
+					theList.Reverse();
+				}
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
+				if (undone) return;
+				if (reverseRange)
 				{
-					if (reverseRange)
-					{
-						theList.Reverse(index, count);
-					}
-					else
-					{
-						theList.Reverse();
-					}
-					undone = true;
+					theList.Reverse(index, count);
 				}
+				else
+				{
+					theList.Reverse();
+				}
+				undone = true;
 			}
 		}
 
@@ -709,25 +683,21 @@ namespace Sanford.Collections.Generic
 
 			public void Execute()
 			{
-				if (undone)
-				{
-					Debug.Assert((index >= 0) && (index < theList.Count));
-					oldItem = theList[index];
-					theList[index] = newItem;
-					undone = false;
-				}
+				if (!undone) return;
+				Debug.Assert((index >= 0) && (index < theList.Count));
+				oldItem = theList[index];
+				theList[index] = newItem;
+				undone = false;
 			}
 
 			public void Undo()
 			{
-				if (!undone)
-				{
-					Debug.Assert((index >= 0) && (index < theList.Count));
-					T local = theList[index];
-					Debug.Assert(local.Equals(newItem));
-					theList[index] = oldItem;
-					undone = true;
-				}
+				if (undone) return;
+				Debug.Assert((index >= 0) && (index < theList.Count));
+				T local = theList[index];
+				Debug.Assert(local.Equals(newItem));
+				theList[index] = oldItem;
+				undone = true;
 			}
 		}
 	}

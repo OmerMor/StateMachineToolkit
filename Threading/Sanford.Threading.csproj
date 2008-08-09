@@ -37,6 +37,7 @@
     <Compile Include="AsyncResult.cs" />
     <Compile Include="DelegateQueue.AsyncResult.cs" />
     <Compile Include="DelegateQueue.cs" />
+    <Compile Include="DelegateScheduler.cs" />
     <Compile Include="InvokeCompletedEventArgs.cs" />
     <Compile Include="PostCompletedEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

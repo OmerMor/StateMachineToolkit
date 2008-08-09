@@ -33,58 +33,48 @@
 #endregion
 
 using System;
-using System.Reflection;
 
 namespace Sanford.Threading
 {
-    /// <summary>
-    /// Represents information about the InvokeCompleted event.
-    /// </summary>
-    public class InvokeCompletedEventArgs : EventArgs
-    {
-        private Delegate method;
+	/// <summary>
+	/// Represents information about the InvokeCompleted event.
+	/// </summary>
+	public class InvokeCompletedEventArgs : EventArgs
+	{
+		private readonly Delegate method;
 
-        private object[] args;
+		private readonly object[] args;
 
-        private object result;
+		private readonly object result;
 
-        private Exception error;
+		private readonly Exception error;
 
-        public InvokeCompletedEventArgs(Delegate method, object[] args, object result, Exception error)
-        {
-            this.method = method;
-            this.args = args;
-            this.result = result;
-            this.error = error;
-        }
+		public InvokeCompletedEventArgs(Delegate method, object[] args, object result, Exception error)
+		{
+			this.method = method;
+			this.args = args;
+			this.result = result;
+			this.error = error;
+		}
 
-        public object[] GetArgs()
-        {
-            return args;
-        }
+		public object[] GetArgs()
+		{
+			return args;
+		}
 
-        public Delegate Method
-        {
-            get
-            {
-                return method;
-            }
-        }
+		public Delegate Method
+		{
+			get { return method; }
+		}
 
-        public object Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		public object Result
+		{
+			get { return result; }
+		}
 
-        public Exception Error
-        {
-            get
-            {
-                return error;
-            }
-        }
-    }
+		public Exception Error
+		{
+			get { return error; }
+		}
+	}
 }

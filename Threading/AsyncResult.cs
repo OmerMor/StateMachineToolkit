@@ -37,141 +37,126 @@ using System.Threading;
 
 namespace Sanford.Threading
 {
-    /// <summary>
-    /// Provides basic implementation of the IAsyncResult interface.
-    /// </summary>
-    public class AsyncResult : IAsyncResult
-    {
-        #region AsyncResult Members
+	/// <summary>
+	/// Provides basic implementation of the IAsyncResult interface.
+	/// </summary>
+	public class AsyncResult : IAsyncResult
+	{
+		#region AsyncResult Members
 
-        #region Fields
+		#region Fields
 
-        // The owner of this AsyncResult object.
-        private object owner;
+		// The owner of this AsyncResult object.
+		private readonly object owner;
 
-        // The callback to be invoked when the operation completes.
-        private AsyncCallback callback;
+		// The callback to be invoked when the operation completes.
+		private readonly AsyncCallback callback;
 
-        // User state information.
-        private object state;
+		// User state information.
+		private readonly object state;
 
-        // For signaling when the operation has completed.
-        private ManualResetEvent waitHandle = new ManualResetEvent(false);
+		// For signaling when the operation has completed.
+		private readonly ManualResetEvent waitHandle = new ManualResetEvent(false);
 
-        // A value indicating whether the operation completed synchronously.
-        private bool completedSynchronously;
+		// A value indicating whether the operation completed synchronously.
+		private bool completedSynchronously;
 
-        // A value indicating whether the operation has completed.
-        private bool isCompleted = false;
+		// A value indicating whether the operation has completed.
+		private bool isCompleted;
 
-        // The ID of the thread this AsyncResult object originated on.
-        private int threadId;
+		// The ID of the thread this AsyncResult object originated on.
+		private readonly int threadId;
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the AsyncResult object with the
-        /// specified owner of the AsyncResult object, the optional callback
-        /// delegate, and optional state object.
-        /// </summary>
-        /// <param name="owner">
-        /// The owner of the AsyncResult object.
-        /// </param>
-        /// <param name="callback">
-        /// An optional asynchronous callback, to be called when the 
-        /// operation is complete. 
-        /// </param>
-        /// <param name="state">
-        /// A user-provided object that distinguishes this particular 
-        /// asynchronous request from other requests. 
-        /// </param>
-        public AsyncResult(object owner, AsyncCallback callback, object state)
-        {
-            this.owner = owner;
-            this.callback = callback;
-            this.state = state;
+		/// <summary>
+		/// Initializes a new instance of the AsyncResult object with the
+		/// specified owner of the AsyncResult object, the optional callback
+		/// delegate, and optional state object.
+		/// </summary>
+		/// <param name="owner">
+		/// The owner of the AsyncResult object.
+		/// </param>
+		/// <param name="callback">
+		/// An optional asynchronous callback, to be called when the 
+		/// operation is complete. 
+		/// </param>
+		/// <param name="state">
+		/// A user-provided object that distinguishes this particular 
+		/// asynchronous request from other requests. 
+		/// </param>
+		public AsyncResult(object owner, AsyncCallback callback, object state)
+		{
+			this.owner = owner;
+			this.callback = callback;
+			this.state = state;
 
-            // Get the current thread ID. This will be used later to determine
-            // if the operation completed synchronously.
-            threadId = Thread.CurrentThread.ManagedThreadId;
-        }
+			// Get the current thread ID. This will be used later to determine
+			// if the operation completed synchronously.
+			threadId = Thread.CurrentThread.ManagedThreadId;
+		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Signals that the operation has completed.
-        /// </summary>
-        public void Signal()
-        {
-            isCompleted = true;
+		/// <summary>
+		/// Signals that the operation has completed.
+		/// </summary>
+		public void Signal()
+		{
+			isCompleted = true;
 
-            completedSynchronously = threadId == Thread.CurrentThread.ManagedThreadId;
+			completedSynchronously = threadId == Thread.CurrentThread.ManagedThreadId;
 
-            waitHandle.Set();
+			waitHandle.Set();
 
-            if(callback != null)
-            {
-                callback(this);
-            }
-        }
+			if (callback != null)
+			{
+				callback(this);
+			}
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        /// <summary>
-        /// Gets the owner of this AsyncResult object.
-        /// </summary>
-        public object Owner
-        {
-            get
-            {
-                return owner;
-            }
-        }
+		/// <summary>
+		/// Gets the owner of this AsyncResult object.
+		/// </summary>
+		public object Owner
+		{
+			get { return owner; }
+		}
 
-        #endregion
+		#endregion
 
-        #endregion
+		#endregion
 
-        #region IAsyncResult Members
+		#region IAsyncResult Members
 
-        public object AsyncState
-        {
-            get             
-            {
-                return state;
-            }
-        }
+		public object AsyncState
+		{
+			get { return state; }
+		}
 
-        public WaitHandle AsyncWaitHandle
-        {
-            get 
-            {
-                return waitHandle;
-            }
-        }
+		public WaitHandle AsyncWaitHandle
+		{
+			get { return waitHandle; }
+		}
 
-        public bool CompletedSynchronously
-        {
-            get 
-            {
-                return completedSynchronously;
-            }
-        }
+		public bool CompletedSynchronously
+		{
+			get { return completedSynchronously; }
+		}
 
-        public bool IsCompleted
-        {
-            get 
-            { 
-                return isCompleted; 
-            }
-        }
+		public bool IsCompleted
+		{
+			get { return isCompleted; }
+		}
 
-        #endregion
-    }
+		#endregion
+	}
 }

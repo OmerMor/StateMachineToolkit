@@ -6,243 +6,228 @@
  * Contact: jabberdabber@hotmail.com
  */
 
-using System;
 using System.Diagnostics;
 
 namespace Sanford.Collections.ImmutableCollections
 {
-    /// <summary>
-    /// Represents subtree nodes within random access lists.
-    /// </summary>
-    internal class RalTreeNode
-    {
-        #region RalTreeNode Members
+	/// <summary>
+	/// Represents subtree nodes within random access lists.
+	/// </summary>
+	internal class RalTreeNode
+	{
+		#region RalTreeNode Members
 
-        #region Instance Fields
+		#region Instance Fields
 
-        // The value represented by this node.
-        private readonly object value;
+		// The value represented by this node.
+		private readonly object m_value;
 
-        // The number of nodes in the tree.
-        private readonly int count;
+		// The number of nodes in the tree.
+		private readonly int m_count;
 
-        // Left and right children.
-        private readonly RalTreeNode leftChild = null;
-        private readonly RalTreeNode rightChild = null;
-        
-        #endregion
+		// Left and right children.
+		private readonly RalTreeNode m_leftChild;
+		private readonly RalTreeNode m_rightChild;
 
-        #region Construction
+		#endregion
 
-        /// <summary>
-        /// Initializes an instance of the RandomAccessListNode with the
-        /// specified value, left child, and right child.
-        /// </summary>
-        /// <param name="value">
-        /// The value to store in the node.
-        /// </param>
-        /// <param name="leftChild">
-        /// The left child.
-        /// </param>
-        /// <param name="rightChild">
-        /// The right child.
-        /// </param>
-        public RalTreeNode(
-            object value, 
-            RalTreeNode leftChild, 
-            RalTreeNode rightChild)
-        {
-            this.value = value;
-            this.leftChild = leftChild;
-            this.rightChild = rightChild;
+		#region Construction
 
-            count = 1;
+		/// <summary>
+		/// Initializes an instance of the RandomAccessListNode with the
+		/// specified value, left child, and right child.
+		/// </summary>
+		/// <param name="value">
+		/// The value to store in the node.
+		/// </param>
+		/// <param name="leftChild">
+		/// The left child.
+		/// </param>
+		/// <param name="rightChild">
+		/// The right child.
+		/// </param>
+		public RalTreeNode(
+			object value,
+			RalTreeNode leftChild,
+			RalTreeNode rightChild)
+		{
+			m_value = value;
+			m_leftChild = leftChild;
+			m_rightChild = rightChild;
 
-            if(leftChild != null)
-            {
-                count += leftChild.Count * 2;
+			m_count = 1;
 
-                Debug.Assert(rightChild != null);
-                Debug.Assert(count == 1 + leftChild.Count + rightChild.Count);
-            }
-        }
+			if (leftChild == null) return;
+			m_count += leftChild.Count*2;
 
-        #endregion
+			Debug.Assert(rightChild != null);
+			Debug.Assert(m_count == 1 + leftChild.Count + rightChild.Count);
+		}
 
-        #region Methods
+		#endregion
 
-        /// <summary>
-        /// Gets the value at the specified element in the random access list
-        /// subtree.
-        /// </summary>
-        /// <param name="index">
-        /// An integer that represents the position of the random access list 
-        /// subtree element to get. 
-        /// </param>
-        /// <returns>
-        /// The value at the specified position in the random access list
-        /// subtree.
-        /// </returns>
-        public object GetValue(int index)
-        {
-            Debug.Assert(index < Count);
+		#region Methods
 
-            return GetValue(index, this);            
-        }
+		/// <summary>
+		/// Gets the value at the specified element in the random access list
+		/// subtree.
+		/// </summary>
+		/// <param name="index">
+		/// An integer that represents the position of the random access list 
+		/// subtree element to get. 
+		/// </param>
+		/// <returns>
+		/// The value at the specified position in the random access list
+		/// subtree.
+		/// </returns>
+		public object GetValue(int index)
+		{
+			Debug.Assert(index < Count);
 
-        // Recursive method for getting the value at the specified position.
-        private object GetValue(int index, RalTreeNode node)
-        {
-            object result;
+			return GetValue(index, this);
+		}
 
-            // If the position of the value to get has been reached.
-            if(index == 0)
-            {
-                // Get the value.
-                result = node.Value;
-            }
-            // Else the position of the value to get has not been reached.
-            else
-            { 
-                int n = node.Count / 2;
+		// Recursive method for getting the value at the specified position.
+		private static object GetValue(int index, RalTreeNode node)
+		{
+			object result;
 
-                // If the value is in the left subtree.
-                if(index <= n)
-                {
-                    Debug.Assert(node.LeftChild != null);
+			// If the position of the value to get has been reached.
+			if (index == 0)
+			{
+				// Get the value.
+				result = node.Value;
+			}
+				// Else the position of the value to get has not been reached.
+			else
+			{
+				int n = node.Count/2;
 
-                    // Descend into the left subtree.
-                    result = GetValue(index - 1, node.LeftChild);
-                }
-                // Else the value is in the right subtree.
-                else
-                {
-                    Debug.Assert(node.RightChild != null);
+				// If the value is in the left subtree.
+				if (index <= n)
+				{
+					Debug.Assert(node.LeftChild != null);
 
-                    // Descend into the right subtree.
-                    result = GetValue(index - 1 - n, node.RightChild);
-                }
-            }
+					// Descend into the left subtree.
+					result = GetValue(index - 1, node.LeftChild);
+				}
+					// Else the value is in the right subtree.
+				else
+				{
+					Debug.Assert(node.RightChild != null);
 
-            return result;
-        }
+					// Descend into the right subtree.
+					result = GetValue(index - 1 - n, node.RightChild);
+				}
+			}
 
-        /// <summary>
-        /// Sets the specified element in the current random access list 
-        /// subtree to the specified value.
-        /// </summary>
-        /// <param name="value">
-        /// The new value for the specified element. 
-        /// </param>
-        /// <param name="index">
-        /// An integer that represents the position of the random access list  
-        /// subtree element to set. 
-        /// </param>
-        /// <returns>
-        /// A new random access list tree node with the element at the specified 
-        /// position set to the specified value.
-        /// </returns>
-        public RalTreeNode SetValue(object value, int index)
-        {
-            return SetValue(value, index, this);
-        }
+			return result;
+		}
 
-        // Recursive method for setting the value at the specified position.
-        private RalTreeNode SetValue(object value, int index, RalTreeNode node)
-        {
-            RalTreeNode result;
+		/// <summary>
+		/// Sets the specified element in the current random access list 
+		/// subtree to the specified value.
+		/// </summary>
+		/// <param name="value">
+		/// The new value for the specified element. 
+		/// </param>
+		/// <param name="index">
+		/// An integer that represents the position of the random access list  
+		/// subtree element to set. 
+		/// </param>
+		/// <returns>
+		/// A new random access list tree node with the element at the specified 
+		/// position set to the specified value.
+		/// </returns>
+		public RalTreeNode SetValue(object value, int index)
+		{
+			return SetValue(value, index, this);
+		}
 
-            // If the position of the value to set has been reached.
-            if(index == 0)
-            {
-                // Set the value.
-                result = new RalTreeNode(
-                    value,
-                    node.LeftChild,
-                    node.RightChild);
-            }
-            // Else if the position of the value to set has not been reached.
-            else
-            {
-                Debug.Assert(node.LeftChild != null);
+		// Recursive method for setting the value at the specified position.
+		private RalTreeNode SetValue(object value, int index, RalTreeNode node)
+		{
+			RalTreeNode result;
 
-                int n = Count / 2;
+			// If the position of the value to set has been reached.
+			if (index == 0)
+			{
+				// Set the value.
+				result = new RalTreeNode(
+					value,
+					node.LeftChild,
+					node.RightChild);
+			}
+				// Else if the position of the value to set has not been reached.
+			else
+			{
+				Debug.Assert(node.LeftChild != null);
 
-                // If the value is in the left subtree.
-                if(index <= n)
-                {
-                    // Descend into the left subtree.
-                    result = new RalTreeNode(
-                        node.Value,
-                        node.LeftChild.SetValue(value, index - 1),
-                        node.RightChild);
-                }
-                // Else if the value is in the right subtree.
-                else
-                {
-                    Debug.Assert(node.RightChild != null);
+				int n = Count/2;
 
-                    // Descend into the right subtree.
-                    result = new RalTreeNode(
-                        node.Value,
-                        node.LeftChild,
-                        node.RightChild.SetValue(value, index - 1 - n));
-                }
-            }
+				// If the value is in the left subtree.
+				if (index <= n)
+				{
+					// Descend into the left subtree.
+					result = new RalTreeNode(
+						node.Value,
+						node.LeftChild.SetValue(value, index - 1),
+						node.RightChild);
+				}
+					// Else if the value is in the right subtree.
+				else
+				{
+					Debug.Assert(node.RightChild != null);
 
-            return result;
-        }
+					// Descend into the right subtree.
+					result = new RalTreeNode(
+						node.Value,
+						node.LeftChild,
+						node.RightChild.SetValue(value, index - 1 - n));
+				}
+			}
 
-        #endregion
+			return result;
+		}
 
-        #region Properties
+		#endregion
 
-        /// <summary>
-        /// Gets the number of nodes in the tree.
-        /// </summary>
-        public int Count
-        {
-            get
-            {
-                return count;
-            }
-        }
+		#region Properties
 
-        /// <summary>
-        /// Gets the left child.
-        /// </summary>
-        public RalTreeNode LeftChild
-        {
-            get
-            {
-                return leftChild;
-            }
-        }
+		/// <summary>
+		/// Gets the number of nodes in the tree.
+		/// </summary>
+		public int Count
+		{
+			get { return m_count; }
+		}
 
-        /// <summary>
-        /// Gets the right child.
-        /// </summary>
-        public RalTreeNode RightChild
-        {
-            get
-            {
-                return rightChild;
-            }
-        }
+		/// <summary>
+		/// Gets the left child.
+		/// </summary>
+		public RalTreeNode LeftChild
+		{
+			get { return m_leftChild; }
+		}
 
-        /// <summary>
-        /// Gets the value represented by this node.
-        /// </summary>
-        public object Value
-        {
-            get
-            {
-                return value;
-            }
-        }
+		/// <summary>
+		/// Gets the right child.
+		/// </summary>
+		public RalTreeNode RightChild
+		{
+			get { return m_rightChild; }
+		}
 
-        #endregion
+		/// <summary>
+		/// Gets the value represented by this node.
+		/// </summary>
+		public object Value
+		{
+			get { return m_value; }
+		}
 
-        #endregion
-    }
+		#endregion
+
+		#endregion
+	}
 }

@@ -35,7 +35,6 @@
 using System;
 using System.Collections;
 
-
 namespace Sanford.Collections
 {
 	/// <summary>
@@ -46,7 +45,7 @@ namespace Sanford.Collections
 	/// is based on the data structure created by William Pugh.
 	/// </remarks> 
 	public class SkipList : IDictionary
-	{        
+	{
 		#region SkipList Members
 
 		#region Constants
@@ -57,18 +56,18 @@ namespace Sanford.Collections
 		// Probability factor used to determine the node level
 		private const double Probability = 0.5;
 
-		#endregion 
+		#endregion
 
 		#region Fields
 
 		// The skip list header. It also serves as the NIL node.
-		private Node header = new Node(MaxLevel);
+		private readonly Node header = new Node(MaxLevel);
 
 		// Comparer for comparing keys.
-		private IComparer comparer;
+		private readonly IComparer comparer;
 
 		// Random number generator for generating random node levels.
-		private Random random = new Random();
+		private readonly Random random = new Random();
 
 		// Current maximum list level.
 		private int listLevel;
@@ -78,10 +77,10 @@ namespace Sanford.Collections
 
 		// Version of the skip list. Used for validation checks with 
 		// enumerators.
-		private long version = 0;
+		private long version;
 
 		#endregion
-        
+
 		/// <summary>
 		/// Initializes a new instance of the SkipList class that is empty and 
 		/// is sorted according to the IComparable interface implemented by 
@@ -138,17 +137,17 @@ namespace Sanford.Collections
 		private void Initialize()
 		{
 			listLevel = 1;
-			count = 0; 
+			count = 0;
 
 			// When the list is empty, make sure all forward references in the
 			// header point back to the header. This is important because the 
 			// header is used as the sentinel to mark the end of the skip list.
-			for(int i = 0; i < MaxLevel; i++)
+			for (int i = 0; i < MaxLevel; i++)
 			{
 				header.forward[i] = header;
 			}
 		}
- 
+
 		/// <summary>
 		/// Returns a level value for a new SkipList node.
 		/// </summary>
@@ -160,8 +159,8 @@ namespace Sanford.Collections
 			int level = 1;
 
 			// Determines the next node level.
-			while(random.NextDouble() < Probability && level < MaxLevel &&
-			      level <= listLevel)
+			while (random.NextDouble() < Probability && level < MaxLevel &&
+			       level <= listLevel)
 			{
 				level++;
 			}
@@ -182,7 +181,7 @@ namespace Sanford.Collections
 		{
 			Node curr;
 			Node[] dummy = new Node[MaxLevel];
-            
+
 			return Search(key, out curr, dummy);
 		}
 
@@ -244,23 +243,15 @@ namespace Sanford.Collections
 		private bool Search(object key, out Node curr, Node[] update)
 		{
 			// Make sure key isn't null.
-			if(key == null)
+			if (key == null)
 			{
-				throw new ArgumentNullException("An attempt was made to pass a null key to a SkipList.");
+				throw new ArgumentNullException("key", "An attempt was made to pass a null key to a SkipList.");
 			}
-
-			bool result;
 
 			// Check to see if we will search with a comparer.
-			if(comparer != null)
-			{
-				result = SearchWithComparer(key, out curr, update);
-			}
-				// Else we're using the IComparable interface.
-			else
-			{
-				result = SearchWithComparable(key, out curr, update);
-			}
+			bool result = comparer != null 
+			              	? SearchWithComparer(key, out curr, update) 
+			              	: SearchWithComparable(key, out curr, update);
 
 			return result;
 		}
@@ -290,12 +281,12 @@ namespace Sanford.Collections
 			curr = header;
 
 			// Work our way down from the top of the skip list to the bottom.
-			for(int i = listLevel - 1; i >= 0; i--)
+			for (int i = listLevel - 1; i >= 0; i--)
 			{
 				// While we haven't reached the end of the skip list and the 
 				// current key is less than the search key.
-				while(curr.forward[i] != header && 
-				      comparer.Compare(curr.forward[i].Entry.Key, key) < 0)
+				while (curr.forward[i] != header &&
+				       comparer.Compare(curr.forward[i].Entry.Key, key) < 0)
 				{
 					// Move forward in the skip list.
 					curr = curr.forward[i];
@@ -316,14 +307,14 @@ namespace Sanford.Collections
 
 			// If we haven't reached the end of the skip list and the 
 			// current key is equal to the search key.
-			if(curr != header && comparer.Compare(key, curr.Entry.Key) == 0)
+			if (curr != header && comparer.Compare(key, curr.Entry.Key) == 0)
 			{
 				// Indicate that we've found the search key.
 				found = true;
 			}
 
 			return found;
-		} 
+		}
 
 		/// <summary>
 		/// Search for the specified key using the IComparable interface 
@@ -353,35 +344,36 @@ namespace Sanford.Collections
 		/// same value as the header indicating that the search reached the end 
 		/// of the SkipList.
 		/// </remarks>
-		private bool SearchWithComparable(object key, out Node curr, 
+		private bool SearchWithComparable(object key, out Node curr,
 		                                  Node[] update)
-		{            
+		{
 			// Make sure key is comparable.
-			if(!(key is IComparable))
+			if (!(key is IComparable))
 			{
-				throw new ArgumentException("The SkipList was set to use the IComparable interface and an attempt was made to add a key that does not support this interface.");
+				throw new ArgumentException(
+					"The SkipList was set to use the IComparable interface and an attempt was made to add a key that does not support this interface.");
 			}
-            
-			bool found = false;            
+
+			bool found = false;
 			IComparable comp;
 
 			// Begin at the start of the skip list.
 			curr = header;
-            
+
 			// Work our way down from the top of the skip list to the bottom.
-			for(int i = listLevel - 1; i >= 0; i--)
-			{ 
+			for (int i = listLevel - 1; i >= 0; i--)
+			{
 				// Get the comparable interface for the current key.
-				comp = (IComparable)curr.forward[i].Key;
+				comp = (IComparable) curr.forward[i].Key;
 
 				// While we haven't reached the end of the skip list and the 
 				// current key is less than the search key.
-				while(curr.forward[i] != header && comp.CompareTo(key) < 0)
+				while (curr.forward[i] != header && comp.CompareTo(key) < 0)
 				{
 					// Move forward in the skip list.
 					curr = curr.forward[i];
 					// Get the comparable interface for the current key.
-					comp = (IComparable)curr.forward[i].Key;
+					comp = (IComparable) curr.forward[i].Key;
 				}
 
 				// Keep track of each node where we move down a level. This 
@@ -398,18 +390,18 @@ namespace Sanford.Collections
 			curr = curr.forward[0];
 
 			// Get the comparable interface for the current key.
-			comp = (IComparable)curr.Key;
+			comp = (IComparable) curr.Key;
 
 			// If we haven't reached the end of the skip list and the 
 			// current key is equal to the search key.
-			if(curr != header && comp.CompareTo(key) == 0)
+			if (curr != header && comp.CompareTo(key) == 0)
 			{
 				// Indicate that we've found the search key.
 				found = true;
 			}
 
 			return found;
-		} 
+		}
 
 		/// <summary>
 		/// Inserts a key/value pair into the SkipList.
@@ -432,11 +424,11 @@ namespace Sanford.Collections
 
 			// If the level for the new node is greater than the skip list 
 			// level.
-			if(newLevel > listLevel)
+			if (newLevel > listLevel)
 			{
 				// Make sure our update references above the current skip list
 				// level point to the header. 
-				for(int i = listLevel; i < newLevel; i++)
+				for (int i = listLevel; i < newLevel; i++)
 				{
 					update[i] = header;
 				}
@@ -449,7 +441,7 @@ namespace Sanford.Collections
 			Node newNode = new Node(newLevel, key, val);
 
 			// Insert the new node into the skip list.
-			for(int i = 0; i < newLevel; i++)
+			for (int i = 0; i < newLevel; i++)
 			{
 				// The new node forward references are initialized to point to
 				// our update forward references which point to nodes further 
@@ -465,7 +457,7 @@ namespace Sanford.Collections
 			count++;
 			// Indicate that the skip list has changed.
 			version++;
-		}  
+		}
 
 		#endregion
 
@@ -481,7 +473,7 @@ namespace Sanford.Collections
 			#region Fields
 
 			// References to nodes further along in the skip list.
-			public Node[] forward;
+			public readonly Node[] forward;
 
 			// Node key.
 			private Object key;
@@ -527,14 +519,8 @@ namespace Sanford.Collections
 			/// </summary>
 			public Object Key
 			{
-				get
-				{
-					return key;
-				}
-				set
-				{
-					key = value;
-				}
+				get { return key; }
+				set { key = value; }
 			}
 
 			/// <summary>
@@ -542,14 +528,8 @@ namespace Sanford.Collections
 			/// </summary>
 			public Object Value
 			{
-				get
-				{
-					return val;
-				}
-				set
-				{
-					val = value;
-				}
+				get { return val; }
+				set { val = value; }
 			}
 
 			/// <summary>
@@ -557,10 +537,7 @@ namespace Sanford.Collections
 			/// </summary>
 			public DictionaryEntry Entry
 			{
-				get
-				{
-					return new DictionaryEntry(Key, Value);
-				}
+				get { return new DictionaryEntry(Key, Value); }
 			}
 
 			#region IDisposable Members
@@ -570,7 +547,7 @@ namespace Sanford.Collections
 			/// </summary>
 			public void Dispose()
 			{
-				for(int i = 0; i < forward.Length; i++)
+				for (int i = 0; i < forward.Length; i++)
 				{
 					forward[i] = null;
 				}
@@ -587,19 +564,19 @@ namespace Sanford.Collections
 		/// Enumerates the elements of a skip list.
 		/// </summary>
 		private class SkipListEnumerator : IDictionaryEnumerator
-		{  
+		{
 			#region SkipListEnumerator Members
 
 			#region Fields
 
 			// The skip list to enumerate.
-			private SkipList list;
+			private readonly SkipList list;
 
 			// The current node.
 			private Node current;
 
 			// The version of the skip list we are enumerating.
-			private long version;
+			private readonly long version;
 
 			// Keeps track of previous move result so that we can know 
 			// whether or not we are at the end of the skip list.
@@ -619,7 +596,7 @@ namespace Sanford.Collections
 			}
 
 			#endregion
-       
+
 			#region IDictionaryEnumerator Members
 
 			/// <summary>
@@ -630,27 +607,22 @@ namespace Sanford.Collections
 			{
 				get
 				{
-					DictionaryEntry entry;
-
 					// Make sure the skip list hasn't been modified since the
 					// enumerator was created.
-					if(version != list.version)
+					if (version != list.version)
 					{
-						throw new InvalidOperationException("SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
+						throw new InvalidOperationException(
+							"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 					}
 						// Make sure we are not before the beginning or beyond the 
 						// end of the skip list.
-					else if(current == list.header)
-					{            
-						throw new InvalidOperationException("SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
+					if (current == list.header)
+					{
+						throw new InvalidOperationException(
+							"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 					}
 						// Finally, all checks have passed. Get the current entry.
-					else
-					{
-						entry = current.Entry;
-					}
-
-					return entry;
+					return current.Entry;
 				}
 			}
 
@@ -696,17 +668,17 @@ namespace Sanford.Collections
 			{
 				// Make sure the skip list hasn't been modified since the
 				// enumerator was created.
-				if(version == list.version)
-				{       
+				if (version == list.version)
+				{
 					// If the result of the previous move operation was true
 					// we can still move forward in the skip list.
-					if(moveResult)
+					if (moveResult)
 					{
 						// Move forward in the skip list.
 						current = current.forward[0];
 
 						// If we are at the end of the skip list.
-						if(current == list.header)
+						if (current == list.header)
 						{
 							// Indicate that we've reached the end of the skip 
 							// list.
@@ -719,7 +691,8 @@ namespace Sanford.Collections
 					// creation of the enumerator.
 				else
 				{
-					throw new InvalidOperationException("SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
+					throw new InvalidOperationException(
+						"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 				}
 
 				return moveResult;
@@ -733,18 +706,14 @@ namespace Sanford.Collections
 			{
 				// Make sure the skip list hasn't been modified since the
 				// enumerator was created.
-				if(version == list.version)
+				if (version != list.version)
 				{
-					current = list.header;
-					moveResult = true;
+					throw new InvalidOperationException(
+						"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 				}
-					// Else this version of the enumerator doesn't match that of 
-					// the skip list. The skip list has been modified since the 
-					// creation of the enumerator.
-				else
-				{
-					throw new InvalidOperationException("SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
-				}
+				
+				current = list.header;
+				moveResult = true;
 			}
 
 			/// <summary>
@@ -752,14 +721,11 @@ namespace Sanford.Collections
 			/// </summary>
 			public object Current
 			{
-				get
-				{                    
-					return Entry;
-				}
+				get { return Entry; }
 			}
 
 			#endregion
-		}   
+		}
 
 		#endregion
 
@@ -777,9 +743,9 @@ namespace Sanford.Collections
 		public void Add(object key, object value)
 		{
 			Node[] update = new Node[MaxLevel];
-            
+
 			// If key does not already exist in the skip list.
-			if(!Search(key, update))
+			if (!Search(key, update))
 			{
 				// Inseart key/value pair into the skip list.
 				Insert(key, value, update);
@@ -789,7 +755,8 @@ namespace Sanford.Collections
 				// exists in the skip list.
 			else
 			{
-				throw new ArgumentException("An attempt was made to add an element in which the key of the element already exists in the SkipList.");
+				throw new ArgumentException(
+					"An attempt was made to add an element in which the key of the element already exists in the SkipList.");
 			}
 		}
 
@@ -803,7 +770,7 @@ namespace Sanford.Collections
 			Node prev;
 
 			// While we haven't reached the end of the skip list.
-			while(curr != header)
+			while (curr != header)
 			{
 				// Keep track of the previous node.
 				prev = curr;
@@ -856,31 +823,31 @@ namespace Sanford.Collections
 			Node[] update = new Node[MaxLevel];
 			Node curr;
 
-			if(Search(key, out curr, update))
+			if (!Search(key, out curr, update)) return;
+			// Take the forward references that point to the node to be 
+			// removed and reassign them to the nodes that come after it.
+			for (int i = 0;
+			     i < listLevel &&
+			     update[i].forward[i] == curr;
+			     i++)
 			{
-				// Take the forward references that point to the node to be 
-				// removed and reassign them to the nodes that come after it.
-				for(int i = 0; i < listLevel && 
-				               update[i].forward[i] == curr; i++)
-				{
-					update[i].forward[i] = curr.forward[i];
-				}
-
-				curr.Dispose();
-
-				// After removing the node, we may need to lower the current 
-				// skip list level if the node had the highest level of all of
-				// the nodes.
-				while(listLevel > 1 && header.forward[listLevel - 1] == header)
-				{
-					listLevel--;
-				}
-
-				// Keep track of the number of nodes.
-				count--;
-				// Indicate that the skip list has changed.
-				version++;
+				update[i].forward[i] = curr.forward[i];
 			}
+
+			curr.Dispose();
+
+			// After removing the node, we may need to lower the current 
+			// skip list level if the node had the highest level of all of
+			// the nodes.
+			while (listLevel > 1 && header.forward[listLevel - 1] == header)
+			{
+				listLevel--;
+			}
+
+			// Keep track of the number of nodes.
+			count--;
+			// Indicate that the skip list has changed.
+			version++;
 		}
 
 		/// <summary>
@@ -888,10 +855,7 @@ namespace Sanford.Collections
 		/// </summary>
 		public bool IsFixedSize
 		{
-			get
-			{
-				return false;
-			}
+			get { return false; }
 		}
 
 		/// <summary>
@@ -899,10 +863,7 @@ namespace Sanford.Collections
 		/// </summary>
 		public bool IsReadOnly
 		{
-			get
-			{
-				return false;
-			}
+			get { return false; }
 		}
 
 		/// <summary>
@@ -916,7 +877,7 @@ namespace Sanford.Collections
 				object val = null;
 				Node curr;
 
-				if(Search(key, out curr))
+				if (Search(key, out curr))
 				{
 					val = curr.Entry.Value;
 				}
@@ -929,7 +890,7 @@ namespace Sanford.Collections
 				Node curr;
 
 				// If the search key already exists in the skip list.
-				if(Search(key, out curr, update))
+				if (Search(key, out curr, update))
 				{
 					// Replace the current value with the new value.
 					curr.Value = value;
@@ -958,7 +919,7 @@ namespace Sanford.Collections
 				ArrayList collection = new ArrayList();
 
 				// While we haven't reached the end of the skip list.
-				while(curr != header)
+				while (curr != header)
 				{
 					// Add the key to the collection.
 					collection.Add(curr.Entry.Key);
@@ -983,7 +944,7 @@ namespace Sanford.Collections
 				ArrayList collection = new ArrayList();
 
 				// While we haven't reached the end of the skip list.
-				while(curr != header)
+				while (curr != header)
 				{
 					// Add the value to the collection.
 					collection.Add(curr.Entry.Value);
@@ -993,7 +954,7 @@ namespace Sanford.Collections
 
 				return collection;
 			}
-		} 
+		}
 
 		#endregion
 
@@ -1013,43 +974,42 @@ namespace Sanford.Collections
 		public void CopyTo(Array array, int index)
 		{
 			// Make sure array isn't null.
-			if(array == null)
+			if (array == null)
 			{
-				throw new ArgumentNullException("An attempt was made to pass a null array to the CopyTo method of a SkipList.");
+				throw new ArgumentNullException("array", 
+					"An attempt was made to pass a null array to the CopyTo method of a SkipList.");
 			}
 				// Make sure index is not negative.
-			else if(index < 0)
+			if (index < 0)
 			{
-				throw new ArgumentOutOfRangeException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
+				throw new ArgumentOutOfRangeException("index", index, 
+					"An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
 			}
 				// Array bounds checking.
-			else if(index >= array.Length)
+			if (index >= array.Length)
 			{
-				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
+				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
 			}
 				// Make sure that the number of elements in the skip list is not 
 				// greater than the available space from index to the end of the 
 				// array.
-			else if((array.Length - index) < Count)
+			if ((array.Length - index) < Count)
 			{
-				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
+				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
 			}
 				// Else copy elements from skip list into array.
-			else
+			// Start at the beginning of the skip list.
+			Node curr = header.forward[0];
+
+			// While we haven't reached the end of the skip list.
+			while (curr != header)
 			{
-				// Start at the beginning of the skip list.
-				Node curr = header.forward[0];
+				// Copy current value into array.
+				array.SetValue(curr.Entry.Value, index);
 
-				// While we haven't reached the end of the skip list.
-				while(curr != header)
-				{
-					// Copy current value into array.
-					array.SetValue(curr.Entry.Value, index);
-
-					// Move forward in the skip list and array.
-					curr = curr.forward[0];
-					index++;
-				}
+				// Move forward in the skip list and array.
+				curr = curr.forward[0];
+				index++;
 			}
 		}
 
@@ -1058,10 +1018,7 @@ namespace Sanford.Collections
 		/// </summary>
 		public int Count
 		{
-			get
-			{                
-				return count;
-			}
+			get { return count; }
 		}
 
 		/// <summary>
@@ -1070,10 +1027,7 @@ namespace Sanford.Collections
 		/// </summary>
 		public bool IsSynchronized
 		{
-			get
-			{
-				return false;
-			}
+			get { return false; }
 		}
 
 		/// <summary>
@@ -1082,10 +1036,7 @@ namespace Sanford.Collections
 		/// </summary>
 		public object SyncRoot
 		{
-			get
-			{
-				return this;
-			}
+			get { return this; }
 		}
 
 		#endregion
@@ -1098,7 +1049,7 @@ namespace Sanford.Collections
 		/// <returns>
 		/// An IEnumerator that can be used to iterate through the collection.
 		/// </returns>
-		IEnumerator System.Collections.IEnumerable.GetEnumerator()
+		IEnumerator IEnumerable.GetEnumerator()
 		{
 			return new SkipListEnumerator(this);
 		}
