@@ -32,8 +32,8 @@
 
 #endregion
 
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
@@ -41,35 +41,35 @@ namespace Sanford.StateMachineToolkit
 	/// Summary description for ActionCollection.
 	/// </summary>
 	public class ActionCollection : IEnumerable<ActionHandler>
-    {
-        private readonly List<ActionHandler> actions = new List<ActionHandler>();
+	{
+		private readonly List<ActionHandler> actions = new List<ActionHandler>();
 
 		public void Add(ActionHandler action)
-        {
-            actions.Add(action);
-        }
+		{
+			actions.Add(action);
+		}
 
-        public void Remove(ActionHandler action)
-        {
-            actions.Remove(action);
-        }
+		public void Remove(ActionHandler action)
+		{
+			actions.Remove(action);
+		}
 
-        #region ICollection Members
+		#region ICollection Members
 
-        #endregion
+		#endregion
 
-        #region IEnumerable Members
+		#region IEnumerable Members
 
-        public IEnumerator<ActionHandler> GetEnumerator()
-        {
-            return actions.GetEnumerator();
-        }
+		public IEnumerator<ActionHandler> GetEnumerator()
+		{
+			return actions.GetEnumerator();
+		}
 
-        #endregion
+		#endregion
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
 			return GetEnumerator();
 		}
-    }
+	}
 }

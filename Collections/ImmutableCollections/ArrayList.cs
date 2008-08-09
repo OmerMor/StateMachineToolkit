@@ -141,9 +141,9 @@ namespace Sanford.Collections.ImmutableCollections
 				// for setting the specified value.
 				rootNode = SetValue(count, value, root);
 			}
-				ArrayList result = new ArrayList(
-					rootNode,
-					count + 1);
+			ArrayList result = new ArrayList(
+				rootNode,
+				count + 1);
 
 			// Postconditions.
 			Debug.Assert(result.Count == Count + 1);
@@ -219,8 +219,8 @@ namespace Sanford.Collections.ImmutableCollections
 			// Preconditions.
 			if (index < 0 || index > Count)
 			{
-				throw new ArgumentOutOfRangeException("index",index,
-					"ArrayList index out of range.");
+				throw new ArgumentOutOfRangeException("index", index,
+				                                      "ArrayList index out of range.");
 			}
 
 			// Create new ArrayList with the value inserted at the specified index.
@@ -341,8 +341,8 @@ namespace Sanford.Collections.ImmutableCollections
 			// Preconditions.
 			if (index < 0 || index >= count)
 			{
-				throw new ArgumentOutOfRangeException("index",index,
-					"ArrayList index out of range.");
+				throw new ArgumentOutOfRangeException("index", index,
+				                                      "ArrayList index out of range.");
 			}
 
 			// Create a new ArrayList with the specified value set at the 

@@ -249,8 +249,8 @@ namespace Sanford.Collections
 			}
 
 			// Check to see if we will search with a comparer.
-			bool result = comparer != null 
-			              	? SearchWithComparer(key, out curr, update) 
+			bool result = comparer != null
+			              	? SearchWithComparer(key, out curr, update)
 			              	: SearchWithComparable(key, out curr, update);
 
 			return result;
@@ -614,14 +614,14 @@ namespace Sanford.Collections
 						throw new InvalidOperationException(
 							"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 					}
-						// Make sure we are not before the beginning or beyond the 
-						// end of the skip list.
+					// Make sure we are not before the beginning or beyond the 
+					// end of the skip list.
 					if (current == list.header)
 					{
 						throw new InvalidOperationException(
 							"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 					}
-						// Finally, all checks have passed. Get the current entry.
+					// Finally, all checks have passed. Get the current entry.
 					return current.Entry;
 				}
 			}
@@ -711,7 +711,7 @@ namespace Sanford.Collections
 					throw new InvalidOperationException(
 						"SkipListEnumerator is no longer valid. The SkipList has been modified since the creation of this enumerator.");
 				}
-				
+
 				current = list.header;
 				moveResult = true;
 			}
@@ -976,28 +976,30 @@ namespace Sanford.Collections
 			// Make sure array isn't null.
 			if (array == null)
 			{
-				throw new ArgumentNullException("array", 
-					"An attempt was made to pass a null array to the CopyTo method of a SkipList.");
+				throw new ArgumentNullException("array",
+				                                "An attempt was made to pass a null array to the CopyTo method of a SkipList.");
 			}
-				// Make sure index is not negative.
+			// Make sure index is not negative.
 			if (index < 0)
 			{
-				throw new ArgumentOutOfRangeException("index", index, 
-					"An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
+				throw new ArgumentOutOfRangeException("index", index,
+				                                      "An attempt was made to pass an out of range index to the CopyTo method of a SkipList.");
 			}
-				// Array bounds checking.
+			// Array bounds checking.
 			if (index >= array.Length)
 			{
-				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
+				throw new ArgumentException(
+					"An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
 			}
-				// Make sure that the number of elements in the skip list is not 
-				// greater than the available space from index to the end of the 
-				// array.
+			// Make sure that the number of elements in the skip list is not 
+			// greater than the available space from index to the end of the 
+			// array.
 			if ((array.Length - index) < Count)
 			{
-				throw new ArgumentException("An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
+				throw new ArgumentException(
+					"An attempt was made to pass an out of range index to the CopyTo method of a SkipList.", "index");
 			}
-				// Else copy elements from skip list into array.
+			// Else copy elements from skip list into array.
 			// Start at the beginning of the skip list.
 			Node curr = header.forward[0];
 

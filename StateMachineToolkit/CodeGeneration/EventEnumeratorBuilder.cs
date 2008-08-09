@@ -6,65 +6,60 @@
  * Last modified: 10/13/2005
  */
 
-using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the event identifiers.
 	/// </summary>
 	internal class EventEnumeratorBuilder
 	{
-        #region EventEnumeratorBuilder Members
+		#region EventEnumeratorBuilder Members
 
-        #region Fields
+		#region Fields
 
-        private ICollection events;
+		private readonly ICollection events;
 
-        private CodeTypeDeclaration result = new CodeTypeDeclaration();
+		private CodeTypeDeclaration result = new CodeTypeDeclaration();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
 		public EventEnumeratorBuilder(ICollection events)
 		{
-            this.events = events;
+			this.events = events;
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        public void Build()
-        {
-            result = new CodeTypeDeclaration("EventID");
+		public void Build()
+		{
+			result = new CodeTypeDeclaration("EventID");
 
-            result.IsEnum = true;
+			result.IsEnum = true;
 
-            foreach(string e in events)
-            {
-                result.Members.Add(new CodeMemberField(typeof(int), e));
-            }
+			foreach (string e in events)
+			{
+				result.Members.Add(new CodeMemberField(typeof (int), e));
+			}
+		}
 
-        }
+		#endregion
 
-        #endregion
+		#region Properties
 
-        #region Properties
+		public CodeTypeDeclaration Result
+		{
+			get { return result; }
+		}
 
-        public CodeTypeDeclaration Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		#endregion
 
-        #endregion
-
-        #endregion
+		#endregion
 	}
 }

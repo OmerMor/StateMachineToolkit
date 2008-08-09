@@ -1,19 +1,37 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Sanford.Threading;
 
 namespace Sanford.StateMachineToolkit
 {
+	/// <summary>
+	/// The ActiveStateMachine class uses the Active Object design pattern. 
+	/// What this means is that an ActiveStateMachine object runs in its own thread. 
+	/// Internally, ActiveStateMachines use <see cref="DelegateQueue"/> objects for handling 
+	/// and dispatching events. 
+	/// You derive your state machines from this class when you want them to be active objects.<para/>
+	/// The ActiveStateMachine class implements the <see cref="IDisposable"/> interface. 
+	/// Since it represents an  active object, it needs to be disposed of at some point to 
+	/// shut its thread down. 
+	/// The Dispose method was made virtual so that derived ActiveStateMachine classes can override it. 
+	/// Typically, a derived ActiveStateMachine will override the Dispose method, and when it is called, 
+	/// will send an event to itself using the <see cref="SendPriority"/> method telling it to dispose of itself. 
+	/// In other words, disposing of an ActiveStateMachine is treated like an event. 
+	/// How your state machine handles the disposing event depends on its current state. 
+	/// However, at some point, your state machine will need to call the ActiveStateMachine's 
+	/// <see cref="Dispose(bool)"/> base class method, passing it a true value. 
+	/// This lets the base class dispose of its <see cref="DelegateQueue"/> object, thus shutting down the 
+	/// thread in which it is running.
+	/// </summary>
+	/// <typeparam name="TState">The state enumeration type.</typeparam>
+	/// <typeparam name="TEvent">The event enumeration type.</typeparam>
 	public abstract class ActiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>, IDisposable
-		where TState : struct, IComparable, IFormattable/*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
 		// Used for queuing events.
 		private readonly SynchronizationContext context;
 		private readonly DelegateQueue queue = new DelegateQueue();
-
-		private Queue<DeferedEvent> deferedEvents = new Queue<DeferedEvent>();
 
 		private bool disposed;
 
@@ -65,6 +83,12 @@ namespace Sanford.StateMachineToolkit
 			disposed = true;
 		}
 
+		protected override void Initialize(State<TState, TEvent> initialState)
+		{
+			queue.Send(delegate { InitializeStateMachine(initialState); }, null);
+		}
+
+
 		/// <summary>
 		/// Sends an event to the StateMachine.
 		/// </summary>
@@ -86,17 +110,28 @@ namespace Sanford.StateMachineToolkit
 			{
 				throw new ObjectDisposedException("ActiveStateMachine");
 			}
-/*
-			if (eventID < 0 || eventID >= currentState.Transitions.Count)
-			{
-				throw new ArgumentOutOfRangeException("eventID", eventID,
-				                                      "Event ID out of range.");
-			}
-*/
 
 			#endregion
 
 			queue.Post(delegate { Dispatch(eventID, args); }, null);
+		}
+
+		public void SendSynchronously(TEvent eventID, params object[] args)
+		{
+			#region Require
+
+			if (!IsInitialized)
+			{
+				throw new InvalidOperationException();
+			}
+			if (IsDisposed)
+			{
+				throw new ObjectDisposedException("ActiveStateMachine");
+			}
+
+			#endregion
+
+			queue.Send(delegate { Dispatch(eventID, args); }, null);
 		}
 
 		protected override void SendPriority(TEvent eventID, object[] args)
@@ -111,14 +146,6 @@ namespace Sanford.StateMachineToolkit
 			{
 				throw new ObjectDisposedException("ActiveStateMachine");
 			}
-			
-/*
-			if (eventID < 0 || eventID >= currentState.Transitions.Count)
-			{
-				throw new ArgumentOutOfRangeException("eventID", eventID,
-				                                      "Event ID out of range.");
-			}
-*/
 
 			#endregion
 
@@ -158,31 +185,5 @@ namespace Sanford.StateMachineToolkit
 				OnTransitionCompleted(e);
 			}
 		}
-
-		#region Nested type: DeferedEvent
-
-		private class DeferedEvent
-		{
-			private readonly object[] args;
-			private readonly TEvent eventID;
-
-			public DeferedEvent(TEvent eventID, object[] args)
-			{
-				this.eventID = eventID;
-				this.args = args;
-			}
-
-			public TEvent EventID
-			{
-				get { return eventID; }
-			}
-
-			public object[] GetArgs()
-			{
-				return args;
-			}
-		}
-
-		#endregion
 	}
 }

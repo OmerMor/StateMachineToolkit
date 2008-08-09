@@ -146,8 +146,8 @@ namespace Sanford.Collections.ImmutableCollections
 			// Preconditions.
 			if (index < 0 || index >= Length)
 			{
-				throw new ArgumentOutOfRangeException("index",index,
-					"Index out of range.");
+				throw new ArgumentOutOfRangeException("index", index,
+				                                      "Index out of range.");
 			}
 
 			return new Array(head.SetValue(value, index), Length);

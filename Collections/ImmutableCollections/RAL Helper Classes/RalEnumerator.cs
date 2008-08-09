@@ -175,7 +175,7 @@ namespace Sanford.Collections.ImmutableCollections
 						// Finished.
 						break;
 					}
-						// Else the bottom of the right tree has been reached.
+					// Else the bottom of the right tree has been reached.
 					// Keep track of the current node.
 					currentNode = previousNode;
 
