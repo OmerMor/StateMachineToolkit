@@ -7,12 +7,7 @@ using System.Runtime.InteropServices;
 
 [assembly : AssemblyTitle("Threading")]
 [assembly : AssemblyDescription("")]
-[assembly : AssemblyConfiguration("")]
-[assembly : AssemblyCompany("")]
 [assembly : AssemblyProduct("Threading")]
-[assembly : AssemblyCopyright("Leslie Sanford")]
-[assembly : AssemblyTrademark("")]
-[assembly : AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -24,16 +19,3 @@ using System.Runtime.InteropServices;
 
 [assembly : Guid("f96c1c18-7c08-4ec8-afc1-84e538f398af")]
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-// You can specify all the values or you can default the Build and Revision Numbers 
-// by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-
-[assembly : AssemblyVersion("6.0.0.0")]
-[assembly : AssemblyFileVersion("6.0.0.0")]
