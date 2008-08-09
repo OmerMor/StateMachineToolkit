@@ -10,318 +10,278 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.StateMachineBuilder
 {
 	/// <summary>
 	/// Represents a collection of StateRows.
 	/// </summary>
 	public class StateRowCollection : CollectionBase, IBindingList
-	{ 
-        #region StateRowCollection Members
+	{
+		#region StateRowCollection Members
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the StateRowCollection class.
-        /// </summary>
-		public StateRowCollection()
+		#endregion
+
+		#region Methods
+
+		/// <summary>
+		/// Adds a StateRow to the StateRowCollection.
+		/// </summary>
+		/// <param name="row">
+		/// The StateRow to add to the StateRowCollection.
+		/// </param>
+		/// <returns>
+		/// The position into which the StateRow was inserted into the 
+		/// StareRowCollection.
+		/// </returns>
+		public int Add(StateRow row)
 		{
-        }
+			return List.Add(row);
+		}
 
-        #endregion
+		/// <summary>
+		/// Creates a StateRow based on the specified name and adds it to the
+		/// StateRowCollection.
+		/// </summary>
+		/// <param name="name">
+		/// The state name.
+		/// </param>
+		/// <returns>
+		/// The position into which the StateRow was inserted into the 
+		/// StareRowCollection.
+		/// </returns>
+		public int Add(string name)
+		{
+			StateRow newRow = new StateRow();
 
-        #region Methods
+			newRow.Name = name;
 
-        /// <summary>
-        /// Adds a StateRow to the StateRowCollection.
-        /// </summary>
-        /// <param name="row">
-        /// The StateRow to add to the StateRowCollection.
-        /// </param>
-        /// <returns>
-        /// The position into which the StateRow was inserted into the 
-        /// StareRowCollection.
-        /// </returns>
-        public int Add(StateRow row)
-        {
-            return List.Add(row);
-        }
+			return Add(newRow);
+		}
 
-        /// <summary>
-        /// Creates a StateRow based on the specified name and adds it to the
-        /// StateRowCollection.
-        /// </summary>
-        /// <param name="name">
-        /// The state name.
-        /// </param>
-        /// <returns>
-        /// The position into which the StateRow was inserted into the 
-        /// StareRowCollection.
-        /// </returns>
-        public int Add(string name)
-        {
-            StateRow newRow = new StateRow();
+		/// <summary>
+		/// Creates a StateRow based on the specified name and initial state 
+		/// and adds it to the StateRowCollection.
+		/// </summary>
+		/// <param name="name">
+		/// The state name.
+		/// </param>
+		/// <param name="initialState">
+		/// The state's initial state.
+		/// </param>
+		/// <returns>
+		/// The position into which the StateRow was inserted into the 
+		/// StareRowCollection.
+		/// </returns>
+		public int Add(string name, string initialState)
+		{
+			StateRow newRow = new StateRow();
 
-            newRow.Name = name;
+			newRow.Name = name;
+			newRow.InitialState = initialState;
 
-            return Add(newRow);
-        }
+			return Add(newRow);
+		}
 
-        /// <summary>
-        /// Creates a StateRow based on the specified name and initial state 
-        /// and adds it to the StateRowCollection.
-        /// </summary>
-        /// <param name="name">
-        /// The state name.
-        /// </param>
-        /// <param name="initialState">
-        /// The state's initial state.
-        /// </param>
-        /// <returns>
-        /// The position into which the StateRow was inserted into the 
-        /// StareRowCollection.
-        /// </returns>
-        public int Add(string name, string initialState)
-        {
-            StateRow newRow = new StateRow();
+		/// <summary>
+		/// Creates a StateRow based on the specified name, initial state, and
+		/// history type and adds it to the StateRowCollection.
+		/// </summary>
+		/// <param name="name">
+		/// The state name.
+		/// </param>
+		/// <param name="initialState">
+		/// The state's initial state.
+		/// </param>
+		/// <param name="historyType">
+		/// The state's history type.
+		/// </param>
+		/// <returns>
+		/// The position into which the StateRow was inserted into the 
+		/// StareRowCollection.
+		/// </returns>
+		public int Add(string name, string initialState, HistoryType historyType)
+		{
+			StateRow newRow = new StateRow();
 
-            newRow.Name = name;
-            newRow.InitialState = initialState;
+			newRow.Name = name;
+			newRow.InitialState = initialState;
+			newRow.HistoryType = historyType;
 
-            return Add(newRow);
-        }
+			return Add(newRow);
+		}
 
-        /// <summary>
-        /// Creates a StateRow based on the specified name, initial state, and
-        /// history type and adds it to the StateRowCollection.
-        /// </summary>
-        /// <param name="name">
-        /// The state name.
-        /// </param>
-        /// <param name="initialState">
-        /// The state's initial state.
-        /// </param>
-        /// <param name="historyType">
-        /// The state's history type.
-        /// </param>
-        /// <returns>
-        /// The position into which the StateRow was inserted into the 
-        /// StareRowCollection.
-        /// </returns>
-        public int Add(string name, string initialState, HistoryType historyType)
-        {
-            StateRow newRow = new StateRow();
+		protected override void OnClear()
+		{
+			foreach (StateRow row in List)
+			{
+				row.EditCancelled -= EditCancelledHandler;
+			}
 
-            newRow.Name = name;
-            newRow.InitialState = initialState;
-            newRow.HistoryType = historyType;
+			base.OnClear();
+		}
 
-            return Add(newRow);
-        }
+		protected override void OnClearComplete()
+		{
+			OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
 
-        protected override void OnClear()
-        {
-            foreach(StateRow row in List)            
-            {
-                row.EditCancelled -= new EventHandler(EditCancelledHandler);
-            }
+			base.OnClearComplete();
+		}
 
-            base.OnClear ();
-        }
+		protected override void OnInsertComplete(int index, object value)
+		{
+			StateRow newRow = (StateRow) value;
 
-        protected override void OnClearComplete()
-        {
-            OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
+			newRow.EditCancelled += EditCancelledHandler;
 
-            base.OnClearComplete();
-        }
+			OnListChanged(new ListChangedEventArgs(ListChangedType.ItemAdded, index));
 
-        protected override void OnInsertComplete(int index, object value)
-        {
-            StateRow newRow = (StateRow)value;
+			base.OnInsertComplete(index, value);
+		}
 
-            newRow.EditCancelled += new EventHandler(EditCancelledHandler);
+		protected override void OnRemoveComplete(int index, object value)
+		{
+			StateRow oldRow = (StateRow) value;
 
-            OnListChanged(new ListChangedEventArgs(ListChangedType.ItemAdded, index));
+			oldRow.EditCancelled -= EditCancelledHandler;
 
-            base.OnInsertComplete (index, value);
-        }
+			OnListChanged(new ListChangedEventArgs(ListChangedType.ItemDeleted, index));
 
-        protected override void OnRemoveComplete(int index, object value)
-        {
-            StateRow oldRow = (StateRow)value;
+			base.OnRemoveComplete(index, value);
+		}
 
-            oldRow.EditCancelled -= new EventHandler(EditCancelledHandler);
+		protected override void OnSetComplete(int index, object oldValue, object newValue)
+		{
+			if (oldValue != newValue)
+			{
+				StateRow oldRow = (StateRow) oldValue;
+				StateRow newRow = (StateRow) newValue;
 
-            OnListChanged(new ListChangedEventArgs(ListChangedType.ItemDeleted, index));
+				oldRow.EditCancelled -= EditCancelledHandler;
+				newRow.EditCancelled += EditCancelledHandler;
 
-            base.OnRemoveComplete (index, value);
-        }
+				OnListChanged(new ListChangedEventArgs(ListChangedType.ItemAdded, index));
+			}
 
-        protected override void OnSetComplete(int index, object oldValue, object newValue)
-        {
-            if(oldValue != newValue)
-            {
-                StateRow oldRow = (StateRow)oldValue;
-                StateRow newRow = (StateRow)newValue;
+			base.OnSetComplete(index, oldValue, newValue);
+		}
 
-                oldRow.EditCancelled -= new EventHandler(EditCancelledHandler);
-                newRow.EditCancelled += new EventHandler(EditCancelledHandler);
+		private void OnListChanged(ListChangedEventArgs e)
+		{
+			ListChangedEventHandler handler = ListChanged;
 
-                OnListChanged(new ListChangedEventArgs(ListChangedType.ItemAdded, index));
-            }
+			if (handler != null)
+			{
+				handler(this, e);
+			}
+		}
 
-            base.OnSetComplete (index, oldValue, newValue);
-        }
+		private void EditCancelledHandler(object sender, EventArgs e)
+		{
+			List.Remove(sender);
+		}
 
-        private void OnListChanged(ListChangedEventArgs e)
-        {
-            ListChangedEventHandler handler = ListChanged;
+		#endregion
 
-            if(handler != null)
-            {
-                handler(this, e);
-            }
-        }
+		#region Properties
 
-        private void EditCancelledHandler(object sender, EventArgs e)
-        {
-            List.Remove(sender);
-        }
+		/// <summary>
+		/// Gets or sets the StateRow at the specified index.
+		/// </summary>
+		public StateRow this[int index]
+		{
+			get { return (StateRow) List[index]; }
+			set { List[index] = value; }
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#endregion
 
-        /// <summary>
-        /// Gets or sets the StateRow at the specified index.
-        /// </summary>
-        public StateRow this[int index]
-        {
-            get
-            {
-                return (StateRow)List[index];
-            }
-            set
-            {
-                List[index] = value;
-            }
-        }
+		#region IBindingList Members
 
-        #endregion
+		public event ListChangedEventHandler ListChanged;
 
-        #endregion
+		public object AddNew()
+		{
+			StateRow newRow = new StateRow();
 
-        #region IBindingList Members
+			List.Add(newRow);
 
-        public event System.ComponentModel.ListChangedEventHandler ListChanged;
+			return newRow;
+		}
 
-        public object AddNew()
-        {
-            StateRow newRow = new StateRow();
+		public void AddIndex(PropertyDescriptor property)
+		{
+			throw new NotSupportedException();
+		}
 
-            List.Add(newRow);
+		public void ApplySort(PropertyDescriptor property, ListSortDirection direction)
+		{
+			throw new NotSupportedException();
+		}
 
-            return newRow;
-        }
+		public int Find(PropertyDescriptor property, object key)
+		{
+			throw new NotSupportedException();
+		}
 
-        public void AddIndex(PropertyDescriptor property)
-        {
-            throw new NotSupportedException();
-        }        
+		public void RemoveSort()
+		{
+			throw new NotSupportedException();
+		}
 
-        public void ApplySort(PropertyDescriptor property, System.ComponentModel.ListSortDirection direction)
-        {
-            throw new NotSupportedException();
-        }        
+		public void RemoveIndex(PropertyDescriptor property)
+		{
+			throw new NotSupportedException();
+		}
 
-        public int Find(PropertyDescriptor property, object key)
-        {
-            throw new NotSupportedException();
-        }
+		public bool AllowNew
+		{
+			get { return true; }
+		}
 
-        public void RemoveSort()
-        {
-            throw new NotSupportedException();
-        }
+		public bool AllowEdit
+		{
+			get { return true; }
+		}
 
-        public void RemoveIndex(PropertyDescriptor property)
-        {
-            throw new NotSupportedException();
-        }
+		public bool AllowRemove
+		{
+			get { return true; }
+		}
 
-        public bool AllowNew
-        {
-            get
-            {
-                return true;
-            }
-        }        
+		public PropertyDescriptor SortProperty
+		{
+			get { throw new NotSupportedException(); }
+		}
 
-        public bool AllowEdit
-        {
-            get
-            {
-                return true;
-            }
-        }
+		public bool SupportsChangeNotification
+		{
+			get { return true; }
+		}
 
-        public bool AllowRemove
-        {
-            get
-            {
-                return true;
-            }
-        }
+		public bool SupportsSorting
+		{
+			get { return false; }
+		}
 
-        public PropertyDescriptor SortProperty
-        {
-            get
-            {
-                throw new NotSupportedException();
-            }
-        }
+		public bool SupportsSearching
+		{
+			get { return false; }
+		}
 
-        public bool SupportsChangeNotification
-        {
-            get
-            {
-                return true;
-            }
-        }
+		public bool IsSorted
+		{
+			get { throw new NotSupportedException(); }
+		}
 
-        public bool SupportsSorting
-        {
-            get
-            {
-                return false;
-            }
-        }
+		public ListSortDirection SortDirection
+		{
+			get { throw new NotSupportedException(); }
+		}
 
-        public bool SupportsSearching
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public bool IsSorted
-        {
-            get
-            {
-                throw new NotSupportedException();
-            }
-        }        
-
-        public System.ComponentModel.ListSortDirection SortDirection
-        {
-            get
-            {
-                throw new NotSupportedException();
-            }
-        }
-        
-        #endregion
-    }
+		#endregion
+	}
 }

@@ -1,62 +1,57 @@
-using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
-    /// <summary>
-    /// Builds the event identifiers.
-    /// </summary>
-    internal class StateEnumeratorBuilder
-    {
-        #region StateEnumeratorBuilder Members
+	/// <summary>
+	/// Builds the event identifiers.
+	/// </summary>
+	internal class StateEnumeratorBuilder
+	{
+		#region StateEnumeratorBuilder Members
 
-        #region Fields
+		#region Fields
 
-        private ICollection states;
+		private readonly ICollection states;
 
-        private CodeTypeDeclaration result = new CodeTypeDeclaration();
+		private CodeTypeDeclaration result = new CodeTypeDeclaration();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        public StateEnumeratorBuilder(ICollection states)
-        {
-            this.states = states;
-        }
+		public StateEnumeratorBuilder(ICollection states)
+		{
+			this.states = states;
+		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        public void Build()
-        {
-            result = new CodeTypeDeclaration("StateID");
+		public void Build()
+		{
+			result = new CodeTypeDeclaration("StateID");
 
-            result.IsEnum = true;
+			result.IsEnum = true;
 
-            foreach(string s in states)
-            {
-                result.Members.Add(new CodeMemberField(typeof(int), s));
-            }
+			foreach (string s in states)
+			{
+				result.Members.Add(new CodeMemberField(typeof (int), s));
+			}
+		}
 
-        }
+		#endregion
 
-        #endregion
+		#region Properties
 
-        #region Properties
+		public CodeTypeDeclaration Result
+		{
+			get { return result; }
+		}
 
-        public CodeTypeDeclaration Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		#endregion
 
-        #endregion
-
-        #endregion
-    }
+		#endregion
+	}
 }

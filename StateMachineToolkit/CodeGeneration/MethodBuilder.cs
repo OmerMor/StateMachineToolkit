@@ -10,266 +10,250 @@ using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the methods that make up the state machine.
 	/// </summary>
 	internal class MethodBuilder
 	{
-        #region MethodBuilder Members
+		#region MethodBuilder Members
 
-        #region Fields
+		#region Fields
 
-        private string stateMachineName = string.Empty;
+		private string stateMachineName = string.Empty;
 
-        private string initialState = string.Empty;
+		private string initialState = string.Empty;
 
-        // The state machine's states.
-        private ICollection states;
+		// The state machine's states.
+		private readonly ICollection states;
 
-        // The state machine's guards.
-        private ICollection guards;
+		// The state machine's guards.
+		private readonly ICollection guards;
 
-        // The state machine's actions.
-        private ICollection actions;
+		// The state machine's actions.
+		private readonly ICollection actions;
 
-        // Builds initializing methods.
-        private InitializeMethodBuilder initializeMethodBuilder;        
+		// Builds initializing methods.
+		private readonly InitializeMethodBuilder initializeMethodBuilder;
 
-        // The collection of built methods.
-        private ArrayList methods = new ArrayList();
+		// The collection of built methods.
+		private ArrayList methods = new ArrayList();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the MethodBuilder class with all
-        /// of the tables necessary to build the state machine methods.
-        /// </summary>
-        /// <param name="states">
-        /// The state machine's states.
-        /// </param>
-        /// <param name="evets">
-        /// The state machine's events.
-        /// </param>
-        /// <param name="guards">
-        /// The state machine's guards.
-        /// </param>
-        /// <param name="actions">
-        /// The state machine's actions.
-        /// </param>
-        /// <param name="stateTransitions">
-        /// The state transitions.
-        /// </param>
-        /// <param name="stateRelationships">
-        /// The substate/superstate relationships.
-        /// </param>
-        /// <param name="stateHistoryTypes">
-        /// The state history types.
-        /// </param>
-        /// <param name="stateInitialStates">
-        /// The states' initial states.
-        /// </param>
-		public MethodBuilder(ICollection states, ICollection events, 
-            ICollection guards, ICollection actions, IDictionary stateTransitions,
-            IDictionary stateRelationships, IDictionary stateHistoryTypes,
-            IDictionary stateInitialStates)
+		/// <summary>
+		/// Initializes a new instance of the MethodBuilder class with all
+		/// of the tables necessary to build the state machine methods.
+		/// </summary>
+		/// <param name="states">
+		/// The state machine's states.
+		/// </param>
+		/// <param name="events">
+		/// The state machine's events.
+		/// </param>
+		/// <param name="guards">
+		/// The state machine's guards.
+		/// </param>
+		/// <param name="actions">
+		/// The state machine's actions.
+		/// </param>
+		/// <param name="stateTransitions">
+		/// The state transitions.
+		/// </param>
+		/// <param name="stateRelationships">
+		/// The substate/superstate relationships.
+		/// </param>
+		/// <param name="stateHistoryTypes">
+		/// The state history types.
+		/// </param>
+		/// <param name="stateInitialStates">
+		/// The states' initial states.
+		/// </param>
+		public MethodBuilder(ICollection states, ICollection events,
+		                     ICollection guards, ICollection actions, IDictionary stateTransitions,
+		                     IDictionary stateRelationships, IDictionary stateHistoryTypes,
+		                     IDictionary stateInitialStates)
 		{
-            this.states = states;
-            this.guards = guards;
-            this.actions = actions;
-            
-            initializeMethodBuilder = new InitializeMethodBuilder(states, events, 
-                guards, actions, stateTransitions, stateRelationships, 
-                stateHistoryTypes, stateInitialStates);
+			this.states = states;
+			this.guards = guards;
+			this.actions = actions;
+
+			initializeMethodBuilder = new InitializeMethodBuilder(states, events,
+			                                                      guards, actions, stateTransitions, stateRelationships,
+			                                                      stateHistoryTypes, stateInitialStates);
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Builds the methods for the state machine.
-        /// </summary>
-        public void Build()
-        {
-            methods = new ArrayList();
+		/// <summary>
+		/// Builds the methods for the state machine.
+		/// </summary>
+		public void Build()
+		{
+			methods = new ArrayList();
 
-            // 
-            // Builds initializing methods.
-            //
-           
-            BuildInitializeMethod();
-            initializeMethodBuilder.StateMachineName = StateMachineName;
-            initializeMethodBuilder.Build();
-            methods.AddRange(initializeMethodBuilder.Result);
+			// 
+			// Builds initializing methods.
+			//
 
-            //
-            // Build entry and exit actions.
-            //
+			BuildInitializeMethod();
+			initializeMethodBuilder.StateMachineName = StateMachineName;
+			initializeMethodBuilder.Build();
+			methods.AddRange(initializeMethodBuilder.Result);
 
-            BuildMethods(states, "Entry", MemberAttributes.Family, null, 
-                typeof(void));
-            BuildMethods(states, "Exit", MemberAttributes.Family, null, 
-                typeof(void));
+			//
+			// Build entry and exit actions.
+			//
 
-            CodeParameterDeclarationExpression args = 
-                new CodeParameterDeclarationExpression(typeof(object[]), "args");
+			BuildMethods(states, "Entry", MemberAttributes.Family, null,
+			             typeof (void));
+			BuildMethods(states, "Exit", MemberAttributes.Family, null,
+			             typeof (void));
 
-            // Build guard methods.
-            BuildMethods(guards, string.Empty, 
-                MemberAttributes.Family | MemberAttributes.Abstract, args, 
-                typeof(bool));
+			CodeParameterDeclarationExpression args =
+				new CodeParameterDeclarationExpression(typeof (object[]), "args");
 
-            // Build action methods.
-            BuildMethods(actions, string.Empty,
-                MemberAttributes.Family | MemberAttributes.Abstract, args, 
-                typeof(void));            
-        }
+			// Build guard methods.
+// ReSharper disable BitwiseOperatorOnEnumWihtoutFlags
+			const MemberAttributes memberAttributes = MemberAttributes.Family | MemberAttributes.Abstract;
+// ReSharper restore BitwiseOperatorOnEnumWihtoutFlags
+			BuildMethods(guards, string.Empty, memberAttributes, args, typeof (bool));
 
-        // Builds methods.
-        private void BuildMethods(ICollection col, string methodPrefix, 
-            MemberAttributes attributes, 
-            CodeParameterDeclarationExpression args, Type returnType)
-        {
-            CodeMemberMethod method;
+			// Build action methods.
+			BuildMethods(actions, string.Empty, memberAttributes, args, typeof (void));
+		}
 
-            foreach(string name in col)
-            {
-                method = new CodeMemberMethod();
-                method.Name = methodPrefix + name;
-                method.Attributes = attributes;
-                method.ReturnType = new CodeTypeReference(returnType);
+		// Builds methods.
+		private void BuildMethods(ICollection col, string methodPrefix,
+		                          MemberAttributes attributes,
+		                          CodeParameterDeclarationExpression args, Type returnType)
+		{
+			CodeMemberMethod method;
 
-                if(args != null)
-                {
-                    method.Parameters.Add(args);
-                }
+			foreach (string name in col)
+			{
+				method = new CodeMemberMethod();
+				method.Name = methodPrefix + name;
+				method.Attributes = attributes;
+				method.ReturnType = new CodeTypeReference(returnType);
 
-                methods.Add(method);
-            }
-        }
+				if (args != null)
+				{
+					method.Parameters.Add(args);
+				}
 
-        // Builds the initialize method.
-        private void BuildInitializeMethod()
-        {
-            CodeThisReferenceExpression thisReference = 
-                new CodeThisReferenceExpression();
-            CodeMemberMethod initializeMethod = new CodeMemberMethod();
+				methods.Add(method);
+			}
+		}
 
-            initializeMethod.Name = "Initialize";
-            initializeMethod.Attributes = MemberAttributes.Private;
+		// Builds the initialize method.
+		private void BuildInitializeMethod()
+		{
+			CodeThisReferenceExpression thisReference =
+				new CodeThisReferenceExpression();
+			CodeMemberMethod initializeMethod = new CodeMemberMethod();
 
-            CodeMethodInvokeExpression methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Name = "Initialize";
+			initializeMethod.Attributes = MemberAttributes.Private;
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeStates";
+			CodeMethodInvokeExpression methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeStates";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeGuards";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeGuards";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeActions";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeActions";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeTransitions";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeTransitions";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeRelationships";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeRelationships";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeHistoryTypes";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeHistoryTypes";
 
-            methodInvoke = new CodeMethodInvokeExpression();
+			initializeMethod.Statements.Add(methodInvoke);
 
-            methodInvoke.Method.TargetObject = thisReference;
-            methodInvoke.Method.MethodName = "InitializeInitialStates";
+			methodInvoke = new CodeMethodInvokeExpression();
 
-            initializeMethod.Statements.Add(methodInvoke);
+			methodInvoke.Method.TargetObject = thisReference;
+			methodInvoke.Method.MethodName = "InitializeInitialStates";
 
-            CodeExpression[] parameters = 
-                {
-                    new CodeFieldReferenceExpression(thisReference,
-                    "state" + InitialState) 
-                };
+			initializeMethod.Statements.Add(methodInvoke);
 
-            CodeMethodInvokeExpression initializeInvoke = 
-                new CodeMethodInvokeExpression(thisReference,
-                "Initialize", parameters);
+			CodeExpression[] parameters =
+				{
+					new CodeFieldReferenceExpression(thisReference,
+					                                 "state" + InitialState)
+				};
 
-            initializeMethod.Statements.Add(initializeInvoke);
+			CodeMethodInvokeExpression initializeInvoke =
+				new CodeMethodInvokeExpression(thisReference,
+				                               "Initialize", parameters);
 
-            methods.Add(initializeMethod);
-        }
+			initializeMethod.Statements.Add(initializeInvoke);
 
-        #endregion
+			methods.Add(initializeMethod);
+		}
 
-        #region Properties
+		#endregion
 
-        /// <summary>
-        /// Gets the collection of built methods.
-        /// </summary>
-        public ICollection Result
-        {
-            get
-            {
-                return methods;
-            }
-        }
+		#region Properties
 
-        public string StateMachineName
-        {
-            get
-            {
-                return stateMachineName;
-            }
-            set
-            {
-                stateMachineName = value;
-            }
-        }
+		/// <summary>
+		/// Gets the collection of built methods.
+		/// </summary>
+		public ICollection Result
+		{
+			get { return methods; }
+		}
 
-        /// <summary>
-        /// Gets or sets the state machine's initial state.
-        /// </summary>
-        public string InitialState
-        {
-            get
-            {
-                return initialState;
-            }
-            set
-            {
-                initialState = value;
-            }
-        }
+		public string StateMachineName
+		{
+			get { return stateMachineName; }
+			set { stateMachineName = value; }
+		}
 
-        #endregion
+		/// <summary>
+		/// Gets or sets the state machine's initial state.
+		/// </summary>
+		public string InitialState
+		{
+			get { return initialState; }
+			set { initialState = value; }
+		}
 
-        #endregion
+		#endregion
+
+		#endregion
 	}
 }

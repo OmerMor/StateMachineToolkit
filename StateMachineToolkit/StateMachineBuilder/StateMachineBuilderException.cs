@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.StateMachineBuilder
 {
 	/// <summary>
 	/// The exception that is thrown when the StateMachineBuilder encounters

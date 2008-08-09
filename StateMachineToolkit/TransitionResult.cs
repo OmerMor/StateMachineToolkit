@@ -40,88 +40,79 @@ namespace Sanford.StateMachineToolkit
 	/// Represents the result of a transition.
 	/// </summary>
 	internal class TransitionResult<TState, TEvent>
-		where TState : struct, IComparable, IFormattable/*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-        #region TransitionResult Members
+		#region TransitionResult Members
 
-        #region Fields
+		#region Fields
 
-        private readonly bool hasFired;
+		private readonly bool hasFired;
 
 		private readonly State<TState, TEvent> newState;
 
-        private readonly Exception error;
+		private readonly Exception error;
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the TransitionResult class.
-        /// </summary>
-        /// <param name="hasFired">
-        /// Indicates whether or not the Transition fired.
-        /// </param>
-        /// <param name="newState">
-        /// The resulting state of the Transition.
-        /// </param>
-        /// <param name="error">
-        /// The resulting exception of the Transition if one was thrown.
-        /// </param>
+		/// <summary>
+		/// Initializes a new instance of the TransitionResult class.
+		/// </summary>
+		/// <param name="hasFired">
+		/// Indicates whether or not the Transition fired.
+		/// </param>
+		/// <param name="newState">
+		/// The resulting state of the Transition.
+		/// </param>
+		/// <param name="error">
+		/// The resulting exception of the Transition if one was thrown.
+		/// </param>
 		public TransitionResult(bool hasFired, State<TState, TEvent> newState, Exception error)
-        {
-            this.hasFired = hasFired;
-            this.newState = newState;
-            this.error = error;
-        }
+		{
+			this.hasFired = hasFired;
+			this.newState = newState;
+			this.error = error;
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        /// <summary>
-        /// Gets a value indicating whether or not the transition fired.
-        /// </summary>
-        public bool HasFired
-        {
-            get
-            {
-                return hasFired;
-            }
-        }
+		/// <summary>
+		/// Gets a value indicating whether or not the transition fired.
+		/// </summary>
+		public bool HasFired
+		{
+			get { return hasFired; }
+		}
 
-        /// <summary>
-        /// Gets the exception that was a result of firing the Transition.
-        /// </summary>
-        /// <remarks>
-        /// This property will be null if the Transition did not fire or if it
-        /// did fire but no exception took place.
-        /// </remarks>
-        public Exception Error
-        {
-            get
-            {
-                return error;
-            }
-        }
+		/// <summary>
+		/// Gets the exception that was a result of firing the Transition.
+		/// </summary>
+		/// <remarks>
+		/// This property will be null if the Transition did not fire or if it
+		/// did fire but no exception took place.
+		/// </remarks>
+		public Exception Error
+		{
+			get { return error; }
+		}
 
-        /// <summary>
-        /// Gets the state that is a result of firing the Transition.
-        /// </summary>
-        /// <remarks>
-        /// This property will be null if the Transition did not fire.
-        /// </remarks>
+		/// <summary>
+		/// Gets the state that is a result of firing the Transition.
+		/// </summary>
+		/// <remarks>
+		/// This property will be null if the Transition did not fire.
+		/// </remarks>
 		public State<TState, TEvent> NewState
-        {
-            get
-            {
-                return newState;
-            }
-        }
+		{
+			get { return newState; }
+		}
 
-        #endregion
+		#endregion
 
-        #endregion
-    }
+		#endregion
+	}
 }

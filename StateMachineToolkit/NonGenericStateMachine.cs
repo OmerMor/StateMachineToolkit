@@ -1,5 +1,4 @@
 ﻿using System;
-using Sanford.StateMachineToolkit;
 
 namespace Sanford.StateMachineToolkit
 {
@@ -10,6 +9,7 @@ namespace Sanford.StateMachineToolkit
 	public class PassiveStateMachine : PassiveStateMachine<int, int>
 	{
 	}
+
 	public class State : State<int, int>
 	{
 		public State(int stateID)
@@ -36,15 +36,15 @@ namespace Sanford.StateMachineToolkit
 	public class Transition : Transition<int, int>
 	{
 		public static Transition<TState, TEvent> Create<TState, TEvent>(State<TState, TEvent> target)
-			where TState : struct, IComparable, IFormattable/*, IConvertible*/
-			where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+			where TState : struct, IComparable, IFormattable /*, IConvertible*/
+			where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 		{
 			return new Transition<TState, TEvent>(target);
 		}
 
 		public static Transition<TState, TEvent> Create<TState, TEvent>(GuardHandler guard, State<TState, TEvent> target)
-			where TState : struct, IComparable, IFormattable/*, IConvertible*/
-			where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+			where TState : struct, IComparable, IFormattable /*, IConvertible*/
+			where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 		{
 			return new Transition<TState, TEvent>(guard, target);
 		}

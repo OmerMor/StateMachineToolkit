@@ -6,91 +6,84 @@
  * Last modified: 09/30/2005
  */
 
-using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the method responsible for initializing states' initial state.
 	/// </summary>
-    internal class InitialStateInitializeBuilder
+	internal class InitialStateInitializeBuilder
 	{
-        #region InitialStateInitializeBuilder Members
+		#region InitialStateInitializeBuilder Members
 
-        #region Fields
+		#region Fields
 
-        // The state machine's states and their initial states.
-        private IDictionary stateInitialStates;
+		// The state machine's states and their initial states.
+		private readonly IDictionary stateInitialStates;
 
-        // The built method.
-        private CodeMemberMethod result = new CodeMemberMethod();
+		// The built method.
+		private CodeMemberMethod result = new CodeMemberMethod();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the InitialStateInitializeBuilder 
-        /// class.
-        /// </summary>
-        /// <param name="stateInitialStates">
-        /// The states and their initial states. 
-        /// </param>
+		/// <summary>
+		/// Initializes a new instance of the InitialStateInitializeBuilder 
+		/// class.
+		/// </summary>
+		/// <param name="stateInitialStates">
+		/// The states and their initial states. 
+		/// </param>
 		public InitialStateInitializeBuilder(IDictionary stateInitialStates)
 		{
-            this.stateInitialStates = stateInitialStates;
+			this.stateInitialStates = stateInitialStates;
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Builds the method.
-        /// </summary>
-        public void Build()
-        {
-            result = new CodeMemberMethod();
-            result.Name = "InitializeInitialStates";
-            result.Attributes = MemberAttributes.Private;
+		/// <summary>
+		/// Builds the method.
+		/// </summary>
+		public void Build()
+		{
+			result = new CodeMemberMethod();
+			result.Name = "InitializeInitialStates";
+			result.Attributes = MemberAttributes.Private;
 
-            CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
-            CodeFieldReferenceExpression stateField;
-            CodeFieldReferenceExpression initialStateField;
-            CodePropertyReferenceExpression initialStateProperty;
+			CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
 
-            foreach(DictionaryEntry entry in stateInitialStates)
-            {
-                stateField = new CodeFieldReferenceExpression(
-                    thisReference, "state" + entry.Key.ToString());
+			foreach (DictionaryEntry entry in stateInitialStates)
+			{
+				CodeFieldReferenceExpression stateField =
+					new CodeFieldReferenceExpression(thisReference, "state" + entry.Key);
 
-                initialStateField = new CodeFieldReferenceExpression(
-                    thisReference, "state" + entry.Value.ToString());
+				CodeFieldReferenceExpression initialStateField =
+					new CodeFieldReferenceExpression(thisReference, "state" + entry.Value);
 
-                initialStateProperty = new CodePropertyReferenceExpression(
-                    stateField, "InitialState");
+				CodePropertyReferenceExpression initialStateProperty =
+					new CodePropertyReferenceExpression(stateField, "InitialState");
 
-                result.Statements.Add(new CodeAssignStatement(
-                    initialStateProperty, initialStateField));
-            }
-        }
+				result.Statements.Add(new CodeAssignStatement(
+				                      	initialStateProperty, initialStateField));
+			}
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        public CodeMemberMethod Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		public CodeMemberMethod Result
+		{
+			get { return result; }
+		}
 
-        #endregion
+		#endregion
 
-        #endregion
+		#endregion
 	}
 }

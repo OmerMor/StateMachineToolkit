@@ -10,207 +10,170 @@ using System;
 using System.ComponentModel;
 using System.Xml.Serialization;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.StateMachineBuilder
 {
 	/// <summary>
 	/// Represents a row of data describing a state in a StateRowCollection.
 	/// </summary>
 	public sealed class StateRow : IEditableObject
 	{
-        #region StateRow Members
+		#region StateRow Members
 
-        #region Structs
+		#region Structs
 
-        // Represents the state's properties.
-        private struct StateProperties
-        {
-            public string name;
-            public string initialState;
-            public HistoryType historyType;        
-        }
+		// Represents the state's properties.
+		private struct StateProperties
+		{
+			public string name;
+			public string initialState;
+			public HistoryType historyType;
+		}
 
-        #endregion
+		#endregion
 
-        #region Fields
+		#region Fields
 
-        // The state's current property values.
-        private StateProperties state;
+		// The state's current property values.
+		private StateProperties state;
 
-        // The state's pervious property values.
-        private StateProperties backupState;
+		// The state's pervious property values.
+		private StateProperties backupState;
 
-        // Indicates whether or not the StateRow is being edited.
-        private bool isEditing = false;
+		// Indicates whether or not the StateRow is being edited.
+		private bool isEditing;
 
-        // Indicates whether or not the StateRow is new.
-        private bool isNew = true;
+		// Indicates whether or not the StateRow is new.
+		private bool isNew = true;
 
-        // The state's substates.
-        private StateRowCollection substates = new StateRowCollection();
+		// The state's substates.
+		private readonly StateRowCollection substates = new StateRowCollection();
 
-        // The state's transitions.
-        private TransitionRowCollection transitions = new TransitionRowCollection();
+		// The state's transitions.
+		private readonly TransitionRowCollection transitions = new TransitionRowCollection();
 
-        #endregion
+		#endregion
 
-        #region Events
+		#region Events
 
-        /// <summary>
-        /// Raised when an edit has been cancelled.
-        /// </summary>
-        internal event EventHandler EditCancelled;
+		/// <summary>
+		/// Raised when an edit has been cancelled.
+		/// </summary>
+		internal event EventHandler EditCancelled;
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the StateRow class.
-        /// </summary>
-        public StateRow()
-        {
-        }
+		#endregion
 
-        #endregion
+		#region Methods
 
-        #region Methods
+		// Raises the EditCancelled event.
+		private void OnEditCancelled()
+		{
+			EventHandler handler = EditCancelled;
 
-        // Raises the EditCancelled event.
-        private void OnEditCancelled()
-        {
-            EventHandler handler = EditCancelled;
+			if (handler != null)
+			{
+				handler(this, EventArgs.Empty);
+			}
+		}
 
-            if(handler != null)
-            {
-                handler(this, EventArgs.Empty);
-            }
-        }
+		#endregion
 
-        #endregion
+		#region Properties
 
-        #region Properties
+		/// <summary>
+		/// Gets or sets the state's name.
+		/// </summary>
+		[XmlAttribute("name")]
+		public string Name
+		{
+			get { return state.name; }
+			set { state.name = value; }
+		}
 
-        /// <summary>
-        /// Gets or sets the state's name.
-        /// </summary>
-        [XmlAttribute("name")]
-        public string Name
-        {
-            get
-            {
-                return state.name;
-            }
-            set
-            {
-                state.name = value;
-            }
-        }
+		/// <summary>
+		/// Gets or sets the state's initial state.
+		/// </summary>
+		[XmlAttribute("initialState")]
+		public string InitialState
+		{
+			get { return state.initialState; }
+			set { state.initialState = value; }
+		}
 
-        /// <summary>
-        /// Gets or sets the state's initial state.
-        /// </summary>
-        [XmlAttribute("initialState")]
-        public string InitialState
-        {
-            get
-            {
-                return state.initialState;
-            }
-            set
-            {
-                state.initialState = value;
-            }
-        }
+		/// <summary>
+		/// Gets or sets the state's initial state.
+		/// </summary>
+		[XmlAttribute("historyType")]
+		public HistoryType HistoryType
+		{
+			get { return state.historyType; }
+			set { state.historyType = value; }
+		}
 
-        /// <summary>
-        /// Gets or sets the state's initial state.
-        /// </summary>
-        [XmlAttribute("historyType")]
-        public HistoryType HistoryType
-        {
-            get
-            {
-                return state.historyType;
-            }
-            set
-            {
-                state.historyType = value;
-            }
-        }
+		/// <summary>
+		/// Gets the state's substates.
+		/// </summary>
+		[XmlElement("state", typeof (StateRow))]
+		public StateRowCollection Substates
+		{
+			get { return substates; }
+		}
 
-        /// <summary>
-        /// Gets the state's substates.
-        /// </summary>
-        [XmlElement("state", typeof(StateRow))]
-        public StateRowCollection Substates
-        {
-            get
-            {
-                return substates;
-            }
-        }
+		/// <summary>
+		/// Gets the states transitions.
+		/// </summary>
+		[XmlElement("transition", typeof (TransitionRow))]
+		public TransitionRowCollection Transitions
+		{
+			get { return transitions; }
+		}
 
-        /// <summary>
-        /// Gets the states transitions.
-        /// </summary>
-        [XmlElement("transition", typeof(TransitionRow))]
-        public TransitionRowCollection Transitions
-        {
-            get
-            {
-                return transitions;
-            }
-        }
+		#endregion
 
-        #endregion
+		#endregion
 
-        #endregion
+		#region IEditableObject Members
 
-        #region IEditableObject Members
+		/// <summary>
+		/// Begins an edit on a StateRow.
+		/// </summary>
+		public void BeginEdit()
+		{
+			if (isEditing) return;
+			backupState = state;
+			isEditing = true;
+		}
 
-        /// <summary>
-        /// Begins an edit on a StateRow.
-        /// </summary>
-        public void BeginEdit()
-        {
-            if(!isEditing)
-            {
-                backupState = state;
-                isEditing = true;
-            }
-        }
+		/// <summary>
+		/// Discards changes since the last BeginEdit call.
+		/// </summary>
+		public void CancelEdit()
+		{
+			if (!isEditing) return;
+			state = backupState;
+			isEditing = false;
 
-        /// <summary>
-        /// Discards changes since the last BeginEdit call.
-        /// </summary>
-        public void CancelEdit()
-        {
-            if(isEditing)
-            {
-                state = backupState;
-                isEditing = false;
+			if (isNew)
+			{
+				OnEditCancelled();
+			}
+		}
 
-                if(isNew)
-                {
-                    OnEditCancelled();
-                }
-            }
-        }        
+		/// <summary>
+		/// Pushes changes since the last BeginEdit or IBindingList.AddNew call 
+		/// into the underlying StateRow.
+		/// </summary>
+		public void EndEdit()
+		{
+			if (!isEditing) return;
+			backupState = new StateProperties();
+			isEditing = false;
+			isNew = false;
+		}
 
-        /// <summary>
-        /// Pushes changes since the last BeginEdit or IBindingList.AddNew call 
-        /// into the underlying StateRow.
-        /// </summary>
-        public void EndEdit()
-        {
-            if(isEditing)
-            {
-                backupState = new StateProperties();
-                isEditing = false;
-                isNew = false;
-            }            
-        }        
-
-        #endregion
-    }
+		#endregion
+	}
 }

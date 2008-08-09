@@ -6,188 +6,177 @@
  * Last modified: 10/13/2005
  */
 
-using System;
 using System.CodeDom;
 using System.Collections;
+using Sanford.StateMachineToolkit.StateMachineBuilder;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the method responsible for initializing the transitions.
 	/// </summary>
-    internal class TransitionInitializeBuilder
+	internal class TransitionInitializeBuilder
 	{
-        #region TransitionInitializeBuilder Members
+		#region TransitionInitializeBuilder Members
 
-        #region Fields
+		#region Fields
 
-        // The state machine's transitions.
-        private IDictionary stateTransitions;
+		// The state machine's transitions.
+		private readonly IDictionary stateTransitions;
 
-        private string stateMachineName = string.Empty;
+		private string stateMachineName = string.Empty;
 
-        // The built method.
-        private CodeMemberMethod result = new CodeMemberMethod();
+		// The built method.
+		private CodeMemberMethod result = new CodeMemberMethod();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the TransitionInitializeBuilder class
-        /// with the specified state transition table.
-        /// </summary>
-        /// <param name="stateTransitions">
-        /// The state transitions. 
-        /// </param>
+		/// <summary>
+		/// Initializes a new instance of the TransitionInitializeBuilder class
+		/// with the specified state transition table.
+		/// </summary>
+		/// <param name="stateTransitions">
+		/// The state transitions. 
+		/// </param>
 		public TransitionInitializeBuilder(IDictionary stateTransitions)
 		{
-            this.stateTransitions = stateTransitions;
+			this.stateTransitions = stateTransitions;
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Builds the method.
-        /// </summary>
-        public void Build()
-        {
-            result = new CodeMemberMethod();
-            result.Name = "InitializeTransitions";
-            result.Attributes = MemberAttributes.Private;
+		/// <summary>
+		/// Builds the method.
+		/// </summary>
+		public void Build()
+		{
+			result = new CodeMemberMethod();
+			result.Name = "InitializeTransitions";
+			result.Attributes = MemberAttributes.Private;
 
-            CodeVariableDeclarationStatement transDeclaration = 
-                new CodeVariableDeclarationStatement(typeof(Transition), "trans");
+			CodeVariableDeclarationStatement transDeclaration =
+				new CodeVariableDeclarationStatement(typeof (Transition), "trans");
 
-            result.Statements.Add(transDeclaration);
-            
-            CodeThisReferenceExpression thisReference = 
-                new CodeThisReferenceExpression();
-            CodeTypeReferenceExpression stateMachineReference = 
-                new CodeTypeReferenceExpression(StateMachineName);
-            CodeExpression sourceStateReference;
-            CodeExpression guardReference;
-            CodeExpression actionReference;            
-            CodeExpression targetStateReference;
-            CodeObjectCreateExpression transCreate;
-            CodePropertyReferenceExpression actionProperty;
-            CodePropertyReferenceExpression transProperty;
-            CodeMethodInvokeExpression addInvoke;
-            CodeVariableReferenceExpression transReference = new CodeVariableReferenceExpression("trans");
-            CodeAssignStatement transAssign;
+			result.Statements.Add(transDeclaration);
 
-            actionProperty = new CodePropertyReferenceExpression(transReference, "Actions");
+			CodeThisReferenceExpression thisReference =
+				new CodeThisReferenceExpression();
+			CodeTypeReferenceExpression stateMachineReference =
+				new CodeTypeReferenceExpression(StateMachineName);
+			CodeObjectCreateExpression transCreate;
+			CodeVariableReferenceExpression transReference =
+				new CodeVariableReferenceExpression("trans");
 
-            TransitionRowCollection transRowCollection;
+			CodePropertyReferenceExpression actionProperty =
+				new CodePropertyReferenceExpression(transReference, "Actions");
 
-            foreach(DictionaryEntry entry in stateTransitions)
-            {
-                transRowCollection = (TransitionRowCollection)entry.Value;
+			foreach (DictionaryEntry entry in stateTransitions)
+			{
+				TransitionRowCollection transRowCollection = (TransitionRowCollection) entry.Value;
 
-                foreach(TransitionRow transRow in transRowCollection)
-                {
-                    sourceStateReference = new CodeFieldReferenceExpression(
-                        thisReference, "state" + entry.Key.ToString());                    
+				foreach (TransitionRow transRow in transRowCollection)
+				{
+					CodeExpression sourceStateReference =
+						new CodeFieldReferenceExpression(thisReference, "state" + entry.Key);
 
-                    // If there is a guard for this transition.
-                    if(transRow.Guard != null && transRow.Guard != string.Empty)
-                    {
-                        // Create a reference to the guard.
-                        guardReference = new CodeFieldReferenceExpression(
-                            thisReference, "guard" + transRow.Guard);
-                    }
-                    // Else there is no guard for this transition.
-                    else
-                    {
-                        // Create a null reference for the guard.
-                        guardReference = new CodePrimitiveExpression(null);
-                    }                    
+					// If there is a guard for this transition.
+					CodeExpression guardReference;
+					if (!string.IsNullOrEmpty(transRow.Guard))
+					{
+						// Create a reference to the guard.
+						guardReference =
+							new CodeFieldReferenceExpression(thisReference, "guard" + transRow.Guard);
+					}
+						// Else there is no guard for this transition.
+					else
+					{
+						// Create a null reference for the guard.
+						guardReference = new CodePrimitiveExpression(null);
+					}
 
-                    // If there is a target state for this transition.
-                    if(transRow.Target != null && transRow.Target != string.Empty)
-                    {
-                        // Create a reference to the state target.
-                        targetStateReference = new CodeFieldReferenceExpression(
-                            thisReference, "state" + transRow.Target);
-                    }
-                    // Else there is no target state for this transition (it is an 
-                    // internal transition).
-                    else
-                    {
-                        // Create a null reference for the target state.
-                        targetStateReference = new CodePrimitiveExpression(null);
-                    }
+					// If there is a target state for this transition.
+					CodeExpression targetStateReference;
+					if (!string.IsNullOrEmpty(transRow.Target))
+					{
+						// Create a reference to the state target.
+						targetStateReference =
+							new CodeFieldReferenceExpression(thisReference, "state" + transRow.Target);
+					}
+						// Else there is no target state for this transition (it is an 
+						// internal transition).
+					else
+					{
+						// Create a null reference for the target state.
+						targetStateReference = new CodePrimitiveExpression(null);
+					}
 
-                    //
-                    // Create and initialize the transition and add it to the collection
-                    // of transitions for the specified state.
-                    //
+					//
+					// Create and initialize the transition and add it to the collection
+					// of transitions for the specified state.
+					//
 
-                    transCreate = new CodeObjectCreateExpression();
+					transCreate = new CodeObjectCreateExpression();
 
-                    transCreate.CreateType = new CodeTypeReference(typeof(Transition));
-                    transCreate.Parameters.Add(guardReference);
-                    transCreate.Parameters.Add(targetStateReference);
+					transCreate.CreateType = new CodeTypeReference(typeof (Transition));
+					transCreate.Parameters.Add(guardReference);
+					transCreate.Parameters.Add(targetStateReference);
 
-                    transAssign = new CodeAssignStatement(transReference, transCreate);
+					CodeAssignStatement transAssign = new CodeAssignStatement(transReference, transCreate);
 
-                    result.Statements.Add(transAssign);
+					result.Statements.Add(transAssign);
 
-                    foreach(ActionRow actionRow in transRow.Actions)
-                    {
-                        actionReference = new CodeFieldReferenceExpression(thisReference, "action" + actionRow.Name);
-                        addInvoke = new CodeMethodInvokeExpression(actionProperty, "Add", actionReference);
-                        result.Statements.Add(addInvoke);
-                    }
+					CodeMethodInvokeExpression addInvoke;
+					foreach (ActionRow actionRow in transRow.Actions)
+					{
+						CodeExpression actionReference =
+							new CodeFieldReferenceExpression(thisReference, "action" + actionRow.Name);
+						addInvoke = new CodeMethodInvokeExpression(actionProperty, "Add", actionReference);
+						result.Statements.Add(addInvoke);
+					}
 
-                    transProperty = new CodePropertyReferenceExpression(
-                        sourceStateReference, "Transitions");
+					CodePropertyReferenceExpression transProperty =
+						new CodePropertyReferenceExpression(sourceStateReference, "Transitions");
 
-                    CodeFieldReferenceExpression enumFieldReference = new CodeFieldReferenceExpression(
-                        new CodeTypeReferenceExpression("EventID"), transRow.Event);
+					CodeFieldReferenceExpression enumFieldReference =
+						new CodeFieldReferenceExpression(
+							new CodeTypeReferenceExpression("EventID"), transRow.Event);
 
-                    CodeCastExpression enumCast = 
-                        new CodeCastExpression(typeof(int), enumFieldReference);
+					CodeCastExpression enumCast =
+						new CodeCastExpression(typeof (int), enumFieldReference);
 
-                    addInvoke = new CodeMethodInvokeExpression(transProperty,
-                        "Add", new CodeExpression[] { enumCast, transReference });
-                
-                    result.Statements.Add(addInvoke);
-                }
-            }
-        }
+					addInvoke =
+						new CodeMethodInvokeExpression(transProperty, "Add",
+						                               new CodeExpression[] {enumCast, transReference});
 
-        #endregion
+					result.Statements.Add(addInvoke);
+				}
+			}
+		}
 
-        #region Properties
+		#endregion
 
-        public string StateMachineName
-        {
-            get
-            {
-                return stateMachineName;
-            }
-            set
-            {
-                stateMachineName = value;
-            }
-        }
+		#region Properties
 
-        /// <summary>
-        /// Gets the built method.
-        /// </summary>
-        public CodeMemberMethod Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		public string StateMachineName
+		{
+			get { return stateMachineName; }
+			set { stateMachineName = value; }
+		}
 
-        #endregion
+		/// <summary>
+		/// Gets the built method.
+		/// </summary>
+		public CodeMemberMethod Result
+		{
+			get { return result; }
+		}
 
-        #endregion
+		#endregion
+
+		#endregion
 	}
 }

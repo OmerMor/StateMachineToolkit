@@ -6,130 +6,120 @@
  * Last modified: 10/01/2005
  */
 
-using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the method responsible for initializing the states.
 	/// </summary>
-    internal class StateInitializeBuilder
+	internal class StateInitializeBuilder
 	{
-        #region StateInitializeBuilder Members
+		#region StateInitializeBuilder Members
 
-        #region Fields
+		#region Fields
 
-        // The state machine's states.
-        private ICollection states;
+		// The state machine's states.
+		private readonly ICollection states;
 
-        // The state machine's events.
-        private ICollection events;
+		// The state machine's events.
+		private ICollection events;
 
-        // The built method.
-        private CodeMemberMethod result = new CodeMemberMethod();
+		// The built method.
+		private CodeMemberMethod result = new CodeMemberMethod();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the StateInitializeBuilder class with
-        /// specified state and event tables.
-        /// </summary>
-        /// <param name="states">
-        /// The states to be initialized.
-        /// </param>
-        /// <param name="events">
-        /// The  events the state machine responds to.
-        /// </param>
+		/// <summary>
+		/// Initializes a new instance of the StateInitializeBuilder class with
+		/// specified state and event tables.
+		/// </summary>
+		/// <param name="states">
+		/// The states to be initialized.
+		/// </param>
+		/// <param name="events">
+		/// The  events the state machine responds to.
+		/// </param>
 		public StateInitializeBuilder(ICollection states, ICollection events)
 		{
-            this.states = states;
-            this.events = events;
+			this.states = states;
+			this.events = events;
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Builds the method.
-        /// </summary>
-        public void Build()
-        {
-            result = new CodeMemberMethod();
-            result.Name = "InitializeStates";
-            result.Attributes = MemberAttributes.Private;
+		/// <summary>
+		/// Builds the method.
+		/// </summary>
+		public void Build()
+		{
+			result = new CodeMemberMethod();
+			result.Name = "InitializeStates";
+			result.Attributes = MemberAttributes.Private;
 
-            CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
-            CodeFieldReferenceExpression stateField;
-            CodeDelegateCreateExpression delegateCreate;
-            CodeVariableDeclarationStatement delegateVariable;  
-            CodeObjectCreateExpression stateCreate;
-            CodeTypeReference enumReference = new CodeTypeReference("StateID");
+			CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
+			CodeTypeReference enumReference = new CodeTypeReference("StateID");
 
-            foreach(string name in states)
-            {
-                delegateCreate = 
-                    new CodeDelegateCreateExpression(
-                    new CodeTypeReference(typeof(EntryHandler)), 
-                    thisReference, "Entry" + name);
-                delegateVariable = new CodeVariableDeclarationStatement(
-                    typeof(EntryHandler), "en" + name, delegateCreate);
+			foreach (string name in states)
+			{
+				CodeDelegateCreateExpression delegateCreate = new CodeDelegateCreateExpression(
+					new CodeTypeReference(typeof (EntryHandler)),
+					thisReference, "Entry" + name);
+				CodeVariableDeclarationStatement delegateVariable = new CodeVariableDeclarationStatement(
+					typeof (EntryHandler), "en" + name, delegateCreate);
 
-                result.Statements.Add(delegateVariable);
+				result.Statements.Add(delegateVariable);
 
-                delegateCreate = 
-                    new CodeDelegateCreateExpression(
-                    new CodeTypeReference(typeof(ExitHandler)), 
-                    thisReference, "Exit" + name);
-                delegateVariable = new CodeVariableDeclarationStatement(
-                    typeof(ExitHandler), "ex" + name, delegateCreate);
+				delegateCreate =
+					new CodeDelegateCreateExpression(
+						new CodeTypeReference(typeof (ExitHandler)),
+						thisReference, "Exit" + name);
+				delegateVariable = new CodeVariableDeclarationStatement(
+					typeof (ExitHandler), "ex" + name, delegateCreate);
 
-                result.Statements.Add(delegateVariable);   
-             
-                stateField = new CodeFieldReferenceExpression(thisReference, 
-                    "state" + name);  
+				result.Statements.Add(delegateVariable);
 
-                CodeFieldReferenceExpression enumFieldReference = new CodeFieldReferenceExpression(
-                    new CodeTypeReferenceExpression("StateID"), name);
+				CodeFieldReferenceExpression stateField = new CodeFieldReferenceExpression(thisReference,
+				                                                                           "state" + name);
 
-                System.CodeDom.CodeCastExpression enumCast = 
-                    new CodeCastExpression(typeof(int), enumFieldReference);
+				CodeFieldReferenceExpression enumFieldReference = new CodeFieldReferenceExpression(
+					new CodeTypeReferenceExpression("StateID"), name);
 
-                CodeExpression[] parameters = 
-                    {              
-                        enumCast,
-                        new CodePrimitiveExpression(events.Count),
-                        new CodeVariableReferenceExpression("en" + name),
-                        new CodeVariableReferenceExpression("ex" + name)
-                    };
+				CodeCastExpression enumCast =
+					new CodeCastExpression(typeof (int), enumFieldReference);
 
-                stateCreate = new CodeObjectCreateExpression(typeof(State), parameters);
+				CodeExpression[] parameters =
+					{
+						enumCast,
+						new CodeVariableReferenceExpression("en" + name),
+						new CodeVariableReferenceExpression("ex" + name)
+					};
 
-                result.Statements.Add(new CodeAssignStatement(stateField, stateCreate));
-            }
-        }
+				CodeObjectCreateExpression stateCreate = new CodeObjectCreateExpression(typeof (State), parameters);
 
-        #endregion
+				result.Statements.Add(new CodeAssignStatement(stateField, stateCreate));
+			}
+		}
 
-        #region Properties
+		#endregion
 
-        /// <summary>
-        /// Gets the build method.
-        /// </summary>
-        public CodeMemberMethod Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		#region Properties
 
-        #endregion
+		/// <summary>
+		/// Gets the build method.
+		/// </summary>
+		public CodeMemberMethod Result
+		{
+			get { return result; }
+		}
 
-        #endregion
+		#endregion
+
+		#endregion
 	}
 }

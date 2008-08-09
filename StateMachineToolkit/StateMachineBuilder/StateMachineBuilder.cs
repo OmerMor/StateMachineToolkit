@@ -32,13 +32,13 @@
 
 #endregion
 
-using System;
 using System.CodeDom;
 using System.Collections;
 using System.Reflection;
 using System.Xml.Serialization;
+using Sanford.StateMachineToolkit.CodeGeneration;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.StateMachineBuilder
 {
 	/// <summary>
 	/// Generates code for state machine base classes.
@@ -46,450 +46,410 @@ namespace Sanford.StateMachineToolkit
 	[XmlRoot("stateMachine")]
 	public class StateMachineBuilder
 	{
-        #region StateMachineBuilder Members
+		#region StateMachineBuilder Members
 
-        #region Fields
+		#region Fields
 
-        // The default namespace.
-        private static readonly string DefaultNamespaceName = "YourNamespace";
+		// The default namespace.
+		private const string DefaultNamespaceName = "YourNamespace";
 
-        // The default state machine name.
-        private static readonly string DefaultStateMachineName = "YourStateMachine";
+		// The default state machine name.
+		private const string DefaultStateMachineName = "YourStateMachine";
 
-        // The name of the namespace in which the state machine resides.
-        private string namespaceName = DefaultNamespaceName;
+		// The name of the namespace in which the state machine resides.
+		private string namespaceName = DefaultNamespaceName;
 
-        // The name of the state machine.
-        private string stateMachineName = DefaultStateMachineName;
+		// The name of the state machine.
+		private string stateMachineName = DefaultStateMachineName;
 
-        // The initial state of the state machine.
-        private string initialState = string.Empty;
+		// The initial state of the state machine.
+		private string initialState = string.Empty;
 
-        // The root of the state hierarchy.
-        private StateRowCollection stateRowCollection = new StateRowCollection();
+		// The root of the state hierarchy.
+		private readonly StateRowCollection stateRowCollection = new StateRowCollection();
 
-        private StateMachineType stateMachineType = StateMachineType.Active;
+		private StateMachineType stateMachineType = StateMachineType.Active;
 
-        // The result of building the state machine.
-        private CodeNamespace result = new CodeNamespace();
+		// The result of building the state machine.
+		private CodeNamespace result = new CodeNamespace();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-		public StateMachineBuilder()
+		#endregion
+
+		#region Methods
+
+		/// <summary>
+		/// Builds the state machine.
+		/// </summary>
+		public void Build()
 		{
-        }
+			ArrayList states = new ArrayList();
+			ArrayList events = new ArrayList();
+			ArrayList guards = new ArrayList();
+			ArrayList actions = new ArrayList();
+			IDictionary stateTransitions = new SortedList();
+			IDictionary stateRelationships = new SortedList();
+			IDictionary stateHistoryTypes = new SortedList();
+			IDictionary stateInitialStates = new SortedList();
 
-        #endregion
+			ReadStates(States, states);
+			ReadEvents(States, events);
+			ReadGuards(States, guards);
+			ReadActions(States, actions);
+			ReadStateTransitions(States, stateTransitions);
+			ReadStateRelationships(States, stateRelationships);
+			ReadStateHistoryTypes(States, stateHistoryTypes);
+			ReadStateInitialStates(States, stateInitialStates);
 
-        #region Methods
+			VerifyTargets(States, states);
+			VerifyInitialState(States);
+			VerifyInitialStates(States);
 
-        /// <summary>
-        /// Builds the state machine.
-        /// </summary>
-        public void Build()
-        {        
-            ArrayList states = new ArrayList();
-            ArrayList events = new ArrayList();
-            ArrayList guards = new ArrayList();
-            ArrayList actions = new ArrayList();
-            IDictionary stateTransitions = new SortedList();
-            IDictionary stateRelationships = new SortedList();
-            IDictionary stateHistoryTypes = new SortedList();
-            IDictionary stateInitialStates = new SortedList();            
+			result = new CodeNamespace(NamespaceName);
 
-            ReadStates(States, states);
-            ReadEvents(States, events);
-            ReadGuards(States, guards);
-            ReadActions(States, actions);
-            ReadStateTransitions(States, stateTransitions);
-            ReadStateRelationships(States, stateRelationships);
-            ReadStateHistoryTypes(States, stateHistoryTypes);
-            ReadStateInitialStates(States, stateInitialStates);   
-         
-            VerifyTargets(States, states);
-            VerifyInitialState(States);
-            VerifyInitialStates(States);
+			CodeTypeDeclaration stateMachineClass =
+				new CodeTypeDeclaration(StateMachineName);
 
-            result = new CodeNamespace(NamespaceName);
+			if (StateMachineType == StateMachineType.Active)
+			{
+				stateMachineClass.BaseTypes.Add(typeof (ActiveStateMachine));
+			}
+			else
+			{
+				stateMachineClass.BaseTypes.Add(typeof (PassiveStateMachine));
+			}
 
-            CodeTypeDeclaration stateMachineClass = 
-                new CodeTypeDeclaration(StateMachineName);
+			stateMachineClass.IsClass = true;
+			stateMachineClass.TypeAttributes =
+				TypeAttributes.Abstract |
+				TypeAttributes.Public;
 
-            if(StateMachineType == StateMachineType.Active)
-            {
-                stateMachineClass.BaseTypes.Add(typeof(ActiveStateMachine));
-            }
-            else
-            {
-                stateMachineClass.BaseTypes.Add(typeof(PassiveStateMachine));
-            }
+			EventEnumeratorBuilder eventEnumBuilder = new EventEnumeratorBuilder(events);
+			eventEnumBuilder.Build();
+			stateMachineClass.Members.Add(eventEnumBuilder.Result);
 
-            stateMachineClass.IsClass = true;
-            stateMachineClass.TypeAttributes = 
-                TypeAttributes.Abstract | 
-                TypeAttributes.Public;  
-          
-            EventEnumeratorBuilder eventEnumBuilder = new EventEnumeratorBuilder(events);
-            eventEnumBuilder.Build();
-            stateMachineClass.Members.Add(eventEnumBuilder.Result);
+			StateEnumeratorBuilder stateEnumBuilder = new StateEnumeratorBuilder(states);
+			stateEnumBuilder.Build();
+			stateMachineClass.Members.Add(stateEnumBuilder.Result);
 
-            StateEnumeratorBuilder stateEnumBuilder = new StateEnumeratorBuilder(states);
-            stateEnumBuilder.Build();
-            stateMachineClass.Members.Add(stateEnumBuilder.Result);
+			ConstructorBuilder constructorBuilder = new ConstructorBuilder();
+			constructorBuilder.InitialState = InitialState;
+			constructorBuilder.Build();
 
-            ConstructorBuilder constructorBuilder = new ConstructorBuilder();
-            constructorBuilder.InitialState = InitialState;
-            constructorBuilder.Build();
+			foreach (CodeConstructor constructor in constructorBuilder.Result)
+			{
+				stateMachineClass.Members.Add(constructor);
+			}
 
-            foreach(CodeConstructor constructor in constructorBuilder.Result)
-            {
-                stateMachineClass.Members.Add(constructor);            
-            }
+			FieldBuilder fieldBuilder = new FieldBuilder(states, events, guards, actions);
+			fieldBuilder.Build();
 
-            FieldBuilder fieldBuilder = new FieldBuilder(states, events, guards, actions);
-            fieldBuilder.Build();
+			foreach (CodeMemberField field in fieldBuilder.Result)
+			{
+				stateMachineClass.Members.Add(field);
+			}
 
-            foreach(CodeMemberField field in fieldBuilder.Result)
-            {
-                stateMachineClass.Members.Add(field);
-            }            
-            
-            MethodBuilder methodBuilder = new MethodBuilder(states, events, 
-                guards, actions, stateTransitions, stateRelationships, 
-                stateHistoryTypes, stateInitialStates);
-            methodBuilder.StateMachineName = StateMachineName;
-            methodBuilder.InitialState = InitialState;
-            methodBuilder.Build();
+			MethodBuilder methodBuilder = new MethodBuilder(states, events,
+			                                                guards, actions, stateTransitions, stateRelationships,
+			                                                stateHistoryTypes, stateInitialStates);
+			methodBuilder.StateMachineName = StateMachineName;
+			methodBuilder.InitialState = InitialState;
+			methodBuilder.Build();
 
-            foreach(CodeMemberMethod method in methodBuilder.Result)
-            {
-                stateMachineClass.Members.Add(method);
-            }
-            
-            result.Types.Add(stateMachineClass);
-        }
+			foreach (CodeMemberMethod method in methodBuilder.Result)
+			{
+				stateMachineClass.Members.Add(method);
+			}
 
-        /// <summary>
-        /// Clears the builder of all states and transitions, and resets its 
-        /// properties to their default values. 
-        /// </summary>
-        public void Clear()
-        {
-            States.Clear();
-            NamespaceName = DefaultNamespaceName;
-            StateMachineName = DefaultStateMachineName;
-            InitialState = string.Empty;
-        }
+			result.Types.Add(stateMachineClass);
+		}
 
-        // Reads all of the state machine's states.
-        private void ReadStates(StateRowCollection col, ArrayList states)
-        {
-            foreach(StateRow row in col)
-            {
-                if(row.Name == null || row.Name == string.Empty)
-                {
-                    throw new StateMachineBuilderException(
-                        "State name cannot be null or empty.");
-                }
-                else if(states.Contains(row.Name))
-                {
-                    throw new StateMachineBuilderException("Duplicate states not allowed.");
-                }
+		/// <summary>
+		/// Clears the builder of all states and transitions, and resets its 
+		/// properties to their default values. 
+		/// </summary>
+		public void Clear()
+		{
+			States.Clear();
+			NamespaceName = DefaultNamespaceName;
+			StateMachineName = DefaultStateMachineName;
+			InitialState = string.Empty;
+		}
 
-                states.Add(row.Name);
+		// Reads all of the state machine's states.
+		private static void ReadStates(StateRowCollection col, IList states)
+		{
+			foreach (StateRow row in col)
+			{
+				if (string.IsNullOrEmpty(row.Name))
+				{
+					throw new StateMachineBuilderException(
+						"State name cannot be null or empty.");
+				}
+				if (states.Contains(row.Name))
+				{
+					throw new StateMachineBuilderException("Duplicate states not allowed.");
+				}
 
-                ReadStates(row.Substates, states);
-            }
-        }
+				states.Add(row.Name);
 
-        // Reads all of the state machine's events.
-        private void ReadEvents(StateRowCollection col, ArrayList events)
-        {
-            foreach(StateRow row in col)
-            {
-                foreach(TransitionRow transRow in row.Transitions)
-                {
-                    if(transRow.Event == null || transRow.Event == string.Empty)
-                    {
-                        throw new StateMachineBuilderException(
-                            "Event cannot be null or empty.");
-                    }
+				ReadStates(row.Substates, states);
+			}
+		}
 
-                    if(!events.Contains(transRow.Event))
-                    {
-                        events.Add(transRow.Event);
-                    }
-                }
+		// Reads all of the state machine's events.
+		private static void ReadEvents(StateRowCollection col, IList events)
+		{
+			foreach (StateRow row in col)
+			{
+				foreach (TransitionRow transRow in row.Transitions)
+				{
+					if (string.IsNullOrEmpty(transRow.Event))
+					{
+						throw new StateMachineBuilderException(
+							"Event cannot be null or empty.");
+					}
 
-                ReadEvents(row.Substates, events);
-            }
-        }
+					if (!events.Contains(transRow.Event))
+					{
+						events.Add(transRow.Event);
+					}
+				}
 
-        // Reads all of the state machine's guards.
-        private void ReadGuards(StateRowCollection col, ArrayList guards)
-        {
-            foreach(StateRow row in col)
-            {
-                foreach(TransitionRow transRow in row.Transitions)
-                {
-                    if(transRow.Guard != null && 
-                        transRow.Guard != string.Empty &&
-                        !guards.Contains(transRow.Guard))
-                    {
-                        guards.Add(transRow.Guard);
-                    }
-                }
+				ReadEvents(row.Substates, events);
+			}
+		}
 
-                ReadGuards(row.Substates, guards);
-            }
-        }
+		// Reads all of the state machine's guards.
+		private static void ReadGuards(StateRowCollection col, IList guards)
+		{
+			foreach (StateRow row in col)
+			{
+				foreach (TransitionRow transRow in row.Transitions)
+				{
+					if (!string.IsNullOrEmpty(transRow.Guard) &&
+					    !guards.Contains(transRow.Guard))
+					{
+						guards.Add(transRow.Guard);
+					}
+				}
 
-        // Reads all of the state machine's actions.
-        private void ReadActions(StateRowCollection col, ArrayList actions)
-        {
-            foreach(StateRow row in col)
-            {
-                foreach(TransitionRow transRow in row.Transitions)
-                {
-                    foreach(ActionRow actionRow in transRow.Actions)
-                    {
-                        if(!actions.Contains(actionRow.Name))
-                        {
-                            actions.Add(actionRow.Name);
-                        }
-                    }
-                }
-                
-                ReadActions(row.Substates, actions);
-            }
-        }
+				ReadGuards(row.Substates, guards);
+			}
+		}
 
-        // Reads all of the state machine's state transitions.
-        private void ReadStateTransitions(StateRowCollection col, IDictionary stateTransitions)
-        {
-            foreach(StateRow row in col)
-            {
-                if(row.Transitions.Count > 0)
-                {
-                    stateTransitions.Add(row.Name, row.Transitions);
-                }
+		// Reads all of the state machine's actions.
+		private static void ReadActions(StateRowCollection col, IList actions)
+		{
+			foreach (StateRow row in col)
+			{
+				foreach (TransitionRow transRow in row.Transitions)
+				{
+					foreach (ActionRow actionRow in transRow.Actions)
+					{
+						if (!actions.Contains(actionRow.Name))
+						{
+							actions.Add(actionRow.Name);
+						}
+					}
+				}
 
-                ReadStateTransitions(row.Substates, stateTransitions);
-            }
-        }
+				ReadActions(row.Substates, actions);
+			}
+		}
 
-        // Reads all of the state machine's substate/superstate relationships.
-        private void ReadStateRelationships(StateRowCollection col, IDictionary stateRelationships)
-        {
-            foreach(StateRow row in col)
-            {
-                foreach(StateRow childRow in row.Substates)
-                {
-                    stateRelationships.Add(childRow.Name, row.Name);
-                }
+		// Reads all of the state machine's state transitions.
+		private static void ReadStateTransitions(StateRowCollection col, IDictionary stateTransitions)
+		{
+			foreach (StateRow row in col)
+			{
+				if (row.Transitions.Count > 0)
+				{
+					stateTransitions.Add(row.Name, row.Transitions);
+				}
 
-                ReadStateRelationships(row.Substates, stateRelationships);
-            }
-        }
+				ReadStateTransitions(row.Substates, stateTransitions);
+			}
+		}
 
-        // Reads all of the state machine's state history types.
-        private void ReadStateHistoryTypes(StateRowCollection col, IDictionary stateHistoryTypes)
-        {
-            foreach(StateRow row in col)
-            {                
-                stateHistoryTypes.Add(row.Name, row.HistoryType);
+		// Reads all of the state machine's substate/superstate relationships.
+		private static void ReadStateRelationships(StateRowCollection col, IDictionary stateRelationships)
+		{
+			foreach (StateRow row in col)
+			{
+				foreach (StateRow childRow in row.Substates)
+				{
+					stateRelationships.Add(childRow.Name, row.Name);
+				}
 
-                ReadStateHistoryTypes(row.Substates, stateHistoryTypes);
-            }
-        }
+				ReadStateRelationships(row.Substates, stateRelationships);
+			}
+		}
 
-        // Reads all of the state machine's states' initial state.
-        private void ReadStateInitialStates(StateRowCollection col, IDictionary stateInitialStates)
-        {
-            foreach(StateRow row in col)
-            {
-                if(row.InitialState != null && row.InitialState != string.Empty)
-                {
-                    stateInitialStates.Add(row.Name, row.InitialState);
-                }
+		// Reads all of the state machine's state history types.
+		private static void ReadStateHistoryTypes(StateRowCollection col, IDictionary stateHistoryTypes)
+		{
+			foreach (StateRow row in col)
+			{
+				stateHistoryTypes.Add(row.Name, row.HistoryType);
 
-                ReadStateInitialStates(row.Substates, stateInitialStates);
-            }
-        }
+				ReadStateHistoryTypes(row.Substates, stateHistoryTypes);
+			}
+		}
 
-        // Verifies that all of the targets are known.
-        private void VerifyTargets(StateRowCollection col, ArrayList states)
-        {
-            foreach(StateRow row in col)
-            {
-                foreach(TransitionRow transRow in row.Transitions)
-                {
-                    if(transRow.Target != null && 
-                        transRow.Target != string.Empty &&
-                        !states.Contains(transRow.Target))
-                    {
-                        throw new StateMachineBuilderException(
-                            "Unknown target state: " + transRow.Target);
-                    }
-                }
-          
-                VerifyTargets(row.Substates, states);
-            }
-        }
+		// Reads all of the state machine's states' initial state.
+		private static void ReadStateInitialStates(StateRowCollection col, IDictionary stateInitialStates)
+		{
+			foreach (StateRow row in col)
+			{
+				if (!string.IsNullOrEmpty(row.InitialState))
+				{
+					stateInitialStates.Add(row.Name, row.InitialState);
+				}
 
-        // Verifies that the initial state is known.
-        private void VerifyInitialState(StateRowCollection col)
-        {
-            bool found = false;
+				ReadStateInitialStates(row.Substates, stateInitialStates);
+			}
+		}
 
-            foreach(StateRow row in col)
-            {
-                if(row.Name == InitialState)
-                {
-                    found = true;
-                    break;
-                }
-            }
+		// Verifies that all of the targets are known.
+		private static void VerifyTargets(StateRowCollection col, IList states)
+		{
+			foreach (StateRow row in col)
+			{
+				foreach (TransitionRow transRow in row.Transitions)
+				{
+					if (!string.IsNullOrEmpty(transRow.Target) &&
+					    !states.Contains(transRow.Target))
+					{
+						throw new StateMachineBuilderException(
+							"Unknown target state: " + transRow.Target);
+					}
+				}
 
-            if(!found)
-            {
-                throw new StateMachineBuilderException(
-                    "Initial state is missing or is not a top state.");
-            }
-        }
+				VerifyTargets(row.Substates, states);
+			}
+		}
 
-        // Verifies that each superstate has an initial state and that its 
-        // initial state is known.
-        private void VerifyInitialStates(StateRowCollection col)
-        {
-            foreach(StateRow row in col)
-            {
-                if(row.InitialState == null || row.InitialState == string.Empty)
-                {
-                    if(row.Substates.Count > 0)
-                    {
-                        throw new StateMachineBuilderException(
-                            "Initial state missing from " + row.Name + " state.");
-                    }
-                }
-                else
-                {
-                    bool found = false;
+		// Verifies that the initial state is known.
+		private void VerifyInitialState(StateRowCollection col)
+		{
+			bool found = false;
 
-                    foreach(StateRow childRow in row.Substates)
-                    {
-                        if(row.InitialState == childRow.Name)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
+			foreach (StateRow row in col)
+			{
+				if (row.Name != InitialState) continue;
+				found = true;
+				break;
+			}
 
-                    if(!found)
-                    {
-                        throw new StateMachineBuilderException(
-                            "No substate match for initial state.");
-                    }
-                }
+			if (!found)
+			{
+				throw new StateMachineBuilderException(
+					"Initial state is missing or is not a top state.");
+			}
+		}
 
-                VerifyInitialStates(row.Substates);
-            }
-        }
+		// Verifies that each superstate has an initial state and that its 
+		// initial state is known.
+		private static void VerifyInitialStates(StateRowCollection col)
+		{
+			foreach (StateRow row in col)
+			{
+				if (string.IsNullOrEmpty(row.InitialState))
+				{
+					if (row.Substates.Count > 0)
+					{
+						throw new StateMachineBuilderException(
+							"Initial state missing from " + row.Name + " state.");
+					}
+				}
+				else
+				{
+					bool found = false;
 
-        #endregion
+					foreach (StateRow childRow in row.Substates)
+					{
+						if (row.InitialState != childRow.Name) continue;
+						found = true;
+						break;
+					}
 
-        #region Properties
+					if (!found)
+					{
+						throw new StateMachineBuilderException(
+							"No substate match for initial state.");
+					}
+				}
 
-        /// <summary>
-        /// Gets the result of building the state machine.
-        /// </summary>
-        public CodeNamespace Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+				VerifyInitialStates(row.Substates);
+			}
+		}
 
-        /// <summary>
-        /// Gets the collection of StateRows that represent the state machine's
-        /// top level states.
-        /// </summary>
-        [XmlElement("state", typeof(StateRow))]
-        public StateRowCollection States
-        {
-            get
-            {
-                return stateRowCollection;
-            }
-        }
+		#endregion
 
-        /// <summary>
-        /// Gets or sets the name of the namespace in which the state machine
-        /// resides.
-        /// </summary>
-        [XmlAttribute("namespace")]
-        public string NamespaceName
-        {
-            get
-            {
-                return namespaceName;
-            }
-            set
-            {
-                namespaceName = value;
-            }
-        }
+		#region Properties
 
-        /// <summary>
-        /// Gets or sets the name of the state machine.
-        /// </summary>
-        [XmlAttribute("name")]
-        public string StateMachineName
-        {
-            get
-            {
-                return stateMachineName;
-            }
-            set
-            {
-                stateMachineName = value;
-            }
-        }
-    
-        /// <summary>
-        /// Gets or sets the initial state of the state machine.
-        /// </summary>
-        [XmlAttribute("initialState")]
-        public string InitialState
-        {
-            get
-            {
-                return initialState;
-            }
-            set
-            {
-                initialState = value;
-            }
-        }
+		/// <summary>
+		/// Gets the result of building the state machine.
+		/// </summary>
+		public CodeNamespace Result
+		{
+			get { return result; }
+		}
 
-        [XmlAttribute("stateMachineType")]
-        public StateMachineType StateMachineType
-        {
-            get
-            {
-                return stateMachineType;
-            }
-            set
-            {
-                stateMachineType = value;
-            }
-        }
+		/// <summary>
+		/// Gets the collection of StateRows that represent the state machine's
+		/// top level states.
+		/// </summary>
+		[XmlElement("state", typeof (StateRow))]
+		public StateRowCollection States
+		{
+			get { return stateRowCollection; }
+		}
 
-        #endregion
+		/// <summary>
+		/// Gets or sets the name of the namespace in which the state machine
+		/// resides.
+		/// </summary>
+		[XmlAttribute("namespace")]
+		public string NamespaceName
+		{
+			get { return namespaceName; }
+			set { namespaceName = value; }
+		}
 
-        #endregion
-    }
+		/// <summary>
+		/// Gets or sets the name of the state machine.
+		/// </summary>
+		[XmlAttribute("name")]
+		public string StateMachineName
+		{
+			get { return stateMachineName; }
+			set { stateMachineName = value; }
+		}
+
+		/// <summary>
+		/// Gets or sets the initial state of the state machine.
+		/// </summary>
+		[XmlAttribute("initialState")]
+		public string InitialState
+		{
+			get { return initialState; }
+			set { initialState = value; }
+		}
+
+		[XmlAttribute("stateMachineType")]
+		public StateMachineType StateMachineType
+		{
+			get { return stateMachineType; }
+			set { stateMachineType = value; }
+		}
+
+		#endregion
+
+		#endregion
+	}
 }

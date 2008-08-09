@@ -6,97 +6,90 @@
  * Last modified: 10/01/2005
  */
 
-using System;
 using System.CodeDom;
 using System.Collections;
 
-namespace Sanford.StateMachineToolkit
+namespace Sanford.StateMachineToolkit.CodeGeneration
 {
 	/// <summary>
 	/// Builds the method responsible for initializing the substate/superstate 
 	/// relationships between states.
 	/// </summary>
-    internal class RelationshipInitializeBuilder
+	internal class RelationshipInitializeBuilder
 	{
-        #region RelationshipInitializeBuilder Members
+		#region RelationshipInitializeBuilder Members
 
-        #region Fields
+		#region Fields
 
-        // The state machine's states and their superstates.
-        private IDictionary stateRelationships;
+		// The state machine's states and their superstates.
+		private readonly IDictionary stateRelationships;
 
-        // The build method.
-        private CodeMemberMethod result = new CodeMemberMethod();
+		// The build method.
+		private CodeMemberMethod result = new CodeMemberMethod();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        /// <summary>
-        /// Initializes a new instance of the RelationshipInitializeBuilder
-        /// with the specified relationship table.
-        /// </summary>
-        /// <param name="stateRelationship">
-        /// The relationships between substates and superstates.
-        /// </param>
+		/// <summary>
+		/// Initializes a new instance of the RelationshipInitializeBuilder
+		/// with the specified relationship table.
+		/// </summary>
+		/// <param name="stateRelationships">
+		/// The relationships between substates and superstates.
+		/// </param>
 		public RelationshipInitializeBuilder(IDictionary stateRelationships)
 		{
-            this.stateRelationships = stateRelationships;
+			this.stateRelationships = stateRelationships;
 		}
 
-        #endregion
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Builds the method.
-        /// </summary>
-        public void Build()
-        {
-            result = new CodeMemberMethod();
-            result.Name = "InitializeRelationships";
-            result.Attributes = MemberAttributes.Private;
+		/// <summary>
+		/// Builds the method.
+		/// </summary>
+		public void Build()
+		{
+			result = new CodeMemberMethod();
+			result.Name = "InitializeRelationships";
+			result.Attributes = MemberAttributes.Private;
 
-            CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
-            CodeFieldReferenceExpression substateField;
-            CodeFieldReferenceExpression superstateField;
-            CodePropertyReferenceExpression substatesProperty;
-            CodeMethodInvokeExpression addInvoke;
+			CodeThisReferenceExpression thisReference = new CodeThisReferenceExpression();
 
-            foreach(DictionaryEntry entry in stateRelationships)
-            {
-                substateField = new CodeFieldReferenceExpression(
-                    thisReference, "state" + entry.Key.ToString());
-                superstateField = new CodeFieldReferenceExpression(
-                    thisReference, "state" + entry.Value.ToString());
+			foreach (DictionaryEntry entry in stateRelationships)
+			{
+				CodeFieldReferenceExpression substateField =
+					new CodeFieldReferenceExpression(thisReference, "state" + entry.Key);
+				CodeFieldReferenceExpression superstateField =
+					new CodeFieldReferenceExpression(thisReference, "state" + entry.Value);
 
-                substatesProperty = new CodePropertyReferenceExpression(
-                    superstateField, "Substates");
+				CodePropertyReferenceExpression substatesProperty =
+					new CodePropertyReferenceExpression(superstateField, "Substates");
 
-                addInvoke = new CodeMethodInvokeExpression(substatesProperty,
-                    "Add", new CodeExpression[] { substateField });
+				CodeMethodInvokeExpression addInvoke =
+					new CodeMethodInvokeExpression(substatesProperty, "Add",
+					                               new CodeExpression[] {substateField});
 
-                result.Statements.Add(addInvoke);
-            }
-        }
+				result.Statements.Add(addInvoke);
+			}
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        /// <summary>
-        /// Gets the built method.
-        /// </summary>
-        public CodeMemberMethod Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+		/// <summary>
+		/// Gets the built method.
+		/// </summary>
+		public CodeMemberMethod Result
+		{
+			get { return result; }
+		}
 
-        #endregion
+		#endregion
 
-        #endregion
+		#endregion
 	}
 }

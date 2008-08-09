@@ -36,59 +36,47 @@ using System;
 
 namespace Sanford.StateMachineToolkit
 {
-    /// <summary>
-    /// Summary description for TransitionCompletedEventArgs.
-    /// </summary>
+	/// <summary>
+	/// Summary description for TransitionCompletedEventArgs.
+	/// </summary>
 	public class TransitionCompletedEventArgs<TState, TEvent> : EventArgs
-		where TState : struct, IComparable, IFormattable/*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-        private readonly TState stateID;
+		private readonly TState stateID;
 
 		private readonly TEvent eventID;
 
-        private readonly object actionResult;
+		private readonly object actionResult;
 
-        private readonly Exception error;
+		private readonly Exception error;
 
 		public TransitionCompletedEventArgs(TState stateID, TEvent eventID, object actionResult, Exception error)
-        {
-            this.stateID = stateID;
-            this.eventID = eventID;
-            this.actionResult = actionResult;
-            this.error = error;
-        }
+		{
+			this.stateID = stateID;
+			this.eventID = eventID;
+			this.actionResult = actionResult;
+			this.error = error;
+		}
 
-        public TState StateID
-        {
-            get
-            {
-                return stateID;
-            }
-        }
+		public TState StateID
+		{
+			get { return stateID; }
+		}
 
 		public TEvent EventID
-        {
-            get
-            {
-                return eventID;
-            }
-        }
+		{
+			get { return eventID; }
+		}
 
-        public object ActionResult
-        {
-            get
-            {
-                return actionResult;
-            }
-        }
+		public object ActionResult
+		{
+			get { return actionResult; }
+		}
 
-        public Exception Error
-        {
-            get
-            {
-                return error;
-            }
-        }
-    }
+		public Exception Error
+		{
+			get { return error; }
+		}
+	}
 }

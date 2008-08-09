@@ -38,154 +38,151 @@ using System.Diagnostics;
 
 namespace Sanford.StateMachineToolkit
 {
-    public enum StateMachineType
-    {
-        Passive,
-        Active
-    }
+	public enum StateMachineType
+	{
+		Passive,
+		Active
+	}
 
 	/// <summary>
 	/// Represents the base class for all state machines.
+	/// You do not derive your state machine classes from this class but rather from one 
+	/// of its derived classes, either the <see cref="ActiveStateMachine{TState,TEvent}"/> 
+	/// class or the <see cref="PassiveStateMachine{TState,TEvent}"/> class.
 	/// </summary>
 	public abstract class StateMachine<TState, TEvent>
-		where TState : struct, IComparable, IFormattable/*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable/*, IConvertible*/
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-        #region StateMachine Members
+		#region StateMachine Members
 
-        #region Fields
+		#region Fields
 
-        // The current state.
+		// The current state.
 		protected State<TState, TEvent> currentState;
 
-        // The return value of the last action.
-        private object actionResult;
+		// The return value of the last action.
+		private object actionResult;
 
-        // Indicates whether the state machine has been initialized.
-        private bool initialized;        
+		// Indicates whether the state machine has been initialized.
+		private bool initialized;
 
-        #endregion
+		#endregion
 
-        #region Events
+		#region Events
 
 		public event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
 
-        #endregion 
+		#endregion
 
-        #region Methods
+		#region Methods
 
-        /// <summary>
-        /// Initializes the StateMachine's initial state.
-        /// </summary>
-        /// <param name="initialState">
-        /// The state that will initially receive events from the StateMachine.
-        /// </param>
-		protected void Initialize(State<TState, TEvent> initialState)
-        { 
-            #region Require
+		/// <summary>
+		/// Initializes the StateMachine's initial state.
+		/// </summary>
+		/// <param name="initialState">
+		/// The state that will initially receive events from the StateMachine.
+		/// </param>
+		protected abstract void Initialize(State<TState, TEvent> initialState);
 
-            if(initialState == null)
-            {
-                throw new ArgumentNullException("initialState");
-            }
+		protected void InitializeStateMachine(State<TState, TEvent> initialState)
+		{
+			#region Require
 
-            #endregion
+			if (initialState == null)
+			{
+				throw new ArgumentNullException("initialState");
+			}
+			if (IsInitialized)
+			{
+				throw new InvalidOperationException("The state machine has already been initialized.");
+			}
+
+			#endregion
+
+			initialized = true;
 
 			State<TState, TEvent> superstate = initialState;
-			Stack<State<TState, TEvent>> superstateStack = new Stack<State<TState, TEvent>>();           
+			Stack<State<TState, TEvent>> superstateStack = new Stack<State<TState, TEvent>>();
 
-            // If the initial state is a substate, travel up the state 
-            // hierarchy in order to descend from the top state to the initial
-            // state.
-            while(superstate != null)
-            {
-                superstateStack.Push(superstate);
-                superstate = superstate.Superstate;
-            }
+			// If the initial state is a substate, travel up the state 
+			// hierarchy in order to descend from the top state to the initial
+			// state.
+			while (superstate != null)
+			{
+				superstateStack.Push(superstate);
+				superstate = superstate.Superstate;
+			}
 
-            // While there are superstates to traverse.
-            while(superstateStack.Count > 0)
-            {
+			// While there are superstates to traverse.
+			while (superstateStack.Count > 0)
+			{
 				superstate = superstateStack.Pop();
-                superstate.Entry();
-            }
+				superstate.Entry();
+			}
 
-            currentState = initialState.EnterByHistory();
-
-            initialized = true;
-        }
+			currentState = initialState.EnterByHistory();
+		}
 
 		public abstract void Send(TEvent eventID, params object[] args);
 
 		protected abstract void SendPriority(TEvent eventID, params object[] args);
 
 		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> e)
-        {
+		{
 			if (TransitionCompleted != null)
-            {
+			{
 				TransitionCompleted(this, e);
-            }
-        }
+			}
+		}
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        /// <summary>
-        /// Gets the ID of the current State.
-        /// </summary>
-        public TState CurrentStateID
-        {
-            get
-            {
-                #region Require
+		/// <summary>
+		/// Gets the ID of the current State.
+		/// </summary>
+		public TState CurrentStateID
+		{
+			get
+			{
+				#region Require
 
-                if(!initialized)
-                {
-                    throw new InvalidOperationException();
-                }
+				if (!initialized)
+				{
+					throw new InvalidOperationException();
+				}
 
-                #endregion
+				#endregion
 
-                Debug.Assert(currentState != null);
+				Debug.Assert(currentState != null);
 
-                return currentState.ID;
-            }
-        }
+				return currentState.ID;
+			}
+		}
 
-        /// <summary>
-        /// Gets or sets the results of the action performed during the last transition.
-        /// </summary>
-        /// <remarks>
-        /// This property should only be set during the execution of an action method.
-        /// </remarks>
-        protected object ActionResult
-        {
-            get
-            {
-                return actionResult;
-            }
-            set
-            {
-                actionResult = value;
-            }
-        }
+		/// <summary>
+		/// Gets or sets the results of the action performed during the last transition.
+		/// </summary>
+		/// <remarks>
+		/// This property should only be set during the execution of an action method.
+		/// </remarks>
+		protected object ActionResult
+		{
+			get { return actionResult; }
+			set { actionResult = value; }
+		}
 
-        public abstract StateMachineType StateMachineType
-        {
-            get;
-        }
+		public abstract StateMachineType StateMachineType { get; }
 
-        protected bool IsInitialized
-        {
-            get
-            {
-                return initialized;
-            }
-        }        
+		protected bool IsInitialized
+		{
+			get { return initialized; }
+		}
 
-        #endregion
+		#endregion
 
-        #endregion        
-    }
+		#endregion
+	}
 }
