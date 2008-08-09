@@ -1,0 +1,7 @@
+Generic State Machine in C# based on implementation by Leslie Sanford.
+
+More information can be found here:
+http://www.codeproject.com/KB/cs/statemachinetoolkitparti.aspx
+http://www.codeproject.com/KB/cs/statemachinetoolkitpartii.aspx
+http://www.codeproject.com/KB/cs/statemachinetoolkitprtiii.aspx
+http://www.lesliesanford.com/
