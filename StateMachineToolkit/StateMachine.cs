@@ -130,10 +130,16 @@ namespace Sanford.StateMachineToolkit
 
 		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> e)
 		{
-			if (TransitionCompleted != null)
+			try
 			{
-				TransitionCompleted(this, e);
+				if (TransitionCompleted != null)
+				{
+					TransitionCompleted(this, e);
+				}
 			}
+// ReSharper disable EmptyGeneralCatchClause
+			catch{} // ignore errors in the event handler
+// ReSharper restore EmptyGeneralCatchClause
 		}
 
 		#endregion

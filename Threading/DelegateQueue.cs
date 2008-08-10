@@ -404,33 +404,37 @@ namespace Sanford.Threading
 				// Invoke the delegate.
 				result.Invoke();
 
-				if (result.NotificationType == NotificationType.BeginInvokeCompleted)
+				switch (result.NotificationType)
 				{
-					InvokeCompletedEventArgs e = new InvokeCompletedEventArgs(
-						result.Method,
-						result.GetArgs(),
-						result.ReturnValue,
-						result.Error);
+					case NotificationType.BeginInvokeCompleted:
+						{
+							InvokeCompletedEventArgs e = new InvokeCompletedEventArgs(
+								result.Method,
+								result.GetArgs(),
+								result.ReturnValue,
+								result.Error);
 
-					OnInvokeCompleted(e);
-				}
-				else if (result.NotificationType == NotificationType.PostCompleted)
-				{
-					object[] args = result.GetArgs();
+							OnInvokeCompleted(e);
+						}
+						break;
+					case NotificationType.PostCompleted:
+						{
+							object[] args = result.GetArgs();
 
-					Debug.Assert(args.Length == 1);
-					Debug.Assert(result.Method is SendOrPostCallback);
+							Debug.Assert(args.Length == 1);
+							Debug.Assert(result.Method is SendOrPostCallback);
 
-					PostCompletedEventArgs e = new PostCompletedEventArgs(
-						(SendOrPostCallback) result.Method,
-						args[0],
-						result.Error);
+							PostCompletedEventArgs e = new PostCompletedEventArgs(
+								(SendOrPostCallback) result.Method,
+								args[0],
+								result.Error);
 
-					OnPostCompleted(e);
-				}
-				else
-				{
-					Debug.Assert(result.NotificationType == NotificationType.None);
+							OnPostCompleted(e);
+						}
+						break;
+					default:
+						Debug.Assert(result.NotificationType == NotificationType.None);
+						break;
 				}
 			}
 

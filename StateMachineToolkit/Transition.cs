@@ -142,45 +142,38 @@ namespace Sanford.StateMachineToolkit
 		/// </returns>
 		internal TransitionResult<TState, TEvent> Fire(State<TState, TEvent> origin, object[] args)
 		{
-			TransitionResult<TState, TEvent> result;
+			if (!ShouldFire(args))
+			{
+				return notFiredResult;
+			}
 
 			// If the transition should fire.
-			if (ShouldFire(args))
+			State<TState, TEvent> newState = origin;
+
+			// If this is not an internal transition.
+			if (Target != null)
 			{
-				State<TState, TEvent> newState = origin;
+				State<TState, TEvent> o = origin;
 
-				// If this is not an internal transition.
-				if (Target != null)
+				// Unwind up from the state that originally received the event 
+				// to the source state.
+				while (o != Source)
 				{
-					State<TState, TEvent> o = origin;
-
-					// Unwind up from the state that originally received the event 
-					// to the source state.
-					while (o != Source)
-					{
-						o.Exit();
-						o = o.Superstate;
-					}
-
-					Fire(Source, Target, args);
-
-					newState = Target.EnterByHistory();
-				}
-					// Else if this is an internal transition.
-				else
-				{
-					PerformActions(args);
+					o.Exit();
+					o = o.Superstate;
 				}
 
-				result = new TransitionResult<TState, TEvent>(true, newState, exceptionResult);
+				Fire(Source, Target, args);
+
+				newState = Target.EnterByHistory();
 			}
-				// Else the transition should not fire.
+			// Else if this is an internal transition.
 			else
 			{
-				result = notFiredResult;
+				PerformActions(args);
 			}
 
-			return result;
+			return new TransitionResult<TState, TEvent>(true, newState, exceptionResult);
 		}
 
 		// Recursively traverses the state hierarchy, exiting states along 
@@ -225,15 +218,15 @@ namespace Sanford.StateMachineToolkit
 				PerformActions(args);
 				Target.Entry();
 			}
-				// Handles case 2 after traversing from the target to the source.
+			// Handles case 2 after traversing from the target to the source.
 			else if (s == t)
 			{
 				PerformActions(args);
 				return;
 			}
-				// Handles case 4.
-				// Handles case 5a after traversing the hierarchy until a common 
-				// ancestor if found.
+			// Handles case 4.
+			// Handles case 5a after traversing the hierarchy until a common 
+			// ancestor if found.
 			else if (s.Superstate == t.Superstate)
 			{
 				s.Exit();
@@ -254,14 +247,14 @@ namespace Sanford.StateMachineToolkit
 					s.Exit();
 					Fire(s.Superstate, t, args);
 				}
-					// Handles case 2.
-					// Handles case 5c.
+				// Handles case 2.
+				// Handles case 5c.
 				else if (s.Level < t.Level)
 				{
 					Fire(s, t.Superstate, args);
 					t.Entry();
 				}
-					// Handles case 5a.
+				// Handles case 5a.
 				else
 				{
 					s.Exit();
@@ -274,16 +267,8 @@ namespace Sanford.StateMachineToolkit
 		// Returns a value indicating whether or not the transition should fire.
 		private bool ShouldFire(object[] args)
 		{
-			bool result = true;
-
 			// If there is a guard and it does not evaluate to true.
-			if (Guard != null && !Guard(args))
-			{
-				// Guard must evaluate to true for transition to fire.
-				result = false;
-			}
-
-			return result;
+			return Guard == null || Guard(args);
 		}
 
 		// Performs the transition's actions.

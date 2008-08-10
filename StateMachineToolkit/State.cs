@@ -265,7 +265,6 @@ namespace Sanford.StateMachineToolkit
 				foreach (Transition<TState, TEvent> trans in transitions[eventID])
 				{
 					transResult = trans.Fire(origin, args);
-
 					if (transResult.HasFired)
 					{
 						// Break out of loop. We're finished.
@@ -273,8 +272,8 @@ namespace Sanford.StateMachineToolkit
 					}
 				}
 			}
-				// Else if there are no Transitions for this event and there is a 
-				// superstate.
+			// Else if there are no Transitions for this event and there is a 
+			// superstate.
 			else if (Superstate != null)
 			{
 				// Dispatch the event to the superstate.
@@ -327,34 +326,29 @@ namespace Sanford.StateMachineToolkit
 			State<TState, TEvent> result = this;
 
 			// If there is no history type.
-			if (HistoryType == HistoryType.None)
+			switch (HistoryType)
 			{
-				// If there is an initial state.
-				if (initialState != null)
-				{
-					// Enter the initial state.
-					result = initialState.EnterShallow();
-				}
-			}
-				// Else if the history is shallow.
-			else if (HistoryType == HistoryType.Shallow)
-			{
-				// If there is a history state.
-				if (historyState != null)
-				{
-					// Enter history state in shallow mode.
-					result = historyState.EnterShallow();
-				}
-			}
-				// Else the history is deep.
-			else
-			{
-				// If there is a history state.
-				if (historyState != null)
-				{
-					// Enter history state in deep mode.
-					result = historyState.EnterDeep();
-				}
+				case HistoryType.None:
+					if (initialState != null)
+					{
+						// Enter the initial state.
+						result = initialState.EnterShallow();
+					}
+					break;
+				case HistoryType.Shallow:
+					if (historyState != null)
+					{
+						// Enter history state in shallow mode.
+						result = historyState.EnterShallow();
+					}
+					break;
+				case HistoryType.Deep:
+					if (historyState != null)
+					{
+						// Enter history state in deep mode.
+						result = historyState.EnterDeep();
+					}
+					break;
 			}
 
 			return result;

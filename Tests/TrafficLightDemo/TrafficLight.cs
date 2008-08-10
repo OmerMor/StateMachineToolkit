@@ -111,7 +111,7 @@ namespace TrafficLightDemo
 
 			#endregion
 
-			Send((int) EventID.Dispose);
+			Send(EventID.Dispose);
 		}
 
 		#endregion

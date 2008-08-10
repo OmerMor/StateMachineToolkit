@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkipListStressTest", "Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestExample", "Tests\TestExample\TestExample.csproj", "{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateMachineToolkit.Tests", "Tests\StateMachineToolkit.Tests\StateMachineToolkit.Tests.csproj", "{19646A31-0F00-4657-92B2-1673A6735ED9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,10 @@ Global
 		{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19646A31-0F00-4657-92B2-1673A6735ED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19646A31-0F00-4657-92B2-1673A6735ED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19646A31-0F00-4657-92B2-1673A6735ED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19646A31-0F00-4657-92B2-1673A6735ED9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,5 +99,6 @@ Global
 		{6DAD2029-E13B-41AF-BA11-44605EA57614} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
 		{80DB538C-C6E9-4663-8280-9C2072BA4ACF} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
 		{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
+		{19646A31-0F00-4657-92B2-1673A6735ED9} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
 	EndGlobalSection
 EndGlobal
