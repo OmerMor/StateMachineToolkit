@@ -28,9 +28,9 @@ namespace StateMachineToolkit.Tests
 			var s2 = new State<States, Events>(States.S2);
 			var t1 = Transition.Create(s2);
 			s1.Transitions.Add(Events.S1_to_S2, t1);
-			machine.Start(s1);
 			var handle = new AutoResetEvent(false);
 			machine.TransitionCompleted += (sender, e) => handle.Set();
+			machine.Start(s1);
 			machine.Send(Events.S1_to_S2);
 			bool signaled = handle.WaitOne(TimeSpan.FromMilliseconds(500), false);
 			Assert.IsTrue(signaled);
@@ -45,11 +45,11 @@ namespace StateMachineToolkit.Tests
 			var s2 = new State<States, Events>(States.S2);
 			var t1 = Transition.Create(args => { throw new Exception(); }, s2);
 			s1.Transitions.Add(Events.S1_to_S2, t1);
-			machine.Start(s1);
 			var transitionEvent = new AutoResetEvent(false);
 			var exceptionEvent = new AutoResetEvent(false);
 			machine.TransitionCompleted += (sender, e) => transitionEvent.Set();
 			machine.ExceptionThrown += (sender, e) => exceptionEvent.Set();
+			machine.Start(s1);
 			machine.Send(Events.S1_to_S2);
 			bool transitionCompleted = transitionEvent.WaitOne(TimeSpan.FromMilliseconds(500), false);
 			Assert.IsFalse(transitionCompleted);
@@ -58,8 +58,8 @@ namespace StateMachineToolkit.Tests
 			Assert.IsTrue(exceptionThrown);
 		}
 
-		[Test]
-		public void EntryException()
+		[Test, ExpectedException(ExceptionType = typeof(InvalidOperationException))]
+		public void EntryExceptionOnInit()
 		{
 			TestMachine<States, Events> machine = new TestMachine<States, Events>();
 			var s1 = new State<States, Events>(States.S1, () => { throw new Exception(); }, null);
@@ -67,15 +67,33 @@ namespace StateMachineToolkit.Tests
 			var t1 = Transition.Create(s2);
 			s1.Transitions.Add(Events.S1_to_S2, t1);
 			machine.Start(s1);
+		}
+
+		[Test]
+		public void EntryExceptionOnSend()
+		{
+			TestMachine<States, Events> machine = new TestMachine<States, Events>();
+			var s1 = new State<States, Events>(States.S1);
+			var s2 = new State<States, Events>(States.S2, () => { throw new Exception(); }, null);
+			var t1 = Transition.Create(s2);
+			s1.Transitions.Add(Events.S1_to_S2, t1);
 			var transitionEvent = new AutoResetEvent(false);
 			var exceptionEvent = new AutoResetEvent(false);
-			machine.TransitionCompleted += (sender, e) => transitionEvent.Set();
-			machine.ExceptionThrown += (sender, e) => exceptionEvent.Set();
+			TransitionErrorEventArgs<States, Events> errorEventArgs = null;
+			machine.TransitionCompleted += (sender, args) => transitionEvent.Set();
+			machine.ExceptionThrown += (sender, args) =>
+			{
+				errorEventArgs = args;
+				exceptionEvent.Set();
+			};
+			machine.Start(s1);
 			machine.Send(Events.S1_to_S2);
 			bool transitionCompleted = transitionEvent.WaitOne(TimeSpan.FromMilliseconds(500), false);
 			Assert.IsFalse(transitionCompleted);
 			bool exceptionThrown = exceptionEvent.WaitOne(TimeSpan.FromMilliseconds(500), false);
 			Assert.IsTrue(exceptionThrown);
+			Assert.AreEqual(States.S1, errorEventArgs.SourceStateID);
+			Assert.AreEqual(Events.S1_to_S2, errorEventArgs.EventID);
 		}
 		[Test]
 		public void ExitException()

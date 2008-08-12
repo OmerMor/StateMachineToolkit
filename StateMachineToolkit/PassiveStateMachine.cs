@@ -71,19 +71,26 @@ namespace Sanford.StateMachineToolkit
 		{
 			// Reset action result.
 			ActionResult = null;
+			currentEventContext = new EventContext<TState, TEvent>(CurrentStateID, eventID, args);
+			try
+			{
+				// Dispatch event to the current state.
+				TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
 
-			// Dispatch event to the current state.
-			TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
+				// If a transition was fired as a result of this event.
+				if (!result.HasFired) return;
 
-			// If a transition was fired as a result of this event.
-			if (!result.HasFired) return;
+				currentState = result.NewState;
 
-			currentState = result.NewState;
+				TransitionCompletedEventArgs<TState, TEvent> e =
+					new TransitionCompletedEventArgs<TState, TEvent>(currentState.ID, currentEventContext, ActionResult, result.Error);
 
-			TransitionCompletedEventArgs<TState, TEvent> e =
-				new TransitionCompletedEventArgs<TState, TEvent>(currentState.ID, eventID, ActionResult, result.Error);
-
-			OnTransitionCompleted(e);
+				OnTransitionCompleted(e);
+			}
+			finally
+			{
+				currentEventContext = null;
+			}
 		}
 
 		public override StateMachineType StateMachineType

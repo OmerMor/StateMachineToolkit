@@ -45,16 +45,17 @@ namespace Sanford.StateMachineToolkit
 	{
 		private readonly TState stateID;
 
-		private readonly TEvent eventID;
+		private readonly EventContext<TState, TEvent> eventContext;
 
 		private readonly object actionResult;
 
 		private readonly Exception error;
 
-		public TransitionCompletedEventArgs(TState stateID, TEvent eventID, object actionResult, Exception error)
+		public TransitionCompletedEventArgs(TState stateID, EventContext<TState, TEvent> eventContext, 
+			object actionResult, Exception error)
 		{
 			this.stateID = stateID;
-			this.eventID = eventID;
+			this.eventContext = eventContext;
 			this.actionResult = actionResult;
 			this.error = error;
 		}
@@ -66,7 +67,17 @@ namespace Sanford.StateMachineToolkit
 
 		public TEvent EventID
 		{
-			get { return eventID; }
+			get { return eventContext.CurrentEvent; }
+		}
+
+		public TState PreviousStateID
+		{
+			get { return eventContext.SourceState; }
+		}
+
+		public object[] EventArgs
+		{
+			get { return eventContext.Args; }
 		}
 
 		public object ActionResult

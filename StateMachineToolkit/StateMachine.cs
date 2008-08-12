@@ -44,6 +44,52 @@ namespace Sanford.StateMachineToolkit
 		Active
 	}
 
+	public class TransitionErrorEventArgs<TState, TEvent> : EventArgs
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+	{
+		private readonly EventContext<TState, TEvent> eventContext;
+		private readonly Exception error;
+
+		private static readonly TransitionErrorEventArgs<TState, TEvent> empty = 
+			new TransitionErrorEventArgs<TState, TEvent>(null, null);
+
+		public TransitionErrorEventArgs(EventContext<TState, TEvent> eventContext, Exception error)
+		{
+			this.eventContext = eventContext;
+			this.error = error;
+		}
+
+		public TState SourceStateID
+		{
+			[DebuggerStepThrough]
+			get { return eventContext.SourceState; }
+		}
+
+		public object[] Args
+		{
+			[DebuggerStepThrough]
+			get { return eventContext.Args; }
+		}
+
+		public TEvent EventID
+		{
+			[DebuggerStepThrough]
+			get { return eventContext.CurrentEvent; }
+		}
+
+		public Exception Error
+		{
+			[DebuggerStepThrough]
+			get { return error; }
+		}
+
+		public new static TransitionErrorEventArgs<TState, TEvent> Empty
+		{
+			[DebuggerStepThrough]
+			get { return empty; }
+		}
+	}
 	/// <summary>
 	/// Represents the base class for all state machines.
 	/// You do not derive your state machine classes from this class but rather from one 
@@ -66,6 +112,7 @@ namespace Sanford.StateMachineToolkit
 
 		// Indicates whether the state machine has been initialized.
 		private bool initialized;
+		protected EventContext<TState, TEvent> currentEventContext;
 
 		#endregion
 
@@ -93,7 +140,7 @@ namespace Sanford.StateMachineToolkit
 			{
 				throw new ArgumentNullException("initialState");
 			}
-			if (IsInitialized)
+			if (initialized)
 			{
 				throw new InvalidOperationException("The state machine has already been initialized.");
 			}
@@ -184,11 +231,45 @@ namespace Sanford.StateMachineToolkit
 
 		protected bool IsInitialized
 		{
-			get { return initialized; }
+			get { return initialized && currentState != null; }
 		}
 
 		#endregion
 
 		#endregion
+	}
+
+	public class EventContext<TState, TEvent> 
+		where TState : struct, IComparable, IFormattable 
+		where TEvent : struct, IComparable, IFormattable
+	{
+		private readonly TState sourceState;
+		private readonly TEvent currentEvent;
+		private readonly object[] args;
+
+		public EventContext(TState sourceState, TEvent currentEvent, object[] args)
+		{
+			this.sourceState = sourceState;
+			this.currentEvent = currentEvent;
+			this.args = args;
+		}
+
+		public TState SourceState
+		{
+			[DebuggerStepThrough]
+			get { return sourceState; }
+		}
+
+		public object[] Args
+		{
+			[DebuggerStepThrough]
+			get { return args; }
+		}
+
+		public TEvent CurrentEvent
+		{
+			[DebuggerStepThrough]
+			get { return currentEvent; }
+		}
 	}
 }
