@@ -67,48 +67,10 @@ namespace Sanford.StateMachineToolkit
 			eventDeque.PushFront(new StateMachineEvent(eventID, args));
 		}
 
-		protected override void Dispatch(TEvent eventID, object[] args)
+		protected override void handleDispatchException(Exception ex)
 		{
-			// Reset action result.
-			ActionResult = null;
-			currentEventContext = new EventContext<TState, TEvent>(CurrentStateID, eventID, args);
-			try
-			{
-				OnBeginDispatch(currentEventContext);
-
-				// Dispatch event to the current state.
-				TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
-
-				// report errors
-				if (result.Error != null)
-					OnExceptionThrown(
-						new TransitionErrorEventArgs<TState, TEvent>(
-							currentEventContext, result.Error));
-
-				// If a transition was fired as a result of this event.
-				if (!result.HasFired)
-				{
-					OnTransitionDeclined(currentEventContext);
-					return;
-				}
-
-				currentState = result.NewState;
-
-				TransitionCompletedEventArgs<TState, TEvent> e =
-					new TransitionCompletedEventArgs<TState, TEvent>(
-						currentState.ID, currentEventContext, ActionResult, result.Error);
-
-				OnTransitionCompleted(e);
-			}
-			catch (Exception ex)
-			{
-				OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
-				throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
-			}
-			finally
-			{
-				currentEventContext = null;
-			}
+			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
 		}
 
 		public override StateMachineType StateMachineType
