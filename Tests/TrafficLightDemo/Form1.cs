@@ -98,7 +98,7 @@ namespace TrafficLightDemo
 		{
 			if (e.Error == null)
 			{
-				switch (e.StateID)
+				switch (e.TargetStateID)
 				{
 					case StateID.Off:
 						currentPictureBox.Hide();

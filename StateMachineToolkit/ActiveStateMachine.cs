@@ -34,20 +34,6 @@ namespace Sanford.StateMachineToolkit
 		private readonly DelegateQueue queue = new DelegateQueue();
 
 		private volatile bool disposed;
-		public event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
-		protected void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
-		{
-			if (ExceptionThrown == null) return;
-			try
-			{
-				ExceptionThrown(this, args);
-			}
-// ReSharper disable EmptyGeneralCatchClause
-			catch
-			{
-			}
-// ReSharper restore EmptyGeneralCatchClause
-		}
 
 		protected ActiveStateMachine()
 		{
@@ -213,37 +199,38 @@ namespace Sanford.StateMachineToolkit
 		/// <param name="args">
 		/// The data accompanying the event.
 		/// </param>
-		private void Dispatch(TEvent eventID, object[] args)
+		protected override void Dispatch(TEvent eventID, object[] args)
 		{
 			// Reset action result.
 			ActionResult = null;
 			currentEventContext = new EventContext<TState, TEvent>(CurrentStateID, eventID, args);
 			try
 			{
+				OnBeginDispatch(currentEventContext);
+
 				// Dispatch event to the current state.
 				TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
 
 				// report errors
 				if (result.Error != null)
 					OnExceptionThrown(
-						new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, result.Error));
+						new TransitionErrorEventArgs<TState, TEvent>(
+							currentEventContext, result.Error));
 
 				// If a transition was fired as a result of this event.
-				if (!result.HasFired) return;
+				if (!result.HasFired)
+				{
+					OnTransitionDeclined(currentEventContext);
+					return;
+				}
+
 				currentState = result.NewState;
 
 				TransitionCompletedEventArgs<TState, TEvent> e =
 					new TransitionCompletedEventArgs<TState, TEvent>(
 						currentState.ID, currentEventContext, ActionResult, result.Error);
 
-				if (context != null)
-				{
-					context.Post(delegate { OnTransitionCompleted(e); }, null);
-				}
-				else
-				{
-					OnTransitionCompleted(e);
-				}
+				OnTransitionCompleted(e);
 			}
 			catch (Exception ex)
 			{
@@ -252,6 +239,42 @@ namespace Sanford.StateMachineToolkit
 			finally
 			{
 				currentEventContext = null;
+			}
+		}
+
+		protected override void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
+		{
+			if (context != null)
+			{
+				context.Send(delegate { base.OnBeginDispatch(eventContext); }, null);
+			}
+			else
+			{
+				base.OnBeginDispatch(eventContext);
+			}
+		}
+
+		protected override void OnTransitionDeclined(EventContext<TState, TEvent> eventContext)
+		{
+			if (context != null)
+			{
+				context.Post(delegate { base.OnTransitionDeclined(eventContext); }, null);
+			}
+			else
+			{
+				base.OnTransitionDeclined(eventContext);
+			}
+		}
+
+		protected override void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
+		{
+			if (context != null)
+			{
+				context.Post(delegate { base.OnTransitionCompleted(args); }, null);
+			}
+			else
+			{
+				base.OnTransitionCompleted(args);
 			}
 		}
 	}

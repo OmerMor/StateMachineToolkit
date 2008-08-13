@@ -44,38 +44,19 @@ namespace Sanford.StateMachineToolkit
 		Active
 	}
 
-	public class TransitionErrorEventArgs<TState, TEvent> : EventArgs
+	public class TransitionErrorEventArgs<TState, TEvent> : TransitionEventArgs<TState, TEvent>
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		private readonly EventContext<TState, TEvent> eventContext;
 		private readonly Exception error;
 
 		private static readonly TransitionErrorEventArgs<TState, TEvent> empty = 
 			new TransitionErrorEventArgs<TState, TEvent>(null, null);
 
-		public TransitionErrorEventArgs(EventContext<TState, TEvent> eventContext, Exception error)
+		public TransitionErrorEventArgs(EventContext<TState, TEvent> eventContext, Exception error) 
+			: base(eventContext)
 		{
-			this.eventContext = eventContext;
 			this.error = error;
-		}
-
-		public TState SourceStateID
-		{
-			[DebuggerStepThrough]
-			get { return eventContext.SourceState; }
-		}
-
-		public object[] Args
-		{
-			[DebuggerStepThrough]
-			get { return eventContext.Args; }
-		}
-
-		public TEvent EventID
-		{
-			[DebuggerStepThrough]
-			get { return eventContext.CurrentEvent; }
 		}
 
 		public Exception Error
@@ -119,6 +100,7 @@ namespace Sanford.StateMachineToolkit
 		#region Events
 
 		public event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
+		public event EventHandler<TransitionEventArgs<TState, TEvent>> TransitionDeclined;
 
 		#endregion
 
@@ -175,18 +157,43 @@ namespace Sanford.StateMachineToolkit
 
 		protected abstract void SendPriority(TEvent eventID, params object[] args);
 
-		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> e)
+		protected virtual void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
+		{
+			if (BeginDispatch == null)
+				return;
+			// if handler will throw, we want it to be caught by the dispatch method, and make it fail
+			BeginDispatch(this, new TransitionEventArgs<TState, TEvent>(eventContext));
+		}
+
+		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
+		{
+			raiseSafeEvent(TransitionCompleted, args, true);
+		}
+		protected virtual void OnTransitionDeclined(EventContext<TState, TEvent> eventContext)
+		{
+			raiseSafeEvent(TransitionDeclined, new TransitionEventArgs<TState, TEvent>(eventContext), true);
+		}
+
+		protected virtual void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
+		{
+			raiseSafeEvent(ExceptionThrown, args, false);
+		}
+
+		protected void raiseSafeEvent<TArgs>(EventHandler<TArgs> eventHandler, TArgs args, bool raiseEventOnException)
+			where TArgs : EventArgs
 		{
 			try
 			{
-				if (TransitionCompleted != null)
-				{
-					TransitionCompleted(this, e);
-				}
+				if (eventHandler == null)
+					return;
+				eventHandler(this, args);
 			}
-// ReSharper disable EmptyGeneralCatchClause
-			catch{} // ignore errors in the event handler
-// ReSharper restore EmptyGeneralCatchClause
+			catch (Exception ex)
+			{
+				if (!raiseEventOnException) 
+					return;
+				OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			}
 		}
 
 		#endregion
@@ -237,6 +244,21 @@ namespace Sanford.StateMachineToolkit
 		#endregion
 
 		#endregion
+
+		public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
+
+		/// <summary>
+		/// Dispatches events to the current state.
+		/// </summary>
+		/// <param name="eventID">
+		/// The event ID.
+		/// </param>
+		/// <param name="args">
+		/// The data accompanying the event.
+		/// </param>
+		protected abstract void Dispatch(TEvent eventID, object[] args);
+
+		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
 	}
 
 	public class EventContext<TState, TEvent> 

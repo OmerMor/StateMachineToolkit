@@ -33,61 +33,64 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 
 namespace Sanford.StateMachineToolkit
 {
-	/// <summary>
-	/// Summary description for TransitionCompletedEventArgs.
-	/// </summary>
-	public class TransitionCompletedEventArgs<TState, TEvent> : EventArgs
-		where TState : struct, IComparable, IFormattable /*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+	public class TransitionEventArgs<TState, TEvent> : EventArgs where TState : struct, IComparable, IFormattable where TEvent : struct, IComparable, IFormattable
 	{
-		private readonly TState stateID;
-
-		private readonly EventContext<TState, TEvent> eventContext;
-
-		private readonly object actionResult;
-
-		private readonly Exception error;
-
-		public TransitionCompletedEventArgs(TState stateID, EventContext<TState, TEvent> eventContext, 
-			object actionResult, Exception error)
+		public TransitionEventArgs(EventContext<TState, TEvent> eventContext)
 		{
-			this.stateID = stateID;
 			this.eventContext = eventContext;
-			this.actionResult = actionResult;
-			this.error = error;
 		}
 
-		public TState StateID
-		{
-			get { return stateID; }
-		}
+		protected EventContext<TState, TEvent> eventContext;
 
 		public TEvent EventID
 		{
+			[DebuggerStepThrough]
 			get { return eventContext.CurrentEvent; }
 		}
 
-		public TState PreviousStateID
+		public TState SourceStateID
 		{
+			[DebuggerStepThrough]
 			get { return eventContext.SourceState; }
 		}
 
 		public object[] EventArgs
 		{
+			[DebuggerStepThrough]
 			get { return eventContext.Args; }
+		}
+	}
+
+	/// <summary>
+	/// Summary description for TransitionCompletedEventArgs.
+	/// </summary>
+	public class TransitionCompletedEventArgs<TState, TEvent> : TransitionErrorEventArgs<TState, TEvent> 
+		where TState : struct, IComparable, IFormattable /*, IConvertible*/
+		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+	{
+		private readonly TState targetStateID;
+
+		private readonly object actionResult;
+
+		public TransitionCompletedEventArgs(TState targetStateID, EventContext<TState, TEvent> eventContext, 
+			object actionResult, Exception error) : base(eventContext, error)
+		{
+			this.targetStateID = targetStateID;
+			this.actionResult = actionResult;
+		}
+
+		public TState TargetStateID
+		{
+			get { return targetStateID; }
 		}
 
 		public object ActionResult
 		{
 			get { return actionResult; }
-		}
-
-		public Exception Error
-		{
-			get { return error; }
 		}
 	}
 }

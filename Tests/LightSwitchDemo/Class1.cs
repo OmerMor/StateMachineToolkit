@@ -25,7 +25,7 @@ namespace LightSwitchDemo
 		private static void HandleTransitionCompleted(object sender, TransitionCompletedEventArgs<StateID, EventID> e)
 		{
 			Console.WriteLine("Transition Completed:");
-			Console.WriteLine("\tState ID: {0}", e.StateID);
+			Console.WriteLine("\tState ID: {0}", e.TargetStateID);
 			Console.WriteLine("\tEvent ID: {0}", e.EventID);
 
 			if (e.Error != null)
