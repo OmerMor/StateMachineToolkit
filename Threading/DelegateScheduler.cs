@@ -297,6 +297,7 @@ namespace Sanford.Threading
 			lock (queue.SyncRoot)
 			{
 				queue.Clear();
+				tasks.Clear();
 			}
 		}
 
