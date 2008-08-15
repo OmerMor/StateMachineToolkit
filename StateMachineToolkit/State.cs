@@ -268,13 +268,13 @@ namespace Sanford.StateMachineToolkit
 					if (transResult.HasFired)
 					{
 						// Break out of loop. We're finished.
-						break;
+						return transResult;
 					}
 				}
 			}
 			// Else if there are no Transitions for this event and there is a 
 			// superstate.
-			else if (Superstate != null)
+			if (Superstate != null)
 			{
 				// Dispatch the event to the superstate.
 				transResult = Superstate.Dispatch(origin, eventID, args);
