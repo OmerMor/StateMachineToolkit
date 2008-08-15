@@ -70,6 +70,11 @@ namespace Sanford.StateMachineToolkit
 			[DebuggerStepThrough]
 			get { return empty; }
 		}
+
+		public bool MachineInitialized
+		{
+			get { return eventContext != null; }
+		}
 	}
 	/// <summary>
 	/// Represents the base class for all state machines.
@@ -81,6 +86,14 @@ namespace Sanford.StateMachineToolkit
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
+		public State<TState, TEvent> CreateState(TState stateID)
+		{
+			return new State<TState, TEvent>(stateID);
+		}
+		public State<TState, TEvent> CreateState(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
+		{
+			return new State<TState, TEvent>(stateID, entryHandler, exitHandler);
+		}
 		#region StateMachine Members
 
 		#region Fields
@@ -94,6 +107,9 @@ namespace Sanford.StateMachineToolkit
 		// Indicates whether the state machine has been initialized.
 		private bool initialized;
 		protected EventContext<TState, TEvent> currentEventContext;
+
+		[ThreadStatic]
+		private static StateMachine<TState, TEvent> currentStateMachine;
 
 		#endregion
 
@@ -130,6 +146,7 @@ namespace Sanford.StateMachineToolkit
 			#endregion
 
 			initialized = true;
+			currentStateMachine = this;
 
 			State<TState, TEvent> superstate = initialState;
 			Stack<State<TState, TEvent>> superstateStack = new Stack<State<TState, TEvent>>();
@@ -151,6 +168,8 @@ namespace Sanford.StateMachineToolkit
 			}
 
 			currentState = initialState.EnterByHistory();
+			currentStateMachine = this;
+
 		}
 
 		public abstract void Send(TEvent eventID, params object[] args);
@@ -159,10 +178,7 @@ namespace Sanford.StateMachineToolkit
 
 		protected virtual void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
 		{
-			if (BeginDispatch == null)
-				return;
-			// if handler will throw, we want it to be caught by the dispatch method, and make it fail
-			BeginDispatch(this, new TransitionEventArgs<TState, TEvent>(eventContext));
+			raiseSafeEvent(BeginDispatch, new TransitionEventArgs<TState, TEvent>(eventContext), true);
 		}
 
 		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
@@ -177,6 +193,13 @@ namespace Sanford.StateMachineToolkit
 		protected virtual void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
 		{
 			raiseSafeEvent(ExceptionThrown, args, false);
+		}
+
+		internal static void OnExceptionThrown(Exception ex)
+		{
+			currentStateMachine.OnExceptionThrown(
+				new TransitionErrorEventArgs<TState, TEvent>(
+					currentStateMachine.currentEventContext, ex));
 		}
 
 		protected void raiseSafeEvent<TArgs>(EventHandler<TArgs> eventHandler, TArgs args, bool raiseEventOnException)
@@ -261,6 +284,7 @@ namespace Sanford.StateMachineToolkit
 			// Reset action result.
 			ActionResult = null;
 			currentEventContext = new EventContext<TState, TEvent>(CurrentStateID, eventID, args);
+			currentStateMachine = this;
 			try
 			{
 				OnBeginDispatch(currentEventContext);
@@ -268,11 +292,13 @@ namespace Sanford.StateMachineToolkit
 				// Dispatch event to the current state.
 				TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
 
+/*
 				// report errors
 				if (result.Error != null)
 					OnExceptionThrown(
 						new TransitionErrorEventArgs<TState, TEvent>(
 							currentEventContext, result.Error));
+*/
 
 				// If a transition was fired as a result of this event.
 				if (!result.HasFired)
@@ -283,11 +309,11 @@ namespace Sanford.StateMachineToolkit
 
 				currentState = result.NewState;
 
-				TransitionCompletedEventArgs<TState, TEvent> e =
+				TransitionCompletedEventArgs<TState, TEvent> eventArgs =
 					new TransitionCompletedEventArgs<TState, TEvent>(
 						currentState.ID, currentEventContext, ActionResult, result.Error);
 
-				OnTransitionCompleted(e);
+				OnTransitionCompleted(eventArgs);
 			}
 			catch (Exception ex)
 			{
@@ -296,6 +322,7 @@ namespace Sanford.StateMachineToolkit
 			finally
 			{
 				currentEventContext = null;
+				currentStateMachine = null;
 			}
 		}
 

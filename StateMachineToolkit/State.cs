@@ -132,7 +132,7 @@ namespace Sanford.StateMachineToolkit
 		private TransitionCollection<TState, TEvent> transitions;
 
 		// The result if no transitions fired in response to an event.
-		private readonly TransitionResult<TState, TEvent> notFiredResult =
+		private static readonly TransitionResult<TState, TEvent> notFiredResult =
 			new TransitionResult<TState, TEvent>(false, null, null);
 
 		// Entry action.
@@ -289,10 +289,15 @@ namespace Sanford.StateMachineToolkit
 		internal void Entry()
 		{
 			// If an entry action exists for this state.
-			if (entryHandler != null)
+			if (entryHandler == null) return;
+			// Execute entry action.
+			try
 			{
-				// Execute entry action.
 				entryHandler();
+			}
+			catch (Exception ex)
+			{
+				StateMachine<TState, TEvent>.OnExceptionThrown(ex);
 			}
 		}
 
@@ -304,8 +309,15 @@ namespace Sanford.StateMachineToolkit
 			// If an exit action exists for this state.
 			if (exitHandler != null)
 			{
-				// Execute exit action.
-				exitHandler();
+				try
+				{
+					// Execute exit action.
+					exitHandler();
+				}
+				catch (Exception ex)
+				{
+					StateMachine<TState,TEvent>.OnExceptionThrown(ex);
+				}
 			}
 
 

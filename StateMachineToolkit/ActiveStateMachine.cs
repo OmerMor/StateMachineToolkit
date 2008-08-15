@@ -100,13 +100,6 @@ namespace Sanford.StateMachineToolkit
 		protected override void Initialize(State<TState, TEvent> initialState)
 		{
 			Exception initException = null;
-			EventHandler<TransitionErrorEventArgs<TState, TEvent>> handler =
-				delegate(object sender, TransitionErrorEventArgs<TState, TEvent> e)
-					{
-						initException = e.Error;
-					};
-			ExceptionThrown += handler;
-
 			queue.Send(delegate
 			           	{
 			           		try
@@ -115,11 +108,10 @@ namespace Sanford.StateMachineToolkit
 			           		}
 			           		catch (Exception ex)
 			           		{
-								OnExceptionThrown(
-									new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			           			initException = ex;
 			           		}
 			           	}, null);
-			ExceptionThrown -= handler;
+
 			if (initException != null)
 			{
 				throw new InvalidOperationException("State machine failed to initialize.", initException);
@@ -142,7 +134,7 @@ namespace Sanford.StateMachineToolkit
 
 			if (!IsInitialized)
 			{
-				throw new InvalidOperationException("State machine was not initizlied yet.");
+				throw new InvalidOperationException("State machine was not initialized yet.");
 			}
 			if (IsDisposed)
 			{
@@ -195,11 +187,14 @@ namespace Sanford.StateMachineToolkit
 			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
 		}
 
+		private delegate void Func<T>(T arg);
 		protected override void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
 		{
 			if (context != null)
 			{
-				context.Send(delegate { base.OnBeginDispatch(eventContext); }, null);
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<EventContext<TState, TEvent>> baseMethod = base.OnBeginDispatch;
+				context.Post(delegate { baseMethod(eventContext); }, null);
 			}
 			else
 			{
@@ -211,7 +206,9 @@ namespace Sanford.StateMachineToolkit
 		{
 			if (context != null)
 			{
-				context.Post(delegate { base.OnTransitionDeclined(eventContext); }, null);
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<EventContext<TState, TEvent>> baseMethod = base.OnTransitionDeclined;
+				context.Post(delegate { baseMethod(eventContext); }, null);
 			}
 			else
 			{
@@ -223,7 +220,10 @@ namespace Sanford.StateMachineToolkit
 		{
 			if (context != null)
 			{
-				context.Post(delegate { base.OnTransitionCompleted(args); }, null);
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<TransitionCompletedEventArgs<TState, TEvent>> baseMethod = 
+					base.OnTransitionCompleted;
+				context.Post(delegate { baseMethod(args); }, null);
 			}
 			else
 			{

@@ -16,7 +16,7 @@ namespace Sanford.StateMachineToolkit
 	/// </summary>
 	/// <typeparam name="TState">The state enumeration type.</typeparam>
 	/// <typeparam name="TEvent">The event enumeration type.</typeparam>
-	public class PassiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>
+	public abstract class PassiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{

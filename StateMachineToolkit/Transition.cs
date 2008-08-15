@@ -276,16 +276,17 @@ namespace Sanford.StateMachineToolkit
 		{
 			exceptionResult = null;
 
-			try
+			foreach (ActionHandler action in Actions)
 			{
-				foreach (ActionHandler action in Actions)
+				try
 				{
 					action(args);
 				}
-			}
-			catch (Exception ex)
-			{
-				exceptionResult = ex;
+				catch (Exception ex)
+				{
+					StateMachine<TState, TEvent>.OnExceptionThrown(ex);
+					exceptionResult = ex;
+				}
 			}
 		}
 

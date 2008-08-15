@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Sanford.StateMachineToolkit.ActiveStateMachine&lt;TState, TEvent&gt;">
+    <Position X="6.5" Y="0.75" Width="2.75" />
+    <InheritanceLine Type="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="6" Y="2.5" />
+        <Point X="6.5" Y="2.5" />
+      </Path>
+    </InheritanceLine>
+    <AssociationLine Name="queue" Type="Sanford.Threading.DelegateQueue" FixedFromPoint="true">
+      <Path>
+        <Point X="8.5" Y="4.587" />
+        <Point X="8.5" Y="6" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-0.631" Y="0.124" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAICAAAAACAgAQAAAEBAABBAgAAAAAgAAACQAAgAAAA=</HashCode>
+      <FileName>ActiveStateMachine.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="queue" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent&gt;">
+    <Position X="0.5" Y="0.75" Width="2.75" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent&gt;.StateMachineEvent" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>PassiveStateMachine.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAgAQQAAEAAAABAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <FileName>PassiveStateMachine.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Sanford.StateMachineToolkit.State&lt;TState, TEvent&gt;" Collapsed="true">
+    <Position X="1.25" Y="5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAhSAAALQIAA0AAAAAAQABAAUAEAAEABIAAECAAARgk=</HashCode>
+      <FileName>State.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;">
+    <Position X="3.75" Y="0.5" Width="2.25" />
+    <AssociationLine Name="currentState" Type="Sanford.StateMachineToolkit.State&lt;TState, TEvent&gt;" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3.75" Y="4.688" />
+        <Point X="2.542" Y="4.688" />
+        <Point X="2.542" Y="5" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="StateMachineType" Type="Sanford.StateMachineToolkit.StateMachineType">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-1.313" Y="0.072" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAwAAAAFABEgAQAAIEAAACBEgBBABAgKAACABQgAAAA=</HashCode>
+      <FileName>StateMachine.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="currentState" />
+      <Field Name="currentEventContext" />
+      <Property Name="StateMachineType" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Sanford.StateMachineToolkit.EventContext&lt;TState, TEvent&gt;" Collapsed="true">
+    <Position X="2" Y="6.25" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAQACAAAAAgAAAAIAAAAAAAAAAAAAAAAAAAAAAAEAAg=</HashCode>
+      <FileName>StateMachine.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Sanford.Threading.DelegateQueue" Collapsed="true">
+    <Position X="7" Y="6" Width="2" />
+    <TypeIdentifier />
+    <Lollipop Position="0.108" />
+  </Class>
+  <Enum Name="Sanford.StateMachineToolkit.StateMachineType">
+    <Position X="4.75" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>StateMachine.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Tahoma" Size="8.25" />
+</ClassDiagram>
