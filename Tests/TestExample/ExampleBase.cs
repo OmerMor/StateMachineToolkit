@@ -46,24 +46,12 @@ namespace TestExample
 
 		private void InitializeStates()
 		{
-			EntryHandler enS0 = EntryS0;
-			ExitHandler exS0 = ExitS0;
-			stateS0 = new State<States, Events>(States.S1, enS0, exS0);
-			EntryHandler enS1 = EntryS1;
-			ExitHandler exS1 = ExitS1;
-			stateS1 = new State<States, Events>(States.S1, enS1, exS1);
-			EntryHandler enS11 = EntryS11;
-			ExitHandler exS11 = ExitS11;
-			stateS11 = new State<States, Events>(States.S1, enS11, exS11);
-			EntryHandler enS2 = EntryS2;
-			ExitHandler exS2 = ExitS2;
-			stateS2 = new State<States, Events>(States.S1, enS2, exS2);
-			EntryHandler enS21 = EntryS21;
-			ExitHandler exS21 = ExitS21;
-			stateS21 = new State<States, Events>(States.S1, enS21, exS21);
-			EntryHandler enS211 = EntryS211;
-			ExitHandler exS211 = ExitS211;
-			stateS211 = new State<States, Events>(States.S1, enS211, exS211);
+			stateS0 = CreateState(States.S1, EntryS0, ExitS0);
+			stateS1 = CreateState(States.S1, EntryS1, ExitS1);
+			stateS11 = CreateState(States.S1, EntryS11, ExitS11);
+			stateS2 = CreateState(States.S1, EntryS2, ExitS2);
+			stateS21 = CreateState(States.S1, EntryS21, ExitS21);
+			stateS211 = CreateState(States.S1, EntryS211, ExitS211);
 		}
 
 		private void InitializeGuards()
@@ -80,37 +68,20 @@ namespace TestExample
 
 		private void InitializeTransitions()
 		{
-			Transition<States, Events> trans;
-			trans = Transition.Create(null, stateS211);
-			stateS0.Transitions.Add(Events.E, trans);
-			trans = Transition.Create(null, stateS0);
-			stateS1.Transitions.Add(Events.D, trans);
-			trans = Transition.Create(null, stateS2);
-			stateS1.Transitions.Add(Events.C, trans);
-			trans = Transition.Create(null, stateS1);
-			stateS1.Transitions.Add(Events.A, trans);
-			trans = Transition.Create(null, stateS211);
-			stateS1.Transitions.Add(Events.F, trans);
-			trans = Transition.Create(null, stateS11);
-			stateS1.Transitions.Add(Events.B, trans);
-			trans = Transition.Create(null, stateS211);
-			stateS11.Transitions.Add(Events.G, trans);
-			trans = Transition.Create<States, Events>(guardFooIsTrue, null);
-			trans.Actions.Add(actionSetFooToFalse);
-			stateS11.Transitions.Add(Events.H, trans);
-			trans = Transition.Create(null, stateS1);
-			stateS2.Transitions.Add(Events.C, trans);
-			trans = Transition.Create(null, stateS11);
-			stateS2.Transitions.Add(Events.F, trans);
-			trans = Transition.Create(null, stateS211);
-			stateS21.Transitions.Add(Events.B, trans);
-			trans = Transition.Create(guardFooIsFalse, stateS21);
-			trans.Actions.Add(actionSetFooToTrue);
-			stateS21.Transitions.Add(Events.H, trans);
-			trans = Transition.Create(null, stateS21);
-			stateS211.Transitions.Add(Events.D, trans);
-			trans = Transition.Create(null, stateS0);
-			stateS211.Transitions.Add(Events.G, trans);
+			stateS0.Transitions.Add(Events.E, null, stateS211);
+			stateS1.Transitions.Add(Events.D, null, stateS0);
+			stateS1.Transitions.Add(Events.C, null, stateS2);
+			stateS1.Transitions.Add(Events.A, null, stateS1);
+			stateS1.Transitions.Add(Events.F, null, stateS211);
+			stateS1.Transitions.Add(Events.B, null, stateS11);
+			stateS11.Transitions.Add(Events.G, null, stateS211);
+			stateS11.Transitions.Add(Events.H, guardFooIsTrue, null, actionSetFooToFalse);
+			stateS2.Transitions.Add(Events.C, null, stateS1);
+			stateS2.Transitions.Add(Events.F, null, stateS11);
+			stateS21.Transitions.Add(Events.B, null, stateS211);
+			stateS21.Transitions.Add(Events.H, guardFooIsFalse, stateS21, actionSetFooToTrue);
+			stateS211.Transitions.Add(Events.D, null, stateS21);
+			stateS211.Transitions.Add(Events.G, null, stateS0);
 		}
 
 		private void InitializeRelationships()

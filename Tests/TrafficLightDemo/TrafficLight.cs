@@ -21,12 +21,12 @@ namespace TrafficLightDemo
 
 		public TrafficLight()
 		{
-			on = new State<StateID, EventID>(StateID.On, (EntryHandler) EntryOn);
-			off = new State<StateID, EventID>(StateID.Off, (EntryHandler) EntryOff);
-			red = new State<StateID, EventID>(StateID.Red, (EntryHandler) EntryRed);
-			yellow = new State<StateID, EventID>(StateID.Yellow, (EntryHandler) EntryYellow);
-			green = new State<StateID, EventID>(StateID.Green, (EntryHandler) EntryGreen);
-			disposed = new State<StateID, EventID>(StateID.Disposed, (EntryHandler) EntryDisposed);
+			on = CreateState(StateID.On, EntryOn, null);
+			off = CreateState(StateID.Off, EntryOff, null);
+			red = CreateState(StateID.Red, EntryRed, null);
+			yellow = CreateState(StateID.Yellow, EntryYellow, null);
+			green = CreateState(StateID.Green, EntryGreen, null);
+			disposed = CreateState(StateID.Disposed, EntryDisposed, null);
 
 			on.Substates.Add(red);
 			on.Substates.Add(yellow);
@@ -36,25 +36,19 @@ namespace TrafficLightDemo
 
 			on.HistoryType = HistoryType.Shallow;
 
-			Transition<StateID, EventID> trans = Transition.Create(off);
-			on.Transitions.Add(EventID.TurnOff, trans);
+			on.Transitions.Add(EventID.TurnOff, off);
 
-			trans = Transition.Create(on);
-			off.Transitions.Add(EventID.TurnOn, trans);
+			off.Transitions.Add(EventID.TurnOn, off);
 
-			trans = Transition.Create(green);
-			red.Transitions.Add(EventID.TimerElapsed, trans);
+			red.Transitions.Add(EventID.TimerElapsed, green);
 
-			trans = Transition.Create(yellow);
-			green.Transitions.Add(EventID.TimerElapsed, trans);
+			green.Transitions.Add(EventID.TimerElapsed, yellow);
 
-			trans = Transition.Create(red);
-			yellow.Transitions.Add(EventID.TimerElapsed, trans);
+			yellow.Transitions.Add(EventID.TimerElapsed, red);
 
-			trans = Transition.Create(disposed);
-			off.Transitions.Add(EventID.Dispose, trans);
-			trans = Transition.Create(disposed);
-			on.Transitions.Add(EventID.Dispose, trans);
+			off.Transitions.Add(EventID.Dispose, disposed);
+
+			on.Transitions.Add(EventID.Dispose, disposed);
 
 			Initialize(off);
 		}

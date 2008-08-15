@@ -30,11 +30,6 @@ namespace Sanford.StateMachineToolkit
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
 		// Used for queuing events.
-		private readonly SynchronizationContext context;
-		private readonly DelegateQueue queue = new DelegateQueue();
-
-		private volatile bool disposed;
-
 		protected ActiveStateMachine()
 		{
 			context = SynchronizationContext.Current;
@@ -42,7 +37,7 @@ namespace Sanford.StateMachineToolkit
 			                       	{
 			                       		if (args.Error != null)
 			                       		{
-											OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, args.Error));
+			                       			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, args.Error));
 			                       		}
 			                       	};
 			queue.InvokeCompleted += delegate(object sender, InvokeCompletedEventArgs args)
@@ -53,6 +48,16 @@ namespace Sanford.StateMachineToolkit
 			                         		}
 			                         	};
 		}
+
+		~ActiveStateMachine()
+		{
+			Dispose(false);
+		}
+
+		private readonly SynchronizationContext context;
+		private readonly DelegateQueue queue = new DelegateQueue();
+
+		private volatile bool disposed;
 
 		public override StateMachineType StateMachineType
 		{
@@ -81,11 +86,6 @@ namespace Sanford.StateMachineToolkit
 		}
 
 		#endregion
-
-		~ActiveStateMachine()
-		{
-			Dispose(false);
-		}
 
 		protected virtual void Dispose(bool disposing)
 		{
@@ -118,6 +118,16 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
+		protected override void assertMachineIsValid()
+		{
+			base.assertMachineIsValid();
+			if (IsDisposed)
+			{
+				throw new ObjectDisposedException(
+					string.Format("ActiveStateMachine<{0},{1}>", typeof (TState).Name, typeof (TEvent).Name),
+					"State machine was already disposed.");
+			}
+		}
 
 		/// <summary>
 		/// Sends an event to the StateMachine.
@@ -130,55 +140,19 @@ namespace Sanford.StateMachineToolkit
 		/// </param>
 		public override void Send(TEvent eventID, object[] args)
 		{
-			#region Require
-
-			if (!IsInitialized)
-			{
-				throw new InvalidOperationException("State machine was not initialized yet.");
-			}
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException("ActiveStateMachine");
-			}
-
-			#endregion
-
+			assertMachineIsValid();
 			queue.Post(delegate { Dispatch(eventID, args); }, null);
 		}
 
 		public void SendSynchronously(TEvent eventID, params object[] args)
 		{
-			#region Require
-
-			if (!IsInitialized)
-			{
-				throw new InvalidOperationException();
-			}
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException("ActiveStateMachine");
-			}
-
-			#endregion
-
+			assertMachineIsValid();
 			queue.Send(delegate { Dispatch(eventID, args); }, null);
 		}
 
 		protected override void SendPriority(TEvent eventID, object[] args)
 		{
-			#region Require
-
-			if (!IsInitialized)
-			{
-				throw new InvalidOperationException();
-			}
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException("ActiveStateMachine");
-			}
-
-			#endregion
-
+			assertMachineIsValid();
 			queue.PostPriority(delegate { Dispatch(eventID, args); }, null);
 		}
 
@@ -228,6 +202,21 @@ namespace Sanford.StateMachineToolkit
 			else
 			{
 				base.OnTransitionCompleted(args);
+			}
+		}
+
+		protected override void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
+		{
+			if (context != null)
+			{
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<TransitionErrorEventArgs<TState, TEvent>> baseMethod =
+					base.OnExceptionThrown;
+				context.Post(delegate { baseMethod(args); }, null);
+			}
+			else
+			{
+				base.OnExceptionThrown(args);
 			}
 		}
 	}

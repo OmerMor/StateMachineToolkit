@@ -14,13 +14,9 @@ namespace LightSwitchDemo
 			off = new State<StateID, EventID>(StateID.Off, EnterOff, ExitOff);
 			on = new State<StateID, EventID>(StateID.On, EnterOn, ExitOn);
 
-			Transition<StateID, EventID> trans = Transition.Create(on);
-			trans.Actions.Add(TurnOn);
-			off.Transitions.Add(EventID.TurnOn, trans);
+			off.Transitions.Add(EventID.TurnOn, on, TurnOn);
 
-			trans = Transition.Create(off);
-			trans.Actions.Add(TurnOff);
-			on.Transitions.Add(EventID.TurnOff, trans);
+			on.Transitions.Add(EventID.TurnOff, off, TurnOff);
 
 			Initialize(off);
 		}

@@ -41,36 +41,20 @@ namespace Sanford.StateMachineToolkit
 
 		public override void Send(TEvent eventID, object[] args)
 		{
-			#region Require
-
-			if (!IsInitialized)
-			{
-				throw new InvalidOperationException("State machine has not been initialized.");
-			}
-
-			#endregion
-
+			assertMachineIsValid();
 			eventDeque.PushBack(new StateMachineEvent(eventID, args));
 		}
 
 		protected override void SendPriority(TEvent eventID, object[] args)
 		{
-			#region Require
-
-			if (!IsInitialized)
-			{
-				throw new InvalidOperationException("State machine has not been initialized.");
-			}
-
-			#endregion
-
+			assertMachineIsValid();
 			eventDeque.PushFront(new StateMachineEvent(eventID, args));
 		}
 
 		protected override void handleDispatchException(Exception ex)
 		{
 			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
-			throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
+			//throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
 		}
 
 		public override StateMachineType StateMachineType

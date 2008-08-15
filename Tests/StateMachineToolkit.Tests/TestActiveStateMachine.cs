@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
 using Sanford.StateMachineToolkit;
@@ -76,8 +77,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				registerMachineEvents(machine);
 				machine.Start(s1);
 				machine.Send(Events.S1_to_S2);
@@ -93,8 +93,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(args => { throw new Exception(); }, s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, args => { throw new Exception(); }, s2);
 
 				registerMachineEvents(machine);
 				machine.Start(s1);
@@ -112,8 +111,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1, () => { throw new Exception(); }, null);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				registerMachineEvents(machine);
 				args = null;
 				machine.ExceptionThrown += (sender, e) => args = e;
@@ -132,8 +130,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2, () => { throw new Exception(); }, null);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				errorEventArgs = null;
 				machine.ExceptionThrown += (sender, args) => errorEventArgs = args;
 				registerMachineEvents(machine);
@@ -154,8 +151,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1, null, () => { throw new Exception(); });
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				registerMachineEvents(machine);
 				machine.Start(s1);
 				machine.Send(Events.S1_to_S2);
@@ -170,10 +166,8 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
 				int count = 0;
-				t1.Actions.Add(args => { count++; throw new Exception(); });
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2, args => { count++; throw new Exception(); });
 				registerMachineEvents(machine);
 				machine.Start(s1);
 				machine.Send(Events.S1_to_S2);
@@ -189,11 +183,9 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
 				int count = 0;
-				t1.Actions.Add(args => { count++; throw new Exception(); });
-				t1.Actions.Add(args => { count++; throw new Exception(); });
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				ActionHandler actionHandler = args => { count++; throw new Exception(); };
+				s1.Transitions.Add(Events.S1_to_S2, s2, actionHandler, actionHandler);
 				registerMachineEvents(machine);
 				machine.Start(s1);
 				machine.Send(Events.S1_to_S2);
@@ -210,8 +202,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1, null, () => { throw new Exception(); });
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				registerMachineEvents(machine);
 				machine.Start(s1);
 				machine.Send(Events.S2_to_S1);
@@ -226,8 +217,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1, null, () => { throw new Exception(); });
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				registerMachineEvents(machine);
 				machine.TransitionDeclined += (sender, e) => { throw new Exception(); };
 				machine.Start(s1);
@@ -243,11 +233,9 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 				machine.BeginDispatch += (sender, e) =>
 				                         	{
-				                         		Thread.Sleep(100);
 				                         		Assert.AreEqual(States.S1, machine.CurrentStateID);
 				                         		Assert.AreEqual(Events.S1_to_S2, e.EventID);
 				                         		Assert.AreEqual(States.S1, e.SourceStateID);
@@ -269,8 +257,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 
 				registerMachineEvents(machine);
 				machine.BeginDispatch += (sender, e) => { throw new Exception(); };
@@ -287,8 +274,7 @@ namespace StateMachineToolkit.Tests
 			{
 				var s1 = machine.CreateState(States.S1);
 				var s2 = machine.CreateState(States.S2);
-				var t1 = Transition.Create(s2);
-				s1.Transitions.Add(Events.S1_to_S2, t1);
+				s1.Transitions.Add(Events.S1_to_S2, s2);
 
 				registerMachineEvents(machine);
 				machine.TransitionCompleted += (sender, e) => { throw new Exception(); };
@@ -316,7 +302,10 @@ namespace StateMachineToolkit.Tests
 
 		private bool wasCalled()
 		{
-			return wasCalled(TimeSpan.FromMilliseconds(200));
+			TimeSpan timeout = Debugger.IsAttached 
+			                   	? TimeSpan.FromMinutes(1) 
+			                   	: TimeSpan.FromMilliseconds(50);
+			return wasCalled(timeout);
 		}
 
 		public void AssertWasCalled(string message)

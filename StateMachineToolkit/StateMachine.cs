@@ -329,6 +329,14 @@ namespace Sanford.StateMachineToolkit
 		protected abstract void handleDispatchException(Exception ex);
 
 		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
+
+		protected virtual void assertMachineIsValid()
+		{
+			if (!IsInitialized)
+			{
+				throw new InvalidOperationException("State machine was not initialized yet.");
+			}
+		}
 	}
 
 	public class EventContext<TState, TEvent> 

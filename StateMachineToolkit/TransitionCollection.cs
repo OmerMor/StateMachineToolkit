@@ -124,6 +124,65 @@ namespace Sanford.StateMachineToolkit
 		}
 
 		/// <summary>
+		/// Adds a Transition to the collection for the specified event ID.
+		/// </summary>
+		/// <param name="eventID">
+		/// The event ID associated with the Transition.
+		/// </param>
+		/// <param name="targetState">
+		/// The target state of the transtion.
+		/// </param>
+		/// <param name="actions">
+		/// Optional array of actions, to be performed during the transition.
+		/// </param>
+		/// <remarks>
+		/// When a Transition is added to the collection, it is associated with
+		/// the specified event ID. When a State receives an event, it looks up
+		/// the event ID in its TransitionCollection to see if there are any 
+		/// Transitions for the specified event. 
+		/// </remarks>
+		public void Add(TEvent eventID, State<TState, TEvent> targetState, params ActionHandler[] actions)
+		{
+			Transition<TState, TEvent> trans = Transition.Create(targetState);
+			foreach (ActionHandler action in actions)
+			{
+				trans.Actions.Add(action);
+			}
+			Add(eventID, trans);
+		}
+		/// <summary>
+		/// Adds a Transition to the collection for the specified event ID.
+		/// </summary>
+		/// <param name="eventID">
+		/// The event ID associated with the Transition.
+		/// </param>
+		/// <param name="guard">
+		/// The guard to test to determine whether the transition should take 
+		/// place.
+		/// </param>
+		/// <param name="targetState">
+		/// The target state of the transtion.
+		/// </param>
+		/// <param name="actions">
+		/// Optional array of actions, to be performed during the transition.
+		/// </param>
+		/// <remarks>
+		/// When a Transition is added to the collection, it is associated with
+		/// the specified event ID. When a State receives an event, it looks up
+		/// the event ID in its TransitionCollection to see if there are any 
+		/// Transitions for the specified event. 
+		/// </remarks>
+		public void Add(TEvent eventID, GuardHandler guard, State<TState, TEvent> targetState, params ActionHandler[] actions)
+		{
+			Transition<TState, TEvent> trans = Transition.Create(guard, targetState);
+			foreach (ActionHandler action in actions)
+			{
+				trans.Actions.Add(action);
+			}
+			Add(eventID, trans);
+		}
+
+		/// <summary>
 		/// Removes the specified Transition at the specified event ID.
 		/// </summary>
 		/// <param name="eventID">
