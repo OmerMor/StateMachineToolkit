@@ -284,6 +284,33 @@ namespace StateMachineToolkit.Tests
 				Assert.AreEqual(States.S2, machine.CurrentStateID);
 			}
 		}
+
+		[Test]
+		public void Superstate_should_handle_event_when_guard_of_substate_does_not_pass()
+		{
+			using (TestMachine<States, Events> machine = new TestMachine<States, Events>())
+			{
+				var s1 = machine.CreateState(States.S1);
+				var s1_1 = machine.CreateState(States.S1_1);
+				var s1_2 = machine.CreateState(States.S1_2);
+				var s2 = machine.CreateState(States.S2);
+
+				s1.Substates.Add(s1_1);
+				s1.Substates.Add(s1_2);
+				s1.InitialState = s1_1;
+				s1_1.Transitions.Add(Events.E1, s1_2);
+				s1_2.Transitions.Add(Events.E1, args => false, s1_1);
+				s1.Transitions.Add(Events.E1, s2);
+
+				registerMachineEvents(machine);
+				machine.Start(s1);
+				machine.SendSynchronously(Events.E1);
+				Assert.AreEqual(States.S1_2, machine.CurrentStateID);
+				machine.SendSynchronously(Events.E1);
+				Assert.AreEqual(States.S2, machine.CurrentStateID);
+				assertMachineEvents(true, false, true, false);
+			}
+		}
 	}
 
 	public class EventTester
@@ -347,13 +374,16 @@ namespace StateMachineToolkit.Tests
 	public enum States
 	{
 		S1,
-		S2
+		S2,
+		S1_1,
+		S1_2,
 	}
 
 	public enum Events
 	{
 		S1_to_S2,
-		S2_to_S1
+		S2_to_S1,
+		E1,
 	}
 
 	public class _<T>
