@@ -51,7 +51,7 @@
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DocumentationFile>..\build\debug\Sanford.StateMachineToolkit.XML</DocumentationFile>
+    <DocumentationFile>..\build\debug\Sanford.StateMachineToolkit.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -73,7 +73,7 @@
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
     <DefineConstants>TRACE</DefineConstants>
-    <DocumentationFile>..\build\release\Sanford.StateMachineToolkit.XML</DocumentationFile>
+    <DocumentationFile>..\build\release\Sanford.StateMachineToolkit.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
