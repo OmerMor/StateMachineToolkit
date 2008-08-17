@@ -72,7 +72,7 @@ namespace Sanford.StateMachineToolkit.CodeGeneration
 		{
 			fields = new ArrayList();
 
-			BuildFields(states, "Name", "state", typeof (State));
+			BuildFields(states, "Name", "state", typeof(StateMachine<,>.State));
 			BuildFields(guards, "Name", "guard", typeof (GuardHandler));
 			BuildFields(actions, "Name", "action", typeof (ActionHandler));
 		}

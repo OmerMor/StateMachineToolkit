@@ -38,75 +38,39 @@ using System.Diagnostics;
 
 namespace Sanford.StateMachineToolkit
 {
-	public enum StateMachineType
-	{
-		Passive,
-		Active
-	}
-
-	public class TransitionErrorEventArgs<TState, TEvent> : TransitionEventArgs<TState, TEvent>
-		where TState : struct, IComparable, IFormattable /*, IConvertible*/
-		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
-	{
-		private readonly Exception error;
-
-		private static readonly TransitionErrorEventArgs<TState, TEvent> empty = 
-			new TransitionErrorEventArgs<TState, TEvent>(null, null);
-
-		public TransitionErrorEventArgs(EventContext<TState, TEvent> eventContext, Exception error) 
-			: base(eventContext)
-		{
-			this.error = error;
-		}
-
-		public Exception Error
-		{
-			[DebuggerStepThrough]
-			get { return error; }
-		}
-
-		public new static TransitionErrorEventArgs<TState, TEvent> Empty
-		{
-			[DebuggerStepThrough]
-			get { return empty; }
-		}
-
-		public bool MachineInitialized
-		{
-			get { return eventContext != null; }
-		}
-	}
 	/// <summary>
 	/// Represents the base class for all state machines.
 	/// You do not derive your state machine classes from this class but rather from one 
 	/// of its derived classes, either the <see cref="ActiveStateMachine{TState,TEvent}"/> 
 	/// class or the <see cref="PassiveStateMachine{TState,TEvent}"/> class.
 	/// </summary>
-	public abstract class StateMachine<TState, TEvent>
+	public abstract partial class StateMachine<TState, TEvent>
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		public State<TState, TEvent> CreateState(TState stateID)
+		private readonly StateMap m_states = new StateMap();
+
+		public State CreateState(TState stateID)
 		{
-			return new State<TState, TEvent>(stateID);
+			return new State(stateID);
 		}
-		public State<TState, TEvent> CreateState(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
+		public State CreateState(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
 		{
-			return new State<TState, TEvent>(stateID, entryHandler, exitHandler);
+			return new State(stateID, entryHandler, exitHandler);
 		}
 		#region StateMachine Members
 
 		#region Fields
 
 		// The current state.
-		protected State<TState, TEvent> currentState;
+		protected State currentState;
 
 		// The return value of the last action.
 		private object actionResult;
 
 		// Indicates whether the state machine has been initialized.
 		private bool initialized;
-		protected EventContext<TState, TEvent> currentEventContext;
+		protected EventContext currentEventContext;
 
 		[ThreadStatic]
 		private static StateMachine<TState, TEvent> currentStateMachine;
@@ -115,8 +79,10 @@ namespace Sanford.StateMachineToolkit
 
 		#region Events
 
+		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
 		public event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
 		public event EventHandler<TransitionEventArgs<TState, TEvent>> TransitionDeclined;
+		public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
 
 		#endregion
 
@@ -128,9 +94,20 @@ namespace Sanford.StateMachineToolkit
 		/// <param name="initialState">
 		/// The state that will initially receive events from the StateMachine.
 		/// </param>
-		protected abstract void Initialize(State<TState, TEvent> initialState);
+		protected abstract void Initialize(State initialState);
 
-		protected void InitializeStateMachine(State<TState, TEvent> initialState)
+		/// <summary>
+		/// Initializes the StateMachine's initial state.
+		/// </summary>
+		/// <param name="initialStateID">
+		/// The state that will initially receive events from the StateMachine.
+		/// </param>
+		protected void Initialize(TState initialStateID)
+		{
+			Initialize(States[initialStateID]);
+		}
+
+		protected void InitializeStateMachine(State initialState)
 		{
 			#region Require
 
@@ -148,8 +125,8 @@ namespace Sanford.StateMachineToolkit
 			initialized = true;
 			currentStateMachine = this;
 
-			State<TState, TEvent> superstate = initialState;
-			Stack<State<TState, TEvent>> superstateStack = new Stack<State<TState, TEvent>>();
+			State superstate = initialState;
+			Stack<State> superstateStack = new Stack<State>();
 
 			// If the initial state is a substate, travel up the state 
 			// hierarchy in order to descend from the top state to the initial
@@ -176,7 +153,7 @@ namespace Sanford.StateMachineToolkit
 
 		protected abstract void SendPriority(TEvent eventID, params object[] args);
 
-		protected virtual void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
+		protected virtual void OnBeginDispatch(EventContext eventContext)
 		{
 			raiseSafeEvent(BeginDispatch, new TransitionEventArgs<TState, TEvent>(eventContext), true);
 		}
@@ -185,7 +162,7 @@ namespace Sanford.StateMachineToolkit
 		{
 			raiseSafeEvent(TransitionCompleted, args, true);
 		}
-		protected virtual void OnTransitionDeclined(EventContext<TState, TEvent> eventContext)
+		protected virtual void OnTransitionDeclined(EventContext eventContext)
 		{
 			raiseSafeEvent(TransitionDeclined, new TransitionEventArgs<TState, TEvent>(eventContext), true);
 		}
@@ -216,6 +193,72 @@ namespace Sanford.StateMachineToolkit
 				if (!raiseEventOnException) 
 					return;
 				OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			}
+		}
+
+		/// <summary>
+		/// Dispatches events to the current state.
+		/// </summary>
+		/// <param name="eventID">
+		/// The event ID.
+		/// </param>
+		/// <param name="args">
+		/// The data accompanying the event.
+		/// </param>
+		protected virtual void Dispatch(TEvent eventID, object[] args)
+		{
+			// Reset action result.
+			ActionResult = null;
+			currentEventContext = new EventContext(CurrentStateID, eventID, args);
+			currentStateMachine = this;
+			try
+			{
+				OnBeginDispatch(currentEventContext);
+
+				// Dispatch event to the current state.
+				TransitionResult result = currentState.Dispatch(eventID, args);
+
+/*
+				// report errors
+				if (result.Error != null)
+					OnExceptionThrown(
+						new TransitionErrorEventArgs(
+							currentEventContext, result.Error));
+*/
+
+				// If a transition was fired as a result of this event.
+				if (!result.HasFired)
+				{
+					OnTransitionDeclined(currentEventContext);
+					return;
+				}
+
+				currentState = result.NewState;
+
+				TransitionCompletedEventArgs<TState, TEvent> eventArgs =
+					new TransitionCompletedEventArgs<TState, TEvent>(
+						currentState.ID, currentEventContext, ActionResult, result.Error);
+
+				OnTransitionCompleted(eventArgs);
+			}
+			catch (Exception ex)
+			{
+				handleDispatchException(ex);
+			}
+			finally
+			{
+				currentEventContext = null;
+				currentStateMachine = null;
+			}
+		}
+
+		protected abstract void handleDispatchException(Exception ex);
+
+		protected virtual void assertMachineIsValid()
+		{
+			if (!IsInitialized)
+			{
+				throw new InvalidOperationException("State machine was not initialized yet.");
 			}
 		}
 
@@ -264,112 +307,89 @@ namespace Sanford.StateMachineToolkit
 			get { return initialized && currentState != null; }
 		}
 
-		#endregion
-
-		#endregion
-
-		public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
-
-		/// <summary>
-		/// Dispatches events to the current state.
-		/// </summary>
-		/// <param name="eventID">
-		/// The event ID.
-		/// </param>
-		/// <param name="args">
-		/// The data accompanying the event.
-		/// </param>
-		protected virtual void Dispatch(TEvent eventID, object[] args)
+		public StateMap States
 		{
-			// Reset action result.
-			ActionResult = null;
-			currentEventContext = new EventContext<TState, TEvent>(CurrentStateID, eventID, args);
-			currentStateMachine = this;
-			try
+			get { return m_states; }
+		}
+
+		#endregion
+
+		#endregion
+
+		public class StateMap
+		{
+			private readonly Dictionary<TState, State> m_map = new Dictionary<TState, State>();
+
+			public State this[TState state]
 			{
-				OnBeginDispatch(currentEventContext);
-
-				// Dispatch event to the current state.
-				TransitionResult<TState, TEvent> result = currentState.Dispatch(eventID, args);
-
-/*
-				// report errors
-				if (result.Error != null)
-					OnExceptionThrown(
-						new TransitionErrorEventArgs<TState, TEvent>(
-							currentEventContext, result.Error));
-*/
-
-				// If a transition was fired as a result of this event.
-				if (!result.HasFired)
+				get
 				{
-					OnTransitionDeclined(currentEventContext);
-					return;
+					// lazy initialization
+					if (!m_map.ContainsKey(state))
+					{
+						m_map.Add(state, new State(state));
+					}
+					return m_map[state];
 				}
-
-				currentState = result.NewState;
-
-				TransitionCompletedEventArgs<TState, TEvent> eventArgs =
-					new TransitionCompletedEventArgs<TState, TEvent>(
-						currentState.ID, currentEventContext, ActionResult, result.Error);
-
-				OnTransitionCompleted(eventArgs);
-			}
-			catch (Exception ex)
-			{
-				handleDispatchException(ex);
-			}
-			finally
-			{
-				currentEventContext = null;
-				currentStateMachine = null;
 			}
 		}
 
-		protected abstract void handleDispatchException(Exception ex);
-
-		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
-
-		protected virtual void assertMachineIsValid()
+		public void AddTransition(TState source, TEvent eventID, TState target, params ActionHandler[] actions)
 		{
-			if (!IsInitialized)
+			States[source].Transitions.Add(eventID, States[target], actions);
+		}
+		public void AddTransition(TState source, TEvent eventID, GuardHandler guard, TState target, params ActionHandler[] actions)
+		{
+			States[source].Transitions.Add(eventID, guard, States[target], actions);
+		}
+
+		public void SetupSubstates(TState superState, HistoryType historyType, TState initialSubstate, params TState[] additionalSubstates)
+		{
+			States[superState].Substates.Add(States[initialSubstate]);
+			foreach (TState substate in additionalSubstates)
 			{
-				throw new InvalidOperationException("State machine was not initialized yet.");
+				States[superState].Substates.Add(States[substate]);
+			}
+			States[superState].HistoryType = historyType;
+			States[superState].InitialState = States[initialSubstate];
+		}
+		public class EventContext
+		{
+			private readonly TState sourceState;
+			private readonly TEvent currentEvent;
+			private readonly object[] args;
+
+			public EventContext(TState sourceState, TEvent currentEvent, object[] args)
+			{
+				this.sourceState = sourceState;
+				this.currentEvent = currentEvent;
+				this.args = args;
+			}
+
+			public TState SourceState
+			{
+				[DebuggerStepThrough]
+				get { return sourceState; }
+			}
+
+			public object[] Args
+			{
+				[DebuggerStepThrough]
+				get { return args; }
+			}
+
+			public TEvent CurrentEvent
+			{
+				[DebuggerStepThrough]
+				get { return currentEvent; }
 			}
 		}
 	}
 
-	public class EventContext<TState, TEvent> 
-		where TState : struct, IComparable, IFormattable 
-		where TEvent : struct, IComparable, IFormattable
+	public enum StateMachineType
 	{
-		private readonly TState sourceState;
-		private readonly TEvent currentEvent;
-		private readonly object[] args;
-
-		public EventContext(TState sourceState, TEvent currentEvent, object[] args)
-		{
-			this.sourceState = sourceState;
-			this.currentEvent = currentEvent;
-			this.args = args;
-		}
-
-		public TState SourceState
-		{
-			[DebuggerStepThrough]
-			get { return sourceState; }
-		}
-
-		public object[] Args
-		{
-			[DebuggerStepThrough]
-			get { return args; }
-		}
-
-		public TEvent CurrentEvent
-		{
-			[DebuggerStepThrough]
-			get { return currentEvent; }
-		}
+		Passive,
+		Active
 	}
+
 }

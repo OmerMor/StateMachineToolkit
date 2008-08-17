@@ -100,7 +100,7 @@ namespace Sanford.StateMachineToolkit.CodeGeneration
 						new CodeVariableReferenceExpression("ex" + name)
 					};
 
-				CodeObjectCreateExpression stateCreate = new CodeObjectCreateExpression(typeof (State), parameters);
+				CodeObjectCreateExpression stateCreate = new CodeObjectCreateExpression(typeof (StateMachine<,>.State), parameters);
 
 				result.Statements.Add(new CodeAssignStatement(stateField, stateCreate));
 			}

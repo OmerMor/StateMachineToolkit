@@ -1,5 +1,5 @@
 using System;
-using Sanford.Collections;
+using Sanford.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
@@ -20,9 +20,9 @@ namespace Sanford.StateMachineToolkit
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		private readonly Deque eventDeque = new Deque();
+		private readonly Deque<StateMachineEvent> eventDeque = new Deque<StateMachineEvent>();
 
-		protected override void Initialize(State<TState, TEvent> initialState)
+		protected override void Initialize(State initialState)
 		{
 			InitializeStateMachine(initialState);
 		}
@@ -33,7 +33,7 @@ namespace Sanford.StateMachineToolkit
 
 			while (eventDeque.Count > 0)
 			{
-				e = (StateMachineEvent) eventDeque.PopFront();
+				e = eventDeque.PopFront();
 
 				Dispatch(e.EventID, e.GetArgs());
 			}

@@ -107,6 +107,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ActiveStateMachine.cs" />
+    <Compile Include="EventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -188,9 +189,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TransitionCollection.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TransitionCompletedEventArgs.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TransitionResult.cs">

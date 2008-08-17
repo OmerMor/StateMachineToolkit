@@ -97,7 +97,7 @@ namespace Sanford.StateMachineToolkit
 
 		}
 
-		protected override void Initialize(State<TState, TEvent> initialState)
+		protected override void Initialize(State initialState)
 		{
 			Exception initException = null;
 			queue.Send(delegate
@@ -162,12 +162,12 @@ namespace Sanford.StateMachineToolkit
 		}
 
 		private delegate void Func<T>(T arg);
-		protected override void OnBeginDispatch(EventContext<TState, TEvent> eventContext)
+		protected override void OnBeginDispatch(EventContext eventContext)
 		{
 			if (context != null)
 			{
 				// overcome Compiler Warning (level 1) CS1911 
-				Func<EventContext<TState, TEvent>> baseMethod = base.OnBeginDispatch;
+				Func<EventContext> baseMethod = base.OnBeginDispatch;
 				context.Post(delegate { baseMethod(eventContext); }, null);
 			}
 			else
@@ -176,12 +176,12 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
-		protected override void OnTransitionDeclined(EventContext<TState, TEvent> eventContext)
+		protected override void OnTransitionDeclined(EventContext eventContext)
 		{
 			if (context != null)
 			{
 				// overcome Compiler Warning (level 1) CS1911 
-				Func<EventContext<TState, TEvent>> baseMethod = base.OnTransitionDeclined;
+				Func<EventContext> baseMethod = base.OnTransitionDeclined;
 				context.Post(delegate { baseMethod(eventContext); }, null);
 			}
 			else

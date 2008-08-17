@@ -59,7 +59,7 @@ namespace Sanford.StateMachineToolkit.CodeGeneration
 			result.Attributes = MemberAttributes.Private;
 
 			CodeVariableDeclarationStatement transDeclaration =
-				new CodeVariableDeclarationStatement(typeof (Transition), "trans");
+				new CodeVariableDeclarationStatement(typeof (StateMachine<,>.Transition), "trans");
 
 			result.Statements.Add(transDeclaration);
 
@@ -121,7 +121,7 @@ namespace Sanford.StateMachineToolkit.CodeGeneration
 
 					transCreate = new CodeObjectCreateExpression();
 
-					transCreate.CreateType = new CodeTypeReference(typeof (Transition));
+					transCreate.CreateType = new CodeTypeReference(typeof(StateMachine<,>.Transition));
 					transCreate.Parameters.Add(guardReference);
 					transCreate.Parameters.Add(targetStateReference);
 
