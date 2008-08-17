@@ -43,6 +43,7 @@
     <Compile Include="Generic\Deque.Node.cs" />
     <Compile Include="Generic\Deque.Synchronized.cs" />
     <Compile Include="Generic\ICommand.cs" />
+    <Compile Include="Generic\PriorityQueue.cs" />
     <Compile Include="Generic\UndoableList.cs" />
     <Compile Include="Generic\UndoManager.cs" />
     <Compile Include="ImmutableCollections\Array.cs" />
