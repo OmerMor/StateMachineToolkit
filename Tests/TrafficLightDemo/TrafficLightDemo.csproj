@@ -6,7 +6,8 @@
     <ProjectGuid>{6D9B1E76-25A6-4040-BE8E-A326220EFE87}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ApplicationIcon>App.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
     <AssemblyKeyContainerName>
     </AssemblyKeyContainerName>
     <AssemblyName>TrafficLightDemo</AssemblyName>
@@ -115,7 +116,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App.ico" />
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

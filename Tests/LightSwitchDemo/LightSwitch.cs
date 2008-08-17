@@ -5,20 +5,16 @@ namespace LightSwitchDemo
 {
 	public class LightSwitch : PassiveStateMachine<StateID, EventID>
 	{
-		private readonly State<StateID, EventID> on;
-
-		private readonly State<StateID, EventID> off;
-
 		public LightSwitch()
 		{
-			off = new State<StateID, EventID>(StateID.Off, EnterOff, ExitOff);
-			on = new State<StateID, EventID>(StateID.On, EnterOn, ExitOn);
+			States[StateID.Off].EntryHandler += EnterOff;
+			States[StateID.Off].ExitHandler += ExitOff;
+			States[StateID.On].EntryHandler += EnterOn;
+			States[StateID.On].ExitHandler += ExitOn;
+			AddTransition(StateID.Off, EventID.TurnOn, StateID.On, TurnOn);
+			AddTransition(StateID.On, EventID.TurnOff, StateID.Off, TurnOff);
 
-			off.Transitions.Add(EventID.TurnOn, on, TurnOn);
-
-			on.Transitions.Add(EventID.TurnOff, off, TurnOff);
-
-			Initialize(off);
+			Initialize(StateID.Off);
 		}
 
 		#region Entry/Exit Methods

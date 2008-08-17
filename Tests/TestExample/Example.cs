@@ -11,42 +11,42 @@ namespace TestExample
 
 		public void SendA()
 		{
-			Send(Events.A);
+			Send(EventID.A);
 		}
 
 		public void SendB()
 		{
-			Send(Events.B);
+			Send(EventID.B);
 		}
 
 		public void SendC()
 		{
-			Send(Events.C);
+			Send(EventID.C);
 		}
 
 		public void SendD()
 		{
-			Send(Events.D);
+			Send(EventID.D);
 		}
 
 		public void SendE()
 		{
-			Send(Events.E);
+			Send(EventID.E);
 		}
 
 		public void SendF()
 		{
-			Send(Events.F);
+			Send(EventID.F);
 		}
 
 		public void SendG()
 		{
-			Send(Events.G);
+			Send(EventID.G);
 		}
 
 		public void SendH()
 		{
-			Send(Events.H);
+			Send(EventID.H);
 		}
 
 		protected override void EntryS0()

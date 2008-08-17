@@ -2,7 +2,7 @@ using Sanford.StateMachineToolkit;
 
 namespace TestExample
 {
-	public enum Events
+	public enum EventID
 	{
 		E,
 		D,
@@ -14,14 +14,14 @@ namespace TestExample
 		H,
 	}
 
-	public enum States
+	public enum StateID
 	{
 		S1 = 8,
 	}
 
-	public abstract class ExampleBase : PassiveStateMachine<States, Events>
+	public abstract class ExampleBase : PassiveStateMachine<StateID, EventID>
 	{
-		private State<States, Events> stateS0, stateS1, stateS11, stateS2, stateS21, stateS211;
+		private State stateS0, stateS1, stateS11, stateS2, stateS21, stateS211;
 
 		private GuardHandler guardFooIsTrue, guardFooIsFalse;
 
@@ -46,12 +46,12 @@ namespace TestExample
 
 		private void InitializeStates()
 		{
-			stateS0 = CreateState(States.S1, EntryS0, ExitS0);
-			stateS1 = CreateState(States.S1, EntryS1, ExitS1);
-			stateS11 = CreateState(States.S1, EntryS11, ExitS11);
-			stateS2 = CreateState(States.S1, EntryS2, ExitS2);
-			stateS21 = CreateState(States.S1, EntryS21, ExitS21);
-			stateS211 = CreateState(States.S1, EntryS211, ExitS211);
+			stateS0 = CreateState(StateID.S1, EntryS0, ExitS0);
+			stateS1 = CreateState(StateID.S1, EntryS1, ExitS1);
+			stateS11 = CreateState(StateID.S1, EntryS11, ExitS11);
+			stateS2 = CreateState(StateID.S1, EntryS2, ExitS2);
+			stateS21 = CreateState(StateID.S1, EntryS21, ExitS21);
+			stateS211 = CreateState(StateID.S1, EntryS211, ExitS211);
 		}
 
 		private void InitializeGuards()
@@ -68,20 +68,20 @@ namespace TestExample
 
 		private void InitializeTransitions()
 		{
-			stateS0.Transitions.Add(Events.E, null, stateS211);
-			stateS1.Transitions.Add(Events.D, null, stateS0);
-			stateS1.Transitions.Add(Events.C, null, stateS2);
-			stateS1.Transitions.Add(Events.A, null, stateS1);
-			stateS1.Transitions.Add(Events.F, null, stateS211);
-			stateS1.Transitions.Add(Events.B, null, stateS11);
-			stateS11.Transitions.Add(Events.G, null, stateS211);
-			stateS11.Transitions.Add(Events.H, guardFooIsTrue, null, actionSetFooToFalse);
-			stateS2.Transitions.Add(Events.C, null, stateS1);
-			stateS2.Transitions.Add(Events.F, null, stateS11);
-			stateS21.Transitions.Add(Events.B, null, stateS211);
-			stateS21.Transitions.Add(Events.H, guardFooIsFalse, stateS21, actionSetFooToTrue);
-			stateS211.Transitions.Add(Events.D, null, stateS21);
-			stateS211.Transitions.Add(Events.G, null, stateS0);
+			stateS0.Transitions.Add(EventID.E, null, stateS211);
+			stateS1.Transitions.Add(EventID.D, null, stateS0);
+			stateS1.Transitions.Add(EventID.C, null, stateS2);
+			stateS1.Transitions.Add(EventID.A, null, stateS1);
+			stateS1.Transitions.Add(EventID.F, null, stateS211);
+			stateS1.Transitions.Add(EventID.B, null, stateS11);
+			stateS11.Transitions.Add(EventID.G, null, stateS211);
+			stateS11.Transitions.Add(EventID.H, guardFooIsTrue, null, actionSetFooToFalse);
+			stateS2.Transitions.Add(EventID.C, null, stateS1);
+			stateS2.Transitions.Add(EventID.F, null, stateS11);
+			stateS21.Transitions.Add(EventID.B, null, stateS211);
+			stateS21.Transitions.Add(EventID.H, guardFooIsFalse, stateS21, actionSetFooToTrue);
+			stateS211.Transitions.Add(EventID.D, null, stateS21);
+			stateS211.Transitions.Add(EventID.G, null, stateS0);
 		}
 
 		private void InitializeRelationships()
@@ -167,7 +167,7 @@ namespace TestExample
 
 		protected abstract void SetFooToTrue(object[] args);
 
-		public override void Send(Events eventID, object[] args)
+		public override void Send(EventID eventID, object[] args)
 		{
 			base.Send(eventID, args);
 			Execute();
