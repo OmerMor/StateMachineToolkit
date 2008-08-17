@@ -37,7 +37,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Timers;
-using Sanford.Collections;
+using Sanford.Collections.Generic;
 
 namespace Sanford.Threading
 {
@@ -59,7 +59,7 @@ namespace Sanford.Threading
 		private const int DefaultPollingInterval = 10;
 
 		// For queuing the delegates in priority order.
-		private readonly PriorityQueue queue = new PriorityQueue();
+		private readonly PriorityQueue<Task> queue = new PriorityQueue<Task>();
 
 		// Used for timing events for polling the delegate queue.
 		private readonly Timer timer = new Timer(DefaultPollingInterval);
@@ -271,7 +271,7 @@ namespace Sanford.Threading
 			{
 				while (queue.Count > 0)
 				{
-					tasks.Push((Task) queue.Dequeue());
+					tasks.Push(queue.Dequeue());
 				}
 
 				timer.Stop();
@@ -319,7 +319,7 @@ namespace Sanford.Threading
 
 				// Take a look at the first task in the queue to see if it's
 				// time to run it.
-				Task tk = (Task) queue.Peek();
+				Task tk = queue.Peek();
 
 				// The return value from the delegate that will be invoked.
 
@@ -371,7 +371,7 @@ namespace Sanford.Threading
 					{
 						// Take a look at the next task to see if it is
 						// time to run.
-						tk = (Task) queue.Peek();
+						tk = queue.Peek();
 					}
 				}
 			}
