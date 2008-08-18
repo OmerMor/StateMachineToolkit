@@ -143,12 +143,7 @@ namespace Sanford.StateMachineToolkit
 			/// </remarks>
 			public void Add(TEvent eventID, State targetState, params ActionHandler[] actions)
 			{
-				Transition trans = new Transition(targetState);
-				foreach (ActionHandler action in actions)
-				{
-					trans.Actions.Add(action);
-				}
-				Add(eventID, trans);
+				Add(eventID, null, targetState, actions);
 			}
 			/// <summary>
 			/// Adds a Transition to the collection for the specified event ID.
@@ -177,6 +172,7 @@ namespace Sanford.StateMachineToolkit
 				Transition trans = new Transition(guard, targetState);
 				foreach (ActionHandler action in actions)
 				{
+					if(action == null) continue;
 					trans.Actions.Add(action);
 				}
 				Add(eventID, trans);

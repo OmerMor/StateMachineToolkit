@@ -21,6 +21,7 @@ namespace StateMachineToolkit.Tests.Active
 		private EventTester m_transitionDeclinedEvent;
 		private EventTester m_transitionCompletedEvent;
 		private EventTester m_exceptionThrownEvent;
+		private Exception m_lastException;
 
 		private void assertMachineEvents(bool beginDispatchCalled, bool transitionDeclinedCalled,
 		                                 bool transitionCompletedCalled, bool exceptionThrownCalled)
@@ -52,10 +53,16 @@ namespace StateMachineToolkit.Tests.Active
 			m_transitionDeclinedEvent = new EventTester();
 			m_transitionCompletedEvent = new EventTester();
 			m_exceptionThrownEvent = new EventTester();
+			m_lastException = null;
 			machine.BeginDispatch += (sender, e) => m_beginDispatchEvent.Set();
 			machine.TransitionDeclined += (sender, e) => m_transitionDeclinedEvent.Set();
 			machine.TransitionCompleted += (sender, e) => m_transitionCompletedEvent.Set();
-			machine.ExceptionThrown += (sender, e) => m_exceptionThrownEvent.Set();
+			machine.ExceptionThrown += (sender, e) =>
+			                           	{
+											Debug.WriteLine("ExceptionThrown: " + e.Error);
+			                           		m_lastException = e.Error;
+			                           		m_exceptionThrownEvent.Set();
+			                           	};
 		}
 
 		[Test]
@@ -94,8 +101,25 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
-				assertMachineEvents(true, false, false, true);
+				assertMachineEvents(true, true, false, true);
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
+				Assert.IsInstanceOfType(typeof(GuardException), m_lastException);
+			}
+		}
+
+		[Test]
+		public void GuardException_should_not_prevent_machine_from_checking_other_guards()
+		{
+			using (var machine = new TestMachine<State, Event>())
+			{
+				machine.AddTransition(State.S1, Event.S1_to_S2, throwException, State.S2);
+				machine.AddTransition(State.S1, Event.S1_to_S2, delegate { return true; }, State.S1_1);
+
+				registerMachineEvents(machine);
+				machine.Start(State.S1);
+				machine.Send(Event.S1_to_S2);
+				assertMachineEvents(true, false, true, true);
+				Assert.AreEqual(State.S1_1, machine.CurrentStateID);
 			}
 		}
 
@@ -115,6 +139,7 @@ namespace StateMachineToolkit.Tests.Active
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
 			}
 			Assert.AreEqual(false, args.MachineInitialized);
+			Assert.IsInstanceOfType(typeof(EntryException), m_lastException);
 		}
 
 		[Test]
@@ -136,6 +161,7 @@ namespace StateMachineToolkit.Tests.Active
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
 			Assert.AreEqual(Event.S1_to_S2, errorEventArgs.EventID);
+			Assert.IsInstanceOfType(typeof(EntryException), m_lastException);
 		}
 
 		[Test]
@@ -150,6 +176,7 @@ namespace StateMachineToolkit.Tests.Active
 				machine.Send(Event.S1_to_S2);
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
+				Assert.IsInstanceOfType(typeof(ExitException), m_lastException);
 			}
 		}
 		[Test]
@@ -165,6 +192,7 @@ namespace StateMachineToolkit.Tests.Active
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 				Assert.AreEqual(1, count);
+				Assert.IsInstanceOfType(typeof(ActionException), m_lastException);
 			}
 		}
 		[Test]
@@ -182,6 +210,7 @@ namespace StateMachineToolkit.Tests.Active
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 				Assert.AreEqual(2, count);
+				Assert.IsInstanceOfType(typeof(ActionException), m_lastException);
 			}
 		}
 
@@ -316,9 +345,9 @@ namespace StateMachineToolkit.Tests.Active
 
 		private bool wasCalled()
 		{
-			var timeout = Debugger.IsAttached 
+			var timeout = /*Debugger.IsAttached 
 			                   	? TimeSpan.FromMinutes(1) 
-			                   	: TimeSpan.FromMilliseconds(50);
+			                   	:*/ TimeSpan.FromMilliseconds(50);
 			return wasCalled(timeout);
 		}
 

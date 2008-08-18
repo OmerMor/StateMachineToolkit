@@ -244,7 +244,17 @@ namespace Sanford.StateMachineToolkit
 				}
 				catch (Exception ex)
 				{
-					OnExceptionThrown(ex);
+					EventContext context = currentStateMachine.currentEventContext;
+					string message;
+					if (context == null) // state machine initialization phase only
+						message = string.Format("During the state machine initialization an exception was thrown inside the {0} state entry handler.",
+											ID);
+					else
+					message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state entry handler.",
+											context.SourceState, context.CurrentEvent, ID);
+					;
+					EntryException entryException = new EntryException(message, ex);
+					OnExceptionThrown(entryException);
 				}
 			}
 
@@ -263,7 +273,11 @@ namespace Sanford.StateMachineToolkit
 					}
 					catch (Exception ex)
 					{
-						OnExceptionThrown(ex);
+						EventContext context = currentStateMachine.currentEventContext;
+						string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
+													  context.SourceState, context.CurrentEvent, ID);
+						ExitException exitException = new ExitException(message, ex);
+						OnExceptionThrown(exitException);
 					}
 				}
 

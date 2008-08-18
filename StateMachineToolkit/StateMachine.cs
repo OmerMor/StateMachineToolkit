@@ -192,7 +192,8 @@ namespace Sanford.StateMachineToolkit
 			{
 				if (!raiseEventOnException) 
 					return;
-				OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+				OnExceptionThrown(
+					new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
 			}
 		}
 

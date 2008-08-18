@@ -33,20 +33,26 @@ namespace Sanford.StateMachineToolkit
 		protected ActiveStateMachine()
 		{
 			context = SynchronizationContext.Current;
-			queue.PostCompleted += delegate(object sender, PostCompletedEventArgs args)
-			                       	{
-			                       		if (args.Error != null)
-			                       		{
-			                       			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, args.Error));
-			                       		}
-			                       	};
-			queue.InvokeCompleted += delegate(object sender, InvokeCompletedEventArgs args)
-			                         	{
-			                         		if (args.Error != null)
-			                         		{
-			                         			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, args.Error));
-			                         		}
-			                         	};
+			queue.PostCompleted +=
+				delegate(object sender, PostCompletedEventArgs args)
+					{
+						if (args.Error != null)
+						{
+							OnExceptionThrown(
+								new TransitionErrorEventArgs<TState, TEvent>(
+									currentEventContext, args.Error));
+						}
+					};
+			queue.InvokeCompleted +=
+				delegate(object sender, InvokeCompletedEventArgs args)
+					{
+						if (args.Error != null)
+						{
+							OnExceptionThrown(
+								new TransitionErrorEventArgs<TState, TEvent>(
+									currentEventContext, args.Error));
+						}
+					};
 		}
 
 		~ActiveStateMachine()

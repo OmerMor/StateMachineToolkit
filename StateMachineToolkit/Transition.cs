@@ -33,6 +33,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Sanford.StateMachineToolkit
@@ -65,7 +66,7 @@ namespace Sanford.StateMachineToolkit
 			private readonly GuardHandler guard;
 
 			// The actions to perform during the transition.
-			private readonly ActionCollection actions = new ActionCollection();
+			private readonly IList<ActionHandler> actions = new List<ActionHandler>();
 
 			// If an exception is thrown from an action, represents the exception thrown.
 			private Exception exceptionResult;
@@ -81,7 +82,7 @@ namespace Sanford.StateMachineToolkit
 			/// <summary>
 			/// Initializes a new instance of the Transition class.
 			/// </summary>
-			public Transition()
+			public Transition() : this(null, null)
 			{
 			}
 
@@ -92,9 +93,8 @@ namespace Sanford.StateMachineToolkit
 			/// <param name="target">
 			/// The target state of the transition.
 			/// </param>
-			public Transition(State target)
+			public Transition(State target) : this(null, target)
 			{
-				this.target = target;
 			}
 
 			/// <summary>
@@ -105,9 +105,8 @@ namespace Sanford.StateMachineToolkit
 			/// The guard to test to determine whether the transition should take 
 			/// place.
 			/// </param>
-			public Transition(GuardHandler guard)
+			public Transition(GuardHandler guard) : this(guard, null)
 			{
-				this.guard = guard;
 			}
 
 			/// <summary>
@@ -271,7 +270,19 @@ namespace Sanford.StateMachineToolkit
 			private bool ShouldFire(object[] args)
 			{
 				// If there is a guard and it does not evaluate to true.
-				return Guard == null || Guard(args);
+				try
+				{
+					return Guard == null || Guard(args);
+				}
+				catch (Exception ex)
+				{
+					EventContext context = currentStateMachine.currentEventContext;
+					string message = string.Format("During the transition {0}.{1} an exception was thrown inside a guard.",
+												  context.SourceState, context.CurrentEvent);
+					GuardException guardException = new GuardException(message, ex);
+					OnExceptionThrown(guardException);
+					return false;
+				}
 			}
 
 			// Performs the transition's actions.
@@ -287,8 +298,14 @@ namespace Sanford.StateMachineToolkit
 					}
 					catch (Exception ex)
 					{
-						OnExceptionThrown(ex);
-						exceptionResult = ex;
+						EventContext context = currentStateMachine.currentEventContext;
+						TState sourceId = source.ID;
+						TState targetId = target != null ? target.ID : sourceId;
+						string message = string.Format("During the transition {0}.{1} --> {2} an exception was thrown inside a transition action handler.",
+						                              sourceId, context.CurrentEvent, targetId);
+						ActionException actionException = new ActionException(message, ex);
+						OnExceptionThrown(actionException);
+						exceptionResult = actionException;
 					}
 				}
 			}
@@ -312,7 +329,7 @@ namespace Sanford.StateMachineToolkit
 			/// <summary>
 			/// Gets the collection of actions.
 			/// </summary>
-			public ActionCollection Actions
+			public IList<ActionHandler> Actions
 			{
 				get { return actions; }
 			}

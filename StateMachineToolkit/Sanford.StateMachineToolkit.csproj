@@ -101,11 +101,9 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="ActionCollection.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="ActiveStateMachine.cs" />
     <Compile Include="EventArgs.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
