@@ -46,6 +46,7 @@ namespace Sanford.StateMachineToolkit
 
 		public void Add(ActionHandler action)
 		{
+			if (action == null) return;
 			actions.Add(action);
 		}
 
