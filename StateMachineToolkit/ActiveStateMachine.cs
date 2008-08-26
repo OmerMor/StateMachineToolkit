@@ -64,6 +64,7 @@ namespace Sanford.StateMachineToolkit
 		private readonly DelegateQueue queue = new DelegateQueue();
 
 		private volatile bool disposed;
+		private bool m_syncContext;
 
 		public override StateMachineType StateMachineType
 		{
@@ -150,10 +151,30 @@ namespace Sanford.StateMachineToolkit
 			queue.Post(delegate { Dispatch(eventID, args); }, null);
 		}
 
+		/// <summary>
+		/// Sends an event to the StateMachine, and blocks until it processing ends.
+		/// </summary>
+		/// <param name="eventID">
+		/// The event ID.
+		/// </param>
+		/// <param name="args">
+		/// The data accompanying the event.
+		/// </param>
 		public void SendSynchronously(TEvent eventID, params object[] args)
 		{
 			assertMachineIsValid();
-			queue.Send(delegate { Dispatch(eventID, args); }, null);
+			queue.Send(delegate
+			           	{
+			           		m_syncContext = true;
+			           		try
+			           		{
+			           			Dispatch(eventID, args);
+			           		}
+			           		finally
+			           		{
+			           			m_syncContext = false;
+			           		}
+			           	}, null);
 		}
 
 		protected override void SendPriority(TEvent eventID, object[] args)
@@ -170,15 +191,35 @@ namespace Sanford.StateMachineToolkit
 		private delegate void Func<T>(T arg);
 		protected override void OnBeginDispatch(EventContext eventContext)
 		{
-			if (context != null)
+			if (context == null || m_syncContext)
 			{
-				// overcome Compiler Warning (level 1) CS1911 
-				Func<EventContext> baseMethod = base.OnBeginDispatch;
-				context.Post(delegate { baseMethod(eventContext); }, null);
+				base.OnBeginDispatch(eventContext);
 			}
 			else
 			{
-				base.OnBeginDispatch(eventContext);
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<EventContext> baseMethod = base.OnBeginDispatch;
+
+				// we call the synchronous Send method, so that user code could
+				// perform just before dispatch begins, and not concurrently.
+				context.Send(delegate { baseMethod(eventContext); }, null);
+			}
+		}
+
+		protected override void OnBeginTransition(EventContext eventContext)
+		{
+			if (context == null || m_syncContext)
+			{
+				base.OnBeginTransition(eventContext);
+			}
+			else
+			{
+				// overcome Compiler Warning (level 1) CS1911 
+				Func<EventContext> baseMethod = base.OnBeginTransition;
+
+				// we call the synchronous Send method, so that user code could
+				// perform just before dispatch begins, and not concurrently.
+				context.Send(delegate { baseMethod(eventContext); }, null);
 			}
 		}
 
@@ -224,6 +265,12 @@ namespace Sanford.StateMachineToolkit
 			{
 				base.OnExceptionThrown(args);
 			}
+		}
+
+		public void WaitForPendingEvents()
+		{
+			SendOrPostCallback nop = delegate {  };
+			queue.Send(nop, null);
 		}
 	}
 }

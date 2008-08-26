@@ -128,6 +128,7 @@ namespace Sanford.StateMachineToolkit
 
 			#endregion
 
+
 			#region Methods
 
 			/// <summary>
@@ -150,6 +151,8 @@ namespace Sanford.StateMachineToolkit
 				}
 
 				// If the transition should fire.
+				OnBeginTransition();
+
 				State newState = origin;
 
 				// If this is not an internal transition.

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Windows.Forms;
 using NUnit.Framework;
 using Sanford.StateMachineToolkit;
 
@@ -72,6 +73,7 @@ namespace StateMachineToolkit.Tests.Active
 			{
 				registerMachineEvents(machine);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, false);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
@@ -86,6 +88,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, false);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
@@ -101,6 +104,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, true, false, true);
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
 				Assert.IsInstanceOfType(typeof(GuardException), m_lastException);
@@ -118,6 +122,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S1_1, machine.CurrentStateID);
 			}
@@ -135,6 +140,7 @@ namespace StateMachineToolkit.Tests.Active
 				args = null;
 				machine.ExceptionThrown += (sender, e) => args = e;
 				machine.Start(State.S1);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(false, false, false, true);
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
 			}
@@ -155,6 +161,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 
 				Assert.AreEqual(State.S1, errorEventArgs.SourceStateID);
@@ -174,6 +181,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 				Assert.IsInstanceOfType(typeof(ExitException), m_lastException);
@@ -189,6 +197,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 				Assert.AreEqual(1, count);
@@ -207,6 +216,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 				Assert.AreEqual(2, count);
@@ -225,6 +235,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S2_to_S1);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, true, false, false);
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
 			}
@@ -251,6 +262,7 @@ namespace StateMachineToolkit.Tests.Active
 				machine.TransitionDeclined += (sender, e) => throwException();
 				machine.Start(State.S1);
 				machine.Send(Event.S2_to_S1);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, true, false, true);
 				Assert.AreEqual(State.S1, machine.CurrentStateID);
 			}
@@ -272,6 +284,7 @@ namespace StateMachineToolkit.Tests.Active
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2, 123);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, false);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
@@ -288,6 +301,7 @@ namespace StateMachineToolkit.Tests.Active
 				machine.BeginDispatch += (sender, e) => throwException();
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
@@ -303,6 +317,7 @@ namespace StateMachineToolkit.Tests.Active
 				machine.TransitionCompleted += (sender, e) => throwException();
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, true);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
 			}
@@ -324,14 +339,104 @@ namespace StateMachineToolkit.Tests.Active
 				Assert.AreEqual(State.S1_2, machine.CurrentStateID);
 				machine.SendSynchronously(Event.E1);
 				Assert.AreEqual(State.S2, machine.CurrentStateID);
+				machine.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, false);
 			}
 		}
+
+
+
+		[Test]
+		public void BeginDispach_event_should_raise_in_right_context()
+		{
+	 		TestMachine<State, Event> machine = null;
+			var loadedEvent = new EventTester(TimeSpan.FromSeconds(1000));
+			var calledInUiThread = false;
+			EventHandler onLoad =
+				((sender, e) =>
+				 	{
+				 		machine = new TestMachine<State, Event>();
+			 			machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
+			 			var uiThreadId = Thread.CurrentThread.ManagedThreadId;
+			 			machine.BeginDispatch +=
+			 				(sender1, e1) =>
+			 					{
+			 						calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
+			 					};
+				 	});
+			Form form = null;
+			try
+			{
+				ThreadPool.QueueUserWorkItem(
+					state =>
+						{
+							form = new Form();
+							form.Load += onLoad;
+							form.Load += (sender,e) => loadedEvent.Set();
+							Application.Run(form);
+						});
+				loadedEvent.AssertWasCalled("Form was not loaded.");
+				Assert.IsNotNull(machine);
+				machine.Start(State.S1);
+				machine.Send(Event.S1_to_S2);
+				machine.WaitForPendingEvents();
+				Assert.IsTrue(calledInUiThread);
+			}
+			finally
+			{
+				form.Close();
+			}
+		}
+		[Test]
+		public void SendSynchronously_should_not_hang_when_raising_BeginDispach_event()
+		{
+			var finishedEvent = new AutoResetEvent(false);
+			EventHandler onLoad = ((sender, e) =>
+			{
+				using (var machine = new TestMachine<State, Event>())
+				{
+					machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
+					machine.BeginDispatch += (sender1, e1) => { };
+					machine.Start(State.S1);
+					machine.SendSynchronously(Event.S1_to_S2);
+					finishedEvent.Set();
+				}
+			});
+			Form form = null;
+			try
+			{
+				ThreadPool.QueueUserWorkItem(
+					state =>
+						{
+							form = new Form();
+							form.Load += onLoad;
+							Application.Run(form);
+						});
+				var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
+				Assert.IsTrue(finished);
+			}
+			finally
+			{
+				form.Close();
+			}
+		}
+
 	}
 
 	public class EventTester
 	{
 		private readonly AutoResetEvent wasCalledEvent = new AutoResetEvent(false);
+		private readonly TimeSpan m_timeout;
+
+		public EventTester()
+			: this(TimeSpan.FromMilliseconds(0))
+		{
+		}
+
+		public EventTester(TimeSpan timeout)
+		{
+			m_timeout = timeout;
+		}
 
 		public void Set()
 		{
@@ -345,10 +450,7 @@ namespace StateMachineToolkit.Tests.Active
 
 		private bool wasCalled()
 		{
-			var timeout = /*Debugger.IsAttached 
-			                   	? TimeSpan.FromMinutes(1) 
-			                   	:*/ TimeSpan.FromMilliseconds(50);
-			return wasCalled(timeout);
+			return wasCalled(m_timeout);
 		}
 
 		public void AssertWasCalled(string message)

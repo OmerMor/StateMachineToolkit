@@ -80,6 +80,7 @@ namespace Sanford.StateMachineToolkit
 		#region Events
 
 		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
+		public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginTransition;
 		public event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
 		public event EventHandler<TransitionEventArgs<TState, TEvent>> TransitionDeclined;
 		public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
@@ -158,6 +159,11 @@ namespace Sanford.StateMachineToolkit
 			raiseSafeEvent(BeginDispatch, new TransitionEventArgs<TState, TEvent>(eventContext), true);
 		}
 
+		protected virtual void OnBeginTransition(EventContext eventContext)
+		{
+			raiseSafeEvent(BeginTransition, new TransitionEventArgs<TState, TEvent>(eventContext), true);
+		}
+
 		protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
 		{
 			raiseSafeEvent(TransitionCompleted, args, true);
@@ -177,6 +183,11 @@ namespace Sanford.StateMachineToolkit
 			currentStateMachine.OnExceptionThrown(
 				new TransitionErrorEventArgs<TState, TEvent>(
 					currentStateMachine.currentEventContext, ex));
+		}
+
+		internal static void OnBeginTransition()
+		{
+			currentStateMachine.OnBeginTransition(currentStateMachine.currentEventContext);
 		}
 
 		protected void raiseSafeEvent<TArgs>(EventHandler<TArgs> eventHandler, TArgs args, bool raiseEventOnException)
