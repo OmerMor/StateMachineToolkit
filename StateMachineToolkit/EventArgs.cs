@@ -37,96 +37,156 @@ using System.Diagnostics;
 
 namespace Sanford.StateMachineToolkit
 {
+	/// <summary>
+	/// Event data for transition events.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state.</typeparam>
+	/// <typeparam name="TEvent">The type of the event.</typeparam>
 	public class TransitionEventArgs<TState, TEvent> : EventArgs
 		where TState : struct, IComparable, IFormattable
 		where TEvent : struct, IComparable, IFormattable
 	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TransitionEventArgs{TState, TEvent}"/> class.
+		/// </summary>
+		/// <param name="eventContext">The event context.</param>
 		public TransitionEventArgs(StateMachine<TState, TEvent>.EventContext eventContext)
 		{
-			this.eventContext = eventContext;
+			m_eventContext = eventContext;
 		}
 
-		protected StateMachine<TState, TEvent>.EventContext eventContext;
+		/// <summary>
+		/// The event context.
+		/// </summary>
+		protected StateMachine<TState, TEvent>.EventContext m_eventContext;
 
+		/// <summary>
+		/// Gets the event ID.
+		/// </summary>
+		/// <value>The event ID.</value>
 		public TEvent EventID
 		{
 			[DebuggerStepThrough]
-			get { return eventContext.CurrentEvent; }
+			get { return m_eventContext.CurrentEvent; }
 		}
 
+		/// <summary>
+		/// Gets the source state ID.
+		/// </summary>
+		/// <value>The source state ID.</value>
 		public TState SourceStateID
 		{
 			[DebuggerStepThrough]
-			get { return eventContext.SourceState; }
+			get { return m_eventContext.SourceState; }
 		}
 
+		/// <summary>
+		/// Gets the event arguments.
+		/// </summary>
+		/// <value>The event arguments.</value>
 		public object[] EventArgs
 		{
 			[DebuggerStepThrough]
-			get { return eventContext.Args; }
+			get { return m_eventContext.Args; }
 		}
 	}
 
+	/// <summary>
+	/// Event data for the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state.</typeparam>
+	/// <typeparam name="TEvent">The type of the event.</typeparam>
 	public class TransitionErrorEventArgs<TState, TEvent> : TransitionEventArgs<TState, TEvent>
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		private readonly Exception error;
+		private readonly Exception m_error;
 
 		private static readonly TransitionErrorEventArgs<TState, TEvent> empty =
 			new TransitionErrorEventArgs<TState, TEvent>(null, null);
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TransitionErrorEventArgs{TState, TEvent}"/> class.
+		/// </summary>
+		/// <param name="eventContext">The event context.</param>
+		/// <param name="error">The error.</param>
 		public TransitionErrorEventArgs(StateMachine<TState, TEvent>.EventContext eventContext, Exception error)
 			: base(eventContext)
 		{
-			this.error = error;
+			m_error = error;
 		}
 
+		/// <summary>
+		/// Gets the error.
+		/// </summary>
+		/// <value>The error.</value>
 		public Exception Error
 		{
 			[DebuggerStepThrough]
-			get { return error; }
+			get { return m_error; }
 		}
 
+		/// <summary>
+		/// Represents an event with no event data.
+		/// </summary>
 		public new static TransitionErrorEventArgs<TState, TEvent> Empty
 		{
 			[DebuggerStepThrough]
 			get { return empty; }
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether the state machine was initialized.
+		/// </summary>
+		/// <value><c>true</c> if the state machine was initialized; otherwise, <c>false</c>.</value>
 		public bool MachineInitialized
 		{
-			get { return eventContext != null; }
+			get { return m_eventContext != null; }
 		}
 	}
 
 	/// <summary>
-	/// Summary description for TransitionCompletedEventArgs.
+	/// Event data for the <see cref="StateMachine{TState,TEvent}.TransitionCompleted"/> event.
 	/// </summary>
 	public class TransitionCompletedEventArgs<TState, TEvent> : TransitionErrorEventArgs<TState, TEvent>
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		private readonly TState targetStateID;
+		private readonly TState m_targetStateID;
 
-		private readonly object actionResult;
+		private readonly object m_actionResult;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TransitionCompletedEventArgs{TState, TEvent}"/> class.
+		/// </summary>
+		/// <param name="targetStateID">The target state ID.</param>
+		/// <param name="eventContext">The event context.</param>
+		/// <param name="actionResult">The action result.</param>
+		/// <param name="error">The error.</param>
 		public TransitionCompletedEventArgs(TState targetStateID, StateMachine<TState, TEvent>.EventContext eventContext,
 			object actionResult, Exception error)
 			: base(eventContext, error)
 		{
-			this.targetStateID = targetStateID;
-			this.actionResult = actionResult;
+			m_targetStateID = targetStateID;
+			m_actionResult = actionResult;
 		}
 
+		/// <summary>
+		/// Gets the target state ID.
+		/// </summary>
+		/// <value>The target state ID.</value>
 		public TState TargetStateID
 		{
-			get { return targetStateID; }
+			get { return m_targetStateID; }
 		}
 
+		/// <summary>
+		/// Gets the action result.
+		/// </summary>
+		/// <value>The action result.</value>
 		public object ActionResult
 		{
-			get { return actionResult; }
+			get { return m_actionResult; }
 		}
 	}
 }

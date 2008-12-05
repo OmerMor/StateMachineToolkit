@@ -112,6 +112,10 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 			set { trans.target = value; }
 		}
 
+		/// <summary>
+		/// Gets the actions.
+		/// </summary>
+		/// <value>The actions.</value>
 		[XmlElement("action", typeof (ActionRow))]
 		public ActionRowCollection Actions
 		{

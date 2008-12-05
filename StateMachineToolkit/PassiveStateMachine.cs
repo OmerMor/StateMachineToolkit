@@ -22,11 +22,18 @@ namespace Sanford.StateMachineToolkit
 	{
 		private readonly Deque<StateMachineEvent> eventDeque = new Deque<StateMachineEvent>();
 
+		/// <summary>
+		/// Initializes the StateMachine's initial state.
+		/// </summary>
+		/// <param name="initialState">The state that will initially receive events from the StateMachine.</param>
 		protected override void Initialize(State initialState)
 		{
 			InitializeStateMachine(initialState);
 		}
 
+		/// <summary>
+		/// Executes pending events.
+		/// </summary>
 		public void Execute()
 		{
 			StateMachineEvent e;
@@ -39,46 +46,81 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
+		/// <summary>
+		/// Sends an event to the state machine, that might trigger a transition.
+		/// </summary>
+		/// <param name="eventID">The event.</param>
+		/// <param name="args">Optional event arguments.</param>
 		public override void Send(TEvent eventID, object[] args)
 		{
-			assertMachineIsValid();
+			AssertMachineIsValid();
 			eventDeque.PushBack(new StateMachineEvent(eventID, args));
 		}
 
+		/// <summary>
+		/// Sends an event to the state machine, that might trigger a transition.
+		/// This event will have precedence over other pending events that were sent using
+		/// the <see cref="Send"/> method.
+		/// </summary>
+		/// <param name="eventID">The event.</param>
+		/// <param name="args">Optional event arguments.</param>
 		protected override void SendPriority(TEvent eventID, object[] args)
 		{
-			assertMachineIsValid();
+			AssertMachineIsValid();
 			eventDeque.PushFront(new StateMachineEvent(eventID, args));
 		}
 
-		protected override void handleDispatchException(Exception ex)
+		/// <summary>
+		/// Template method for handling dispatch exceptions.
+		/// </summary>
+		/// <param name="ex">The exception.</param>
+		protected override void HandleDispatchException(Exception ex)
 		{
-			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(m_currentEventContext, ex));
 			//throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
 		}
 
+		/// <summary>
+		/// Gets the state machine type: active or passive.
+		/// </summary>
 		public override StateMachineType StateMachineType
 		{
 			get { return StateMachineType.Passive; }
 		}
 
+		/// <summary>
+		/// Encapsulates an event that was sent to the state machine.
+		/// </summary>
 		private class StateMachineEvent
 		{
 			private readonly TEvent eventID;
 
 			private readonly object[] args;
 
+			/// <summary>
+			/// Initializes a new instance of the <see cref="StateMachineEvent"/> class.
+			/// </summary>
+			/// <param name="eventID">The event ID.</param>
+			/// <param name="args">The event arguments.</param>
 			public StateMachineEvent(TEvent eventID, object[] args)
 			{
 				this.eventID = eventID;
 				this.args = args;
 			}
 
+			/// <summary>
+			/// Gets the event arguments.
+			/// </summary>
+			/// <returns>The event arguments.</returns>
 			public object[] GetArgs()
 			{
 				return args;
 			}
 
+			/// <summary>
+			/// Gets the event ID.
+			/// </summary>
+			/// <value>The event ID.</value>
 			public TEvent EventID
 			{
 				get { return eventID; }

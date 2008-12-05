@@ -24,7 +24,7 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 		internal event EventHandler EditCancelled;
 
 		// Raises the EditCancelled event.
-		private void OnEditCancelled()
+		private void onEditCancelled()
 		{
 			EventHandler handler = EditCancelled;
 
@@ -46,6 +46,9 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 
 		#region IEditableObject Members
 
+		/// <summary>
+		/// Pushes changes since the last <see cref="M:System.ComponentModel.IEditableObject.BeginEdit"/> or <see cref="M:System.ComponentModel.IBindingList.AddNew"/> call into the underlying object.
+		/// </summary>
 		public void EndEdit()
 		{
 			if (!isEditing) return;
@@ -54,6 +57,9 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 			isNew = false;
 		}
 
+		/// <summary>
+		/// Discards changes since the last <see cref="M:System.ComponentModel.IEditableObject.BeginEdit"/> call.
+		/// </summary>
 		public void CancelEdit()
 		{
 			if (!isEditing) return;
@@ -62,10 +68,13 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 
 			if (isNew)
 			{
-				OnEditCancelled();
+				onEditCancelled();
 			}
 		}
 
+		/// <summary>
+		/// Begins an edit on an object.
+		/// </summary>
 		public void BeginEdit()
 		{
 			if (isEditing) return;

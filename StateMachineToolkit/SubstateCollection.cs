@@ -148,6 +148,12 @@ namespace Sanford.StateMachineToolkit
 
 			#region IEnumerable Members
 
+			/// <summary>
+			/// Returns an enumerator that iterates through the collection.
+			/// </summary>
+			/// <returns>
+			/// A <see cref="IEnumerator{State}"/> that can be used to iterate through the collection.
+			/// </returns>
 			public IEnumerator<State> GetEnumerator()
 			{
 				return substates.GetEnumerator();

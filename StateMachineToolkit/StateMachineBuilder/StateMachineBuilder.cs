@@ -95,18 +95,18 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 			IDictionary stateHistoryTypes = new SortedList();
 			IDictionary stateInitialStates = new SortedList();
 
-			ReadStates(States, states);
-			ReadEvents(States, events);
-			ReadGuards(States, guards);
-			ReadActions(States, actions);
-			ReadStateTransitions(States, stateTransitions);
-			ReadStateRelationships(States, stateRelationships);
-			ReadStateHistoryTypes(States, stateHistoryTypes);
-			ReadStateInitialStates(States, stateInitialStates);
+			readStates(States, states);
+			readEvents(States, events);
+			readGuards(States, guards);
+			readActions(States, actions);
+			readStateTransitions(States, stateTransitions);
+			readStateRelationships(States, stateRelationships);
+			readStateHistoryTypes(States, stateHistoryTypes);
+			readStateInitialStates(States, stateInitialStates);
 
-			VerifyTargets(States, states);
-			VerifyInitialState(States);
-			VerifyInitialStates(States);
+			verifyTargets(States, states);
+			verifyInitialState(States);
+			verifyInitialStates(States);
 
 			result = new CodeNamespace(NamespaceName);
 
@@ -180,7 +180,7 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 		}
 
 		// Reads all of the state machine's states.
-		private static void ReadStates(StateRowCollection col, IList states)
+		private static void readStates(StateRowCollection col, IList states)
 		{
 			foreach (StateRow row in col)
 			{
@@ -196,12 +196,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 
 				states.Add(row.Name);
 
-				ReadStates(row.Substates, states);
+				readStates(row.Substates, states);
 			}
 		}
 
 		// Reads all of the state machine's events.
-		private static void ReadEvents(StateRowCollection col, IList events)
+		private static void readEvents(StateRowCollection col, IList events)
 		{
 			foreach (StateRow row in col)
 			{
@@ -219,12 +219,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					}
 				}
 
-				ReadEvents(row.Substates, events);
+				readEvents(row.Substates, events);
 			}
 		}
 
 		// Reads all of the state machine's guards.
-		private static void ReadGuards(StateRowCollection col, IList guards)
+		private static void readGuards(StateRowCollection col, IList guards)
 		{
 			foreach (StateRow row in col)
 			{
@@ -237,12 +237,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					}
 				}
 
-				ReadGuards(row.Substates, guards);
+				readGuards(row.Substates, guards);
 			}
 		}
 
 		// Reads all of the state machine's actions.
-		private static void ReadActions(StateRowCollection col, IList actions)
+		private static void readActions(StateRowCollection col, IList actions)
 		{
 			foreach (StateRow row in col)
 			{
@@ -257,12 +257,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					}
 				}
 
-				ReadActions(row.Substates, actions);
+				readActions(row.Substates, actions);
 			}
 		}
 
 		// Reads all of the state machine's state transitions.
-		private static void ReadStateTransitions(StateRowCollection col, IDictionary stateTransitions)
+		private static void readStateTransitions(StateRowCollection col, IDictionary stateTransitions)
 		{
 			foreach (StateRow row in col)
 			{
@@ -271,12 +271,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					stateTransitions.Add(row.Name, row.Transitions);
 				}
 
-				ReadStateTransitions(row.Substates, stateTransitions);
+				readStateTransitions(row.Substates, stateTransitions);
 			}
 		}
 
 		// Reads all of the state machine's substate/superstate relationships.
-		private static void ReadStateRelationships(StateRowCollection col, IDictionary stateRelationships)
+		private static void readStateRelationships(StateRowCollection col, IDictionary stateRelationships)
 		{
 			foreach (StateRow row in col)
 			{
@@ -285,23 +285,23 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					stateRelationships.Add(childRow.Name, row.Name);
 				}
 
-				ReadStateRelationships(row.Substates, stateRelationships);
+				readStateRelationships(row.Substates, stateRelationships);
 			}
 		}
 
 		// Reads all of the state machine's state history types.
-		private static void ReadStateHistoryTypes(StateRowCollection col, IDictionary stateHistoryTypes)
+		private static void readStateHistoryTypes(StateRowCollection col, IDictionary stateHistoryTypes)
 		{
 			foreach (StateRow row in col)
 			{
 				stateHistoryTypes.Add(row.Name, row.HistoryType);
 
-				ReadStateHistoryTypes(row.Substates, stateHistoryTypes);
+				readStateHistoryTypes(row.Substates, stateHistoryTypes);
 			}
 		}
 
 		// Reads all of the state machine's states' initial state.
-		private static void ReadStateInitialStates(StateRowCollection col, IDictionary stateInitialStates)
+		private static void readStateInitialStates(StateRowCollection col, IDictionary stateInitialStates)
 		{
 			foreach (StateRow row in col)
 			{
@@ -310,12 +310,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					stateInitialStates.Add(row.Name, row.InitialState);
 				}
 
-				ReadStateInitialStates(row.Substates, stateInitialStates);
+				readStateInitialStates(row.Substates, stateInitialStates);
 			}
 		}
 
 		// Verifies that all of the targets are known.
-		private static void VerifyTargets(StateRowCollection col, IList states)
+		private static void verifyTargets(StateRowCollection col, IList states)
 		{
 			foreach (StateRow row in col)
 			{
@@ -329,12 +329,12 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					}
 				}
 
-				VerifyTargets(row.Substates, states);
+				verifyTargets(row.Substates, states);
 			}
 		}
 
 		// Verifies that the initial state is known.
-		private void VerifyInitialState(StateRowCollection col)
+		private void verifyInitialState(StateRowCollection col)
 		{
 			bool found = false;
 
@@ -354,7 +354,7 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 
 		// Verifies that each superstate has an initial state and that its 
 		// initial state is known.
-		private static void VerifyInitialStates(StateRowCollection col)
+		private static void verifyInitialStates(StateRowCollection col)
 		{
 			foreach (StateRow row in col)
 			{
@@ -384,7 +384,7 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 					}
 				}
 
-				VerifyInitialStates(row.Substates);
+				verifyInitialStates(row.Substates);
 			}
 		}
 
@@ -441,6 +441,10 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 			set { initialState = value; }
 		}
 
+		/// <summary>
+		/// Gets or sets the type of the state machine.
+		/// </summary>
+		/// <value>The type of the state machine.</value>
 		[XmlAttribute("stateMachineType")]
 		public StateMachineType StateMachineType
 		{

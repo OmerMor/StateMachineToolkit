@@ -56,7 +56,7 @@ namespace Sanford.StateMachineToolkit
 		/// (if one was performed). State machines use this information to update their 
 		/// current State, if necessary.
 		/// </summary>
-		[System.Diagnostics.DebuggerDisplay("{stateID}")]
+		[System.Diagnostics.DebuggerDisplay("{m_stateID}")]
 		public class State
 		{
 			#region State Members
@@ -64,38 +64,48 @@ namespace Sanford.StateMachineToolkit
 			#region Fields
 
 			// The superstate.
-			private State superstate;
+			private State m_superstate;
 
 			// The initial State.
-			private State initialState;
+			private State m_initialState;
 
 			// The history State.
-			private State historyState;
+			private State m_historyState;
 
 			// The collection of substates for the State.
-			private SubstateCollection substates;
+			private SubstateCollection m_substates;
 
 			// The collection of Transitions for the State.
-			private TransitionCollection transitions;
+			private TransitionCollection m_transitions;
 
 			// The result if no transitions fired in response to an event.
-			private static readonly TransitionResult notFiredResult =
+			private static readonly TransitionResult m_notFiredResult =
 				new TransitionResult(false, null, null);
 
 			// Entry action.
-			public event EntryHandler EntryHandler;
-
-			// Exit action.
-			public event ExitHandler ExitHandler;
 
 			// The State's history type.
-			private HistoryType historyType = HistoryType.None;
+			private HistoryType m_historyType = HistoryType.None;
 
 			// The level of the State within the State hierarchy.
-			private int level;
+			private int m_level;
 
 			// A unique integer value representing the State's ID.
-			private TState stateID;
+			private TState m_stateID;
+
+			#endregion
+
+			#region Events
+
+			/// <summary>
+			/// Occurs when entering the state.
+			/// </summary>
+			public event EntryHandler EntryHandler;
+
+			/// <summary>
+			/// Occurs when leaving the state.
+			/// </summary>
+			public event ExitHandler ExitHandler;
 
 			#endregion
 
@@ -176,12 +186,12 @@ namespace Sanford.StateMachineToolkit
 			// Initializes the State.
 			private void InitializeState(TState id)
 			{
-				stateID = id;
+				m_stateID = id;
 
-				substates = new SubstateCollection(this);
-				transitions = new TransitionCollection(this);
+				m_substates = new SubstateCollection(this);
+				m_transitions = new TransitionCollection(this);
 
-				level = 1;
+				m_level = 1;
 			}
 
 			/// <summary>
@@ -196,20 +206,20 @@ namespace Sanford.StateMachineToolkit
 			/// </returns>
 			internal TransitionResult Dispatch(TEvent eventID, object[] args)
 			{
-				return Dispatch(this, eventID, args);
+				return dispatch(this, eventID, args);
 			}
 
 			// Recursively goes up the the state hierarchy until a state is found 
 			// that will handle the event.
-			private TransitionResult Dispatch(State origin, TEvent eventID, object[] args)
+			private TransitionResult dispatch(State origin, TEvent eventID, object[] args)
 			{
-				TransitionResult transResult = notFiredResult;
+				TransitionResult transResult = m_notFiredResult;
 
 				// If there are any Transitions for this event.
-				if (transitions[eventID] != null)
+				if (m_transitions[eventID] != null)
 				{
 					// Iterate through the Transitions until one of them fires.
-					foreach (Transition trans in transitions[eventID])
+					foreach (Transition trans in m_transitions[eventID])
 					{
 						transResult = trans.Fire(origin, args);
 						if (transResult.HasFired)
@@ -224,7 +234,7 @@ namespace Sanford.StateMachineToolkit
 				if (Superstate != null)
 				{
 					// Dispatch the event to the superstate.
-					transResult = Superstate.Dispatch(origin, eventID, args);
+					transResult = Superstate.dispatch(origin, eventID, args);
 				}
 
 				return transResult;
@@ -244,15 +254,16 @@ namespace Sanford.StateMachineToolkit
 				}
 				catch (Exception ex)
 				{
-					EventContext context = currentStateMachine.currentEventContext;
+					EventContext context = s_currentStateMachine.m_currentEventContext;
 					string message;
 					if (context == null) // state machine initialization phase only
 						message = string.Format("During the state machine initialization an exception was thrown inside the {0} state entry handler.",
 											ID);
 					else
-					message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state entry handler.",
-											context.SourceState, context.CurrentEvent, ID);
-					;
+						message =
+							string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state entry handler.",
+							              context.SourceState, context.CurrentEvent, ID);
+
 					EntryException entryException = new EntryException(message, ex);
 					OnExceptionThrown(entryException);
 				}
@@ -273,7 +284,7 @@ namespace Sanford.StateMachineToolkit
 					}
 					catch (Exception ex)
 					{
-						EventContext context = currentStateMachine.currentEventContext;
+						EventContext context = s_currentStateMachine.m_currentEventContext;
 						string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
 													  context.SourceState, context.CurrentEvent, ID);
 						ExitException exitException = new ExitException(message, ex);
@@ -283,12 +294,12 @@ namespace Sanford.StateMachineToolkit
 
 
 				// If there is a superstate.
-				if (superstate != null)
+				if (m_superstate != null)
 				{
 					// Set the superstate's history state to this state. This lets
 					// the superstate remember which of its substates was last 
 					// active before exiting.
-					superstate.historyState = this;
+					m_superstate.m_historyState = this;
 				}
 			}
 
@@ -302,24 +313,24 @@ namespace Sanford.StateMachineToolkit
 				switch (HistoryType)
 				{
 					case HistoryType.None:
-						if (initialState != null)
+						if (m_initialState != null)
 						{
 							// Enter the initial state.
-							result = initialState.EnterShallow();
+							result = m_initialState.enterShallow();
 						}
 						break;
 					case HistoryType.Shallow:
-						if (historyState != null)
+						if (m_historyState != null)
 						{
 							// Enter history state in shallow mode.
-							result = historyState.EnterShallow();
+							result = m_historyState.enterShallow();
 						}
 						break;
 					case HistoryType.Deep:
-						if (historyState != null)
+						if (m_historyState != null)
 						{
 							// Enter history state in deep mode.
-							result = historyState.EnterDeep();
+							result = m_historyState.enterDeep();
 						}
 						break;
 				}
@@ -328,34 +339,34 @@ namespace Sanford.StateMachineToolkit
 			}
 
 			// Enters the state in via its history in shallow mode.
-			private State EnterShallow()
+			private State enterShallow()
 			{
 				Entry();
 
 				State result = this;
 
 				// If the lowest level has not been reached.
-				if (initialState != null)
+				if (m_initialState != null)
 				{
 					// Enter the next level initial state.
-					result = initialState.EnterShallow();
+					result = m_initialState.enterShallow();
 				}
 
 				return result;
 			}
 
 			// Enters the state via its history in deep mode.
-			private State EnterDeep()
+			private State enterDeep()
 			{
 				Entry();
 
 				State result = this;
 
 				// If the lowest level has not been reached.
-				if (historyState != null)
+				if (m_historyState != null)
 				{
 					// Enter the next level history state.
-					result = historyState.EnterDeep();
+					result = m_historyState.enterDeep();
 				}
 
 				return result;
@@ -370,7 +381,7 @@ namespace Sanford.StateMachineToolkit
 			/// </summary>
 			public TState ID
 			{
-				get { return stateID; }
+				get { return m_stateID; }
 			}
 
 			/// <summary>
@@ -378,7 +389,7 @@ namespace Sanford.StateMachineToolkit
 			/// </summary>
 			public SubstateCollection Substates
 			{
-				get { return substates; }
+				get { return m_substates; }
 			}
 
 			/// <summary>
@@ -386,7 +397,7 @@ namespace Sanford.StateMachineToolkit
 			/// </summary>
 			public TransitionCollection Transitions
 			{
-				get { return transitions; }
+				get { return m_transitions; }
 			}
 
 			/// <summary>
@@ -397,7 +408,7 @@ namespace Sanford.StateMachineToolkit
 			/// </remarks>
 			internal State Superstate
 			{
-				get { return superstate; }
+				get { return m_superstate; }
 				set
 				{
 					#region Preconditions
@@ -410,15 +421,15 @@ namespace Sanford.StateMachineToolkit
 
 					#endregion
 
-					superstate = value;
+					m_superstate = value;
 
-					if (superstate == null)
+					if (m_superstate == null)
 					{
 						Level = 1;
 					}
 					else
 					{
-						Level = superstate.Level + 1;
+						Level = m_superstate.Level + 1;
 					}
 				}
 			}
@@ -431,7 +442,7 @@ namespace Sanford.StateMachineToolkit
 			/// </remarks>
 			public State InitialState
 			{
-				get { return initialState; }
+				get { return m_initialState; }
 				set
 				{
 					#region Preconditions
@@ -450,7 +461,7 @@ namespace Sanford.StateMachineToolkit
 
 					#endregion
 
-					initialState = historyState = value;
+					m_initialState = m_historyState = value;
 				}
 			}
 
@@ -459,8 +470,8 @@ namespace Sanford.StateMachineToolkit
 			/// </summary>
 			public HistoryType HistoryType
 			{
-				get { return historyType; }
-				set { historyType = value; }
+				get { return m_historyType; }
+				set { m_historyType = value; }
 			}
 
 			/// <summary>
@@ -468,14 +479,14 @@ namespace Sanford.StateMachineToolkit
 			/// </summary>
 			internal int Level
 			{
-				get { return level; }
+				get { return m_level; }
 				set
 				{
-					level = value;
+					m_level = value;
 
 					foreach (State substate in Substates)
 					{
-						substate.Level = level + 1;
+						substate.Level = m_level + 1;
 					}
 				}
 			}

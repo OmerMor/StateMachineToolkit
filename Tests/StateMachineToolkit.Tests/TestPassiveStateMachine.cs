@@ -95,7 +95,7 @@ namespace StateMachineToolkit.Tests.Passive
 			machine.Start(s1);
 			machine.Send(EventID.S1_to_S2);
 			machine.Execute();
-			assertMachineEvents(true, false, false, true);
+			assertMachineEvents(true, true, false, true);
 			Assert.AreEqual(StateID.S1, machine.CurrentStateID);
 		}
 

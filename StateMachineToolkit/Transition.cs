@@ -145,7 +145,7 @@ namespace Sanford.StateMachineToolkit
 			/// </returns>
 			internal TransitionResult Fire(State origin, object[] args)
 			{
-				if (!ShouldFire(args))
+				if (!shouldFire(args))
 				{
 					return notFiredResult;
 				}
@@ -168,14 +168,14 @@ namespace Sanford.StateMachineToolkit
 						o = o.Superstate;
 					}
 
-					Fire(Source, Target, args);
+					fire(Source, Target, args);
 
 					newState = Target.EnterByHistory();
 				}
 				// Else if this is an internal transition.
 				else
 				{
-					PerformActions(args);
+					performActions(args);
 				}
 
 				return new TransitionResult(true, newState, exceptionResult);
@@ -183,7 +183,7 @@ namespace Sanford.StateMachineToolkit
 
 			// Recursively traverses the state hierarchy, exiting states along 
 			// the way, performing the action, and entering states to the target.
-			private void Fire(State s, State t, object[] args)
+			private void fire(State s, State t, object[] args)
 			{
 				/*
 				 * There are several state transition traversal cases:
@@ -220,13 +220,13 @@ namespace Sanford.StateMachineToolkit
 				if (s == Target)
 				{
 					s.Exit();
-					PerformActions(args);
+					performActions(args);
 					Target.Entry();
 				}
 				// Handles case 2 after traversing from the target to the source.
 				else if (s == t)
 				{
-					PerformActions(args);
+					performActions(args);
 					return;
 				}
 				// Handles case 4.
@@ -235,7 +235,7 @@ namespace Sanford.StateMachineToolkit
 				else if (s.Superstate == t.Superstate)
 				{
 					s.Exit();
-					PerformActions(args);
+					performActions(args);
 					t.Entry();
 				}
 				else
@@ -250,27 +250,27 @@ namespace Sanford.StateMachineToolkit
 					if (s.Level > t.Level)
 					{
 						s.Exit();
-						Fire(s.Superstate, t, args);
+						fire(s.Superstate, t, args);
 					}
 					// Handles case 2.
 					// Handles case 5c.
 					else if (s.Level < t.Level)
 					{
-						Fire(s, t.Superstate, args);
+						fire(s, t.Superstate, args);
 						t.Entry();
 					}
 					// Handles case 5a.
 					else
 					{
 						s.Exit();
-						Fire(s.Superstate, t.Superstate, args);
+						fire(s.Superstate, t.Superstate, args);
 						t.Entry();
 					}
 				}
 			}
 
 			// Returns a value indicating whether or not the transition should fire.
-			private bool ShouldFire(object[] args)
+			private bool shouldFire(object[] args)
 			{
 				// If there is a guard and it does not evaluate to true.
 				try
@@ -279,7 +279,7 @@ namespace Sanford.StateMachineToolkit
 				}
 				catch (Exception ex)
 				{
-					EventContext context = currentStateMachine.currentEventContext;
+					EventContext context = s_currentStateMachine.m_currentEventContext;
 					string message = string.Format("During the transition {0}.{1} an exception was thrown inside a guard.",
 												  context.SourceState, context.CurrentEvent);
 					GuardException guardException = new GuardException(message, ex);
@@ -289,7 +289,7 @@ namespace Sanford.StateMachineToolkit
 			}
 
 			// Performs the transition's actions.
-			private void PerformActions(object[] args)
+			private void performActions(object[] args)
 			{
 				exceptionResult = null;
 
@@ -301,7 +301,7 @@ namespace Sanford.StateMachineToolkit
 					}
 					catch (Exception ex)
 					{
-						EventContext context = currentStateMachine.currentEventContext;
+						EventContext context = s_currentStateMachine.m_currentEventContext;
 						TState sourceId = source.ID;
 						TState targetId = target != null ? target.ID : sourceId;
 						string message = string.Format("During the transition {0}.{1} --> {2} an exception was thrown inside a transition action handler.",

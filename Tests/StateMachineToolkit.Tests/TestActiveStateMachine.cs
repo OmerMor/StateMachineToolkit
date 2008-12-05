@@ -349,32 +349,32 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void BeginDispach_event_should_raise_in_right_context()
 		{
-	 		TestMachine<State, Event> machine = null;
+			TestMachine<State, Event> machine = null;
 			var loadedEvent = new EventTester(TimeSpan.FromSeconds(1000));
 			var calledInUiThread = false;
 			EventHandler onLoad =
 				((sender, e) =>
-				 	{
-				 		machine = new TestMachine<State, Event>();
-			 			machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-			 			var uiThreadId = Thread.CurrentThread.ManagedThreadId;
-			 			machine.BeginDispatch +=
-			 				(sender1, e1) =>
-			 					{
-			 						calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
-			 					};
-				 	});
+				{
+					machine = new TestMachine<State, Event>();
+					machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
+					var uiThreadId = Thread.CurrentThread.ManagedThreadId;
+					machine.BeginDispatch +=
+						(sender1, e1) =>
+						{
+							calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
+						};
+				});
 			Form form = null;
 			try
 			{
 				ThreadPool.QueueUserWorkItem(
 					state =>
-						{
-							form = new Form();
-							form.Load += onLoad;
-							form.Load += (sender,e) => loadedEvent.Set();
-							Application.Run(form);
-						});
+					{
+						form = new Form();
+						form.Load += onLoad;
+						form.Load += (sender, e) => loadedEvent.Set();
+						Application.Run(form);
+					});
 				loadedEvent.AssertWasCalled("Form was not loaded.");
 				Assert.IsNotNull(machine);
 				machine.Start(State.S1);
@@ -387,6 +387,7 @@ namespace StateMachineToolkit.Tests.Active
 				form.Close();
 			}
 		}
+
 		[Test]
 		public void SendSynchronously_should_not_hang_when_raising_BeginDispach_event()
 		{

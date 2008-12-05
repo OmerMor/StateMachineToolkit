@@ -29,55 +29,83 @@ namespace Sanford.StateMachineToolkit
 		where TState : struct, IComparable, IFormattable /*, IConvertible*/
 		where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
 	{
-		// Used for queuing events.
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+		/// </summary>
 		protected ActiveStateMachine()
 		{
-			context = SynchronizationContext.Current;
-			queue.PostCompleted +=
+			m_context = SynchronizationContext.Current;
+			m_queue.PostCompleted +=
 				delegate(object sender, PostCompletedEventArgs args)
 					{
 						if (args.Error != null)
 						{
 							OnExceptionThrown(
 								new TransitionErrorEventArgs<TState, TEvent>(
-									currentEventContext, args.Error));
+									m_currentEventContext, args.Error));
 						}
 					};
-			queue.InvokeCompleted +=
+			m_queue.InvokeCompleted +=
 				delegate(object sender, InvokeCompletedEventArgs args)
 					{
 						if (args.Error != null)
 						{
 							OnExceptionThrown(
 								new TransitionErrorEventArgs<TState, TEvent>(
-									currentEventContext, args.Error));
+									m_currentEventContext, args.Error));
 						}
 					};
 		}
 
+		/// <summary>
+		/// Releases unmanaged resources and performs other cleanup operations before the
+		/// <see cref="ActiveStateMachine{TState, TEvent}"/> is reclaimed by garbage collection.
+		/// </summary>
 		~ActiveStateMachine()
 		{
 			Dispose(false);
 		}
 
-		private readonly SynchronizationContext context;
-		private readonly DelegateQueue queue = new DelegateQueue();
+		#region Fields
 
-		private volatile bool disposed;
+		private readonly SynchronizationContext m_context;
+		// Used for queuing events.
+		private readonly DelegateQueue m_queue = new DelegateQueue();
+
+		private volatile bool m_disposed;
 		private bool m_syncContext;
 
+		#endregion
+
+		#region Properties
+
+		/// <summary>
+		/// Gets the state machine type: active or passive.
+		/// </summary>
+		/// <value></value>
 		public override StateMachineType StateMachineType
 		{
 			get { return StateMachineType.Active; }
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this instance is disposed.
+		/// </summary>
+		/// <value>
+		/// 	<c>true</c> if this instance is disposed; otherwise, <c>false</c>.
+		/// </value>
 		protected bool IsDisposed
 		{
-			get { return disposed; }
+			get { return m_disposed; }
 		}
+
+		#endregion
 
 		#region IDisposable Members
 
+		/// <summary>
+		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+		/// </summary>
 		public virtual void Dispose()
 		{
 			#region Guard
@@ -94,20 +122,31 @@ namespace Sanford.StateMachineToolkit
 
 		#endregion
 
+		#region Methods
+
+		/// <summary>
+		/// Releases unmanaged and - optionally - managed resources
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; 
+		/// <c>false</c> to release only unmanaged resources.</param>
 		protected virtual void Dispose(bool disposing)
 		{
 			if (!disposing) return;
-			disposed = true;
-			queue.Dispose();
+			m_disposed = true;
+			m_queue.Dispose();
 
 			GC.SuppressFinalize(this);
 
 		}
 
+		/// <summary>
+		/// Initializes the StateMachine's initial state.
+		/// </summary>
+		/// <param name="initialState">The state that will initially receive events from the StateMachine.</param>
 		protected override void Initialize(State initialState)
 		{
 			Exception initException = null;
-			queue.Send(delegate
+			m_queue.Send(delegate
 			           	{
 			           		try
 			           		{
@@ -125,9 +164,14 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
-		protected override void assertMachineIsValid()
+		/// <summary>
+		/// Asserts that the state machine was initialized and not disposed.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">Thrown when the state machine was not initialized.</exception>
+		/// <exception cref="ObjectDisposedException">Thrown when the state machine was already disposed.</exception>"
+		protected override void AssertMachineIsValid()
 		{
-			base.assertMachineIsValid();
+			base.AssertMachineIsValid();
 			if (IsDisposed)
 			{
 				throw new ObjectDisposedException(
@@ -147,8 +191,8 @@ namespace Sanford.StateMachineToolkit
 		/// </param>
 		public override void Send(TEvent eventID, object[] args)
 		{
-			assertMachineIsValid();
-			queue.Post(delegate { Dispatch(eventID, args); }, null);
+			AssertMachineIsValid();
+			m_queue.Post(delegate { Dispatch(eventID, args); }, null);
 		}
 
 		/// <summary>
@@ -162,8 +206,8 @@ namespace Sanford.StateMachineToolkit
 		/// </param>
 		public void SendSynchronously(TEvent eventID, params object[] args)
 		{
-			assertMachineIsValid();
-			queue.Send(delegate
+			AssertMachineIsValid();
+			m_queue.Send(delegate
 			           	{
 			           		m_syncContext = true;
 			           		try
@@ -177,21 +221,35 @@ namespace Sanford.StateMachineToolkit
 			           	}, null);
 		}
 
+		/// <summary>
+		/// Sends an event to the state machine, that might trigger a transition.
+		/// This event will have precedence over other pending events that were sent using
+		/// the <see cref="Send"/> method.
+		/// </summary>
+		/// <param name="eventID">The event.</param>
+		/// <param name="args">Optional event arguments.</param>
 		protected override void SendPriority(TEvent eventID, object[] args)
 		{
-			assertMachineIsValid();
-			queue.PostPriority(delegate { Dispatch(eventID, args); }, null);
+			AssertMachineIsValid();
+			m_queue.PostPriority(delegate { Dispatch(eventID, args); }, null);
 		}
 
-		protected override void handleDispatchException(Exception ex)
+		/// <summary>
+		/// Template method for handling dispatch exceptions.
+		/// </summary>
+		/// <param name="ex">The exception.</param>
+		protected override void HandleDispatchException(Exception ex)
 		{
-			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(currentEventContext, ex));
+			OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(m_currentEventContext, ex));
 		}
 
-		private delegate void Func<T>(T arg);
+		/// <summary>
+		/// Raises the <see cref="StateMachine{TState,TEvent}.BeginDispatch"/> event.
+		/// </summary>
+		/// <param name="eventContext">The event context.</param>
 		protected override void OnBeginDispatch(EventContext eventContext)
 		{
-			if (context == null || m_syncContext)
+			if (m_context == null || m_syncContext)
 			{
 				base.OnBeginDispatch(eventContext);
 			}
@@ -202,13 +260,17 @@ namespace Sanford.StateMachineToolkit
 
 				// we call the synchronous Send method, so that user code could
 				// perform just before dispatch begins, and not concurrently.
-				context.Send(delegate { baseMethod(eventContext); }, null);
+				m_context.Send(delegate { baseMethod(eventContext); }, null);
 			}
 		}
 
+		/// <summary>
+		/// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event.
+		/// </summary>
+		/// <param name="eventContext">The event context.</param>
 		protected override void OnBeginTransition(EventContext eventContext)
 		{
-			if (context == null || m_syncContext)
+			if (m_context == null || m_syncContext)
 			{
 				base.OnBeginTransition(eventContext);
 			}
@@ -219,17 +281,21 @@ namespace Sanford.StateMachineToolkit
 
 				// we call the synchronous Send method, so that user code could
 				// perform just before dispatch begins, and not concurrently.
-				context.Send(delegate { baseMethod(eventContext); }, null);
+				m_context.Send(delegate { baseMethod(eventContext); }, null);
 			}
 		}
 
+		/// <summary>
+		/// Raises the <see cref="StateMachine{TState,TEvent}.TransitionDeclined"/> event.
+		/// </summary>
+		/// <param name="eventContext">The event context.</param>
 		protected override void OnTransitionDeclined(EventContext eventContext)
 		{
-			if (context != null)
+			if (m_context != null)
 			{
 				// overcome Compiler Warning (level 1) CS1911 
 				Func<EventContext> baseMethod = base.OnTransitionDeclined;
-				context.Post(delegate { baseMethod(eventContext); }, null);
+				m_context.Post(delegate { baseMethod(eventContext); }, null);
 			}
 			else
 			{
@@ -237,14 +303,19 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
+		/// <summary>
+		/// Raises the <see cref="StateMachine{TState,TEvent}.TransitionCompleted"/> event.
+		/// </summary>
+		/// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent}"/> instance
+		/// containing the event data.</param>
 		protected override void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
 		{
-			if (context != null)
+			if (m_context != null)
 			{
 				// overcome Compiler Warning (level 1) CS1911 
 				Func<TransitionCompletedEventArgs<TState, TEvent>> baseMethod = 
 					base.OnTransitionCompleted;
-				context.Post(delegate { baseMethod(args); }, null);
+				m_context.Post(delegate { baseMethod(args); }, null);
 			}
 			else
 			{
@@ -252,14 +323,18 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
+		/// <summary>
+		/// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event.
+		/// </summary>
+		/// <param name="args">The <see cref="TransitionErrorEventArgs{TState,TEvent}"/> instance containing the event data.</param>
 		protected override void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
 		{
-			if (context != null)
+			if (m_context != null)
 			{
 				// overcome Compiler Warning (level 1) CS1911 
 				Func<TransitionErrorEventArgs<TState, TEvent>> baseMethod =
 					base.OnExceptionThrown;
-				context.Post(delegate { baseMethod(args); }, null);
+				m_context.Post(delegate { baseMethod(args); }, null);
 			}
 			else
 			{
@@ -267,10 +342,17 @@ namespace Sanford.StateMachineToolkit
 			}
 		}
 
+		/// <summary>
+		/// Waits for pending events.
+		/// </summary>
 		public void WaitForPendingEvents()
 		{
 			SendOrPostCallback nop = delegate {  };
-			queue.Send(nop, null);
+			m_queue.Send(nop, null);
 		}
+
+		#endregion
+
+		private delegate void Func<T>(T arg);
 	}
 }
