@@ -50,22 +50,22 @@ namespace Sanford.Threading
 		#region Fields
 
 		// The thread for processing delegates.
-		private Thread delegateThread;
+		private Thread m_delegateThread;
 
 		// The deque for holding delegates.
-		private readonly Deque<DelegateQueueAsyncResult> delegateDeque = new Deque<DelegateQueueAsyncResult>();
+		private readonly Deque<DelegateQueueAsyncResult> m_delegateDeque = new Deque<DelegateQueueAsyncResult>();
 
 		// The object to use for locking.
-		private readonly object lockObject = new object();
+		private readonly object m_lockObject = new object();
 
 		// The synchronization context in which this DelegateQueue was created.
-		private readonly SynchronizationContext context;
+		private readonly SynchronizationContext m_context;
 
 		// Inidicates whether the delegate queue has been disposed.
-		private volatile bool disposed;
+		private volatile bool m_disposed;
 
 		// Thread ID counter for all DelegateQueues.
-		private static volatile uint threadID;
+		private static int s_threadID;
 
 		private ISite site;
 
@@ -96,7 +96,7 @@ namespace Sanford.Threading
 		{
 			InitializeDelegateQueue();
 
-			context = Current ?? new SynchronizationContext();
+			m_context = Current ?? new SynchronizationContext();
 		}
 
 		/// <summary>
@@ -124,23 +124,23 @@ namespace Sanford.Threading
 		private void InitializeDelegateQueue()
 		{
 			// Create thread for processing delegates.
-			delegateThread = new Thread(DelegateProcedure);
+			m_delegateThread = new Thread(DelegateProcedure);
 
-			lock (lockObject)
+			lock (m_lockObject)
 			{
 				// Increment to next thread ID.
-				threadID++;
+			    int newThreadID = Interlocked.Increment(ref s_threadID);
 
-				// Create name for thread.
-				delegateThread.Name = "Delegate Queue Thread: " + threadID;
+			    // Create name for thread.
+                m_delegateThread.Name = "Delegate Queue Thread: " + newThreadID;
 
 				// Start thread.
-				delegateThread.Start();
+				m_delegateThread.Start();
 
-				Debug.WriteLine(delegateThread.Name + " Started.");
+				Debug.WriteLine(m_delegateThread.Name + " Started.");
 
 				// Wait for signal from thread that it is running.
-				Monitor.Wait(lockObject);
+				Monitor.Wait(m_lockObject);
 			}
 		}
 
@@ -151,11 +151,11 @@ namespace Sanford.Threading
 		protected virtual void Dispose(bool disposing)
 		{
 			if (!disposing) return;
-			lock (lockObject)
+			lock (m_lockObject)
 			{
-				disposed = true;
+				m_disposed = true;
 
-				Monitor.Pulse(lockObject);
+				Monitor.Pulse(m_lockObject);
 
 				GC.SuppressFinalize(this);
 			}
@@ -183,7 +183,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -202,12 +202,12 @@ namespace Sanford.Threading
 			{
 				result = new DelegateQueueAsyncResult(this, method, args, false, NotificationType.BeginInvokeCompleted);
 
-				lock (lockObject)
+				lock (m_lockObject)
 				{
 					// Put the method at the front of the queue.
-					delegateDeque.PushFront(result);
+					m_delegateDeque.PushFront(result);
 
-					Monitor.Pulse(lockObject);
+					Monitor.Pulse(m_lockObject);
 				}
 			}
 				// Else BeginInvokePriority was called from the same thread in which the 
@@ -255,7 +255,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -274,12 +274,12 @@ namespace Sanford.Threading
 			{
 				DelegateQueueAsyncResult result = new DelegateQueueAsyncResult(this, method, args, false, NotificationType.None);
 
-				lock (lockObject)
+				lock (m_lockObject)
 				{
 					// Put the method at the back of the queue.
-					delegateDeque.PushFront(result);
+					m_delegateDeque.PushFront(result);
 
-					Monitor.Pulse(lockObject);
+					Monitor.Pulse(m_lockObject);
 				}
 
 				// Wait for the result of the method invocation.
@@ -312,7 +312,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -323,15 +323,15 @@ namespace Sanford.Threading
 
 			#endregion
 
-			lock (lockObject)
+			lock (m_lockObject)
 			{
 				DelegateQueueAsyncResult result = new DelegateQueueAsyncResult(this, d, new object[] {state}, false,
 				                                                               NotificationType.PostCompleted);
 
 				// Put the method at the front of the queue.
-				delegateDeque.PushFront(result);
+				m_delegateDeque.PushFront(result);
 
-				Monitor.Pulse(lockObject);
+				Monitor.Pulse(m_lockObject);
 			}
 		}
 
@@ -352,10 +352,10 @@ namespace Sanford.Threading
 		// Processes and invokes delegates.
 		private void DelegateProcedure()
 		{
-			lock (lockObject)
+			lock (m_lockObject)
 			{
 				// Signal the constructor that the thread is now running.
-				Monitor.Pulse(lockObject);
+				Monitor.Pulse(m_lockObject);
 			}
 
 			// Set this DelegateQueue as the SynchronizationContext for this thread.
@@ -368,34 +368,34 @@ namespace Sanford.Threading
 			while (true)
 			{
 				// Critical section.
-				lock (lockObject)
+				lock (m_lockObject)
 				{
 					// If the DelegateQueue has been disposed, break out of loop; we're done.
-					if (disposed)
+					if (m_disposed)
 					{
 						break;
 					}
 
 					// If there are delegates waiting to be invoked.
-					if (delegateDeque.Count > 0)
+					if (m_delegateDeque.Count > 0)
 					{
-						result = delegateDeque.PopFront();
+						result = m_delegateDeque.PopFront();
 					}
 						// Else there are no delegates waiting to be invoked.
 					else
 					{
 						// Wait for next delegate.
-						Monitor.Wait(lockObject);
+						Monitor.Wait(m_lockObject);
 
 						// If the DelegateQueue has been disposed, break out of loop; we're done.
-						if (disposed)
+						if (m_disposed)
 						{
 							break;
 						}
 
-						Debug.Assert(delegateDeque.Count > 0);
+						Debug.Assert(m_delegateDeque.Count > 0);
 
-						result = delegateDeque.PopFront();
+						result = m_delegateDeque.PopFront();
 					}
 				}
 
@@ -438,7 +438,7 @@ namespace Sanford.Threading
 				}
 			}
 
-			Debug.WriteLine(delegateThread.Name + " Finished");
+			Debug.WriteLine(m_delegateThread.Name + " Finished");
 		}
 
 		// Raises the InvokeCompleted event.
@@ -448,7 +448,7 @@ namespace Sanford.Threading
 
 			if (handler != null)
 			{
-				context.Post(delegate { handler(this, e); }, null);
+				m_context.Post(delegate { handler(this, e); }, null);
 			}
 		}
 
@@ -459,7 +459,7 @@ namespace Sanford.Threading
 
 			if (handler != null)
 			{
-				context.Post(delegate { handler(this, e); }, null);
+				m_context.Post(delegate { handler(this, e); }, null);
 			}
 		}
 
@@ -470,7 +470,7 @@ namespace Sanford.Threading
 
 			if (handler != null)
 			{
-				context.Post(delegate { handler(this, e); }, null);
+				m_context.Post(delegate { handler(this, e); }, null);
 			}
 		}
 
@@ -513,7 +513,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -524,12 +524,12 @@ namespace Sanford.Threading
 
 			#endregion
 
-			lock (lockObject)
+			lock (m_lockObject)
 			{
-				delegateDeque.PushBack(new DelegateQueueAsyncResult(this, d, new object[] {state}, false,
+				m_delegateDeque.PushBack(new DelegateQueueAsyncResult(this, d, new object[] {state}, false,
 				                                                    NotificationType.PostCompleted));
 
-				Monitor.Pulse(lockObject);
+				Monitor.Pulse(m_lockObject);
 			}
 		}
 
@@ -580,7 +580,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -597,11 +597,11 @@ namespace Sanford.Threading
 			{
 				result = new DelegateQueueAsyncResult(this, method, args, false, NotificationType.BeginInvokeCompleted);
 
-				lock (lockObject)
+				lock (m_lockObject)
 				{
-					delegateDeque.PushBack(result);
+					m_delegateDeque.PushBack(result);
 
-					Monitor.Pulse(lockObject);
+					Monitor.Pulse(m_lockObject);
 				}
 			}
 			else
@@ -633,7 +633,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -684,7 +684,7 @@ namespace Sanford.Threading
 		{
 			#region Require
 
-			if (disposed)
+			if (m_disposed)
 			{
 				throw new ObjectDisposedException("DelegateQueue");
 			}
@@ -701,11 +701,11 @@ namespace Sanford.Threading
 			{
 				DelegateQueueAsyncResult result = new DelegateQueueAsyncResult(this, method, args, false, NotificationType.None);
 
-				lock (lockObject)
+				lock (m_lockObject)
 				{
-					delegateDeque.PushBack(result);
+					m_delegateDeque.PushBack(result);
 
-					Monitor.Pulse(lockObject);
+					Monitor.Pulse(m_lockObject);
 				}
 
 				returnValue = EndInvoke(result);
@@ -732,7 +732,7 @@ namespace Sanford.Threading
 		/// </remarks>
 		public bool InvokeRequired
 		{
-			get { return Thread.CurrentThread.ManagedThreadId != delegateThread.ManagedThreadId; }
+			get { return Thread.CurrentThread.ManagedThreadId != m_delegateThread.ManagedThreadId; }
 		}
 
 		#endregion
@@ -746,7 +746,7 @@ namespace Sanford.Threading
 		{
 			#region Guards
 
-			if (disposed)
+			if (m_disposed)
 			{
 				return;
 			}

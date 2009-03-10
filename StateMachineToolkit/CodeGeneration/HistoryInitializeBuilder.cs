@@ -11,94 +11,94 @@ using System.Collections;
 
 namespace Sanford.StateMachineToolkit.CodeGeneration
 {
-	/// <summary>
-	/// Builds the method responsible for initializing states' history type.
-	/// </summary>
-	internal class HistoryInitializeBuilder
-	{
-		#region HistoryInitializeBuilder Members
+    /// <summary>
+    /// Builds the method responsible for initializing states' history type.
+    /// </summary>
+    internal class HistoryInitializeBuilder
+    {
+        #region HistoryInitializeBuilder Members
 
-		#region Fields
+        #region Fields
 
-		// The state machine's states and their history types.
-		private readonly IDictionary stateHistoryTypes;
+        // The state machine's states and their history types.
+        private readonly IDictionary stateHistoryTypes;
 
-		// The built method.
-		private CodeMemberMethod result = new CodeMemberMethod();
+        // The built method.
+        private CodeMemberMethod result = new CodeMemberMethod();
 
-		#endregion
+        #endregion
 
-		#region Construction
+        #region Construction
 
-		/// <summary>
-		/// Initializes a new instance of the HistoryInitializeBuilder class.
-		/// </summary>
-		/// <param name="stateHistoryTypes">
-		/// The states and their history types.
-		/// </param>
-		public HistoryInitializeBuilder(IDictionary stateHistoryTypes)
-		{
-			this.stateHistoryTypes = stateHistoryTypes;
-		}
+        /// <summary>
+        /// Initializes a new instance of the HistoryInitializeBuilder class.
+        /// </summary>
+        /// <param name="stateHistoryTypes">
+        /// The states and their history types.
+        /// </param>
+        public HistoryInitializeBuilder(IDictionary stateHistoryTypes)
+        {
+            this.stateHistoryTypes = stateHistoryTypes;
+        }
 
-		#endregion
+        #endregion
 
-		#region Methods
+        #region Methods
 
-		/// <summary>
-		/// Builds the method.
-		/// </summary>
-		public void Build()
-		{
-			result = new CodeMemberMethod();
-			result.Name = "InitializeHistoryTypes";
-			result.Attributes = MemberAttributes.Private;
+        /// <summary>
+        /// Builds the method.
+        /// </summary>
+        public void Build()
+        {
+            result = new CodeMemberMethod();
+            result.Name = "InitializeHistoryTypes";
+            result.Attributes = MemberAttributes.Private;
 
-			CodeThisReferenceExpression thisReference =
-				new CodeThisReferenceExpression();
-			CodeTypeReferenceExpression historyType = new CodeTypeReferenceExpression(typeof (HistoryType));
+            CodeThisReferenceExpression thisReference =
+                new CodeThisReferenceExpression();
+            CodeTypeReferenceExpression historyType = new CodeTypeReferenceExpression(typeof (HistoryType));
 
-			foreach (DictionaryEntry entry in stateHistoryTypes)
-			{
-				CodeFieldReferenceExpression stateField = new CodeFieldReferenceExpression(
-					thisReference, "state" + entry.Key);
+            foreach (DictionaryEntry entry in stateHistoryTypes)
+            {
+                CodeFieldReferenceExpression stateField = new CodeFieldReferenceExpression(
+                    thisReference, "state" + entry.Key);
 
-				CodePropertyReferenceExpression historyTypeProperty = new CodePropertyReferenceExpression(
-					stateField, "HistoryType");
+                CodePropertyReferenceExpression historyTypeProperty = new CodePropertyReferenceExpression(
+                    stateField, "HistoryType");
 
-				CodeFieldReferenceExpression historyTypeField;
-				if (string.IsNullOrEmpty(entry.Value.ToString()))
-				{
-					historyTypeField = new CodeFieldReferenceExpression(
-						historyType, "None");
-				}
-				else
-				{
-					historyTypeField = new CodeFieldReferenceExpression(
-						historyType, entry.Value.ToString());
-				}
+                CodeFieldReferenceExpression historyTypeField;
+                if (string.IsNullOrEmpty(entry.Value.ToString()))
+                {
+                    historyTypeField = new CodeFieldReferenceExpression(
+                        historyType, "None");
+                }
+                else
+                {
+                    historyTypeField = new CodeFieldReferenceExpression(
+                        historyType, entry.Value.ToString());
+                }
 
-				CodeAssignStatement historyTypeAssign = new CodeAssignStatement(
-					historyTypeProperty, historyTypeField);
+                CodeAssignStatement historyTypeAssign = new CodeAssignStatement(
+                    historyTypeProperty, historyTypeField);
 
-				result.Statements.Add(historyTypeAssign);
-			}
-		}
+                result.Statements.Add(historyTypeAssign);
+            }
+        }
 
-		#endregion
+        #endregion
 
-		#region Properties
+        #region Properties
 
-		/// <summary>
-		/// Gets the built method.
-		/// </summary>
-		public CodeMemberMethod Result
-		{
-			get { return result; }
-		}
+        /// <summary>
+        /// Gets the built method.
+        /// </summary>
+        public CodeMemberMethod Result
+        {
+            get { return result; }
+        }
 
-		#endregion
+        #endregion
 
-		#endregion
-	}
+        #endregion
+    }
 }

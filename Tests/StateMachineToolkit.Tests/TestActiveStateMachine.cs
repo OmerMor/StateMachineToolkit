@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using NUnit.Framework;
 using Sanford.StateMachineToolkit;
+using Timer=System.Threading.Timer;
 
 namespace StateMachineToolkit.Tests.Active
 {
@@ -18,7 +20,8 @@ namespace StateMachineToolkit.Tests.Active
 	[TestFixture]
 	public class TestActiveStateMachine
 	{
-		private EventTester m_beginDispatchEvent;
+        private EventTester m_beginDispatchEvent;
+        private EventTester m_beginTransitionEvent;
 		private EventTester m_transitionDeclinedEvent;
 		private EventTester m_transitionCompletedEvent;
 		private EventTester m_exceptionThrownEvent;
@@ -48,7 +51,7 @@ namespace StateMachineToolkit.Tests.Active
 				m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
 		}
 
-		private void registerMachineEvents(StateMachine<State, Event> machine)
+		private void registerMachineEvents(IStateMachine<State, Event> machine)
 		{
 			m_beginDispatchEvent = new EventTester();
 			m_transitionDeclinedEvent = new EventTester();
@@ -333,13 +336,14 @@ namespace StateMachineToolkit.Tests.Active
 				machine.AddTransition(State.S1_2, Event.E1, args => false, State.S1_2);
 				machine.AddTransition(State.S1, Event.E1, State.S2);
 
-				registerMachineEvents(machine);
+			    IActiveStateMachine<State, Event> m = machine;
+                registerMachineEvents(m);
 				machine.Start(State.S1);
+                m.SendSynchronously(Event.E1);
+                Assert.AreEqual(State.S1_2, m.CurrentStateID);
 				machine.SendSynchronously(Event.E1);
-				Assert.AreEqual(State.S1_2, machine.CurrentStateID);
-				machine.SendSynchronously(Event.E1);
-				Assert.AreEqual(State.S2, machine.CurrentStateID);
-				machine.WaitForPendingEvents();
+                Assert.AreEqual(State.S2, m.CurrentStateID);
+                m.WaitForPendingEvents();
 				assertMachineEvents(true, false, true, false);
 			}
 		}
@@ -353,7 +357,7 @@ namespace StateMachineToolkit.Tests.Active
 			var loadedEvent = new EventTester(TimeSpan.FromSeconds(1000));
 			var calledInUiThread = false;
 			EventHandler onLoad =
-				((sender, e) =>
+				(sender, e) =>
 				{
 					machine = new TestMachine<State, Event>();
 					machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
@@ -363,7 +367,7 @@ namespace StateMachineToolkit.Tests.Active
 						{
 							calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
 						};
-				});
+				};
 			Form form = null;
 			try
 			{
@@ -474,6 +478,85 @@ namespace StateMachineToolkit.Tests.Active
 		}
 	}
 	
+    public class TraficLightStateMachine : ActiveStateMachine<TraficLightStates,TraficLightEvents>
+    {
+        private readonly Timer m_timer;
+        private static readonly TimeSpan INTERVAL = TimeSpan.FromSeconds(2);
+
+        public TraficLightStateMachine()
+        {
+            AddTransition(TraficLightStates.Off,        TraficLightEvents.Start,        TraficLightStates.On,   x => start());
+            AddTransition(TraficLightStates.On,         TraficLightEvents.Stop,         TraficLightStates.Off,  x => stop());
+            AddTransition(TraficLightStates.Red,        TraficLightEvents.TimeEvent,    TraficLightStates.RedYellow);
+            AddTransition(TraficLightStates.RedYellow,  TraficLightEvents.TimeEvent,    TraficLightStates.Green);
+            AddTransition(TraficLightStates.Green,      TraficLightEvents.TimeEvent,    TraficLightStates.Yellow);
+            AddTransition(TraficLightStates.Yellow,     TraficLightEvents.TimeEvent,    TraficLightStates.Red);
+
+            SetupSubstates(TraficLightStates.On, HistoryType.None, TraficLightStates.Red,
+                           TraficLightStates.RedYellow, TraficLightStates.Green, TraficLightStates.Yellow);
+
+            m_timer = new Timer(state => Send(TraficLightEvents.TimeEvent));
+
+            Initialize(TraficLightStates.Off);
+        }
+
+        private void start()
+        {
+            m_timer.Change(INTERVAL, INTERVAL);
+        }
+        private void stop()
+        {
+            m_timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            SendPriority(TraficLightEvents.Stop);
+            WaitForPendingEvents();
+
+            m_timer.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
+    public class TrafficLightApp
+    {
+        public void Main()
+        {
+            using(var form = new Form())
+            using (var sm = new TraficLightStateMachine())
+            {
+                var state = new Label {Location = new Point {X = 20, Y = 20}};
+                sm.TransitionCompleted += (sender, args) => state.Text = args.TargetStateID.ToString();
+                var start = new Button {Text = "Start", Location = new Point {X = 20, Y = 60}};
+                var stop = new Button {Text = "Stop", Location = new Point {X = 20, Y = 100}};
+
+                start.Click += (sender, args) => sm.Send(TraficLightEvents.Start);
+                stop.Click += (sender, args) => sm.SendSynchronously(TraficLightEvents.Stop);
+
+                form.Controls.AddRange(new Control[] {state, start, stop});
+
+                Application.Run(form);
+            }
+        }
+    }
+
+    public enum TraficLightStates
+    {
+        On,
+        Off,
+        Green,
+        Yellow,
+        Red,
+        RedYellow
+    }
+    public enum TraficLightEvents
+    {
+        Start,
+        Stop,
+        TimeEvent
+    }
+
 	public class TestMachine : ActiveStateMachine<State, Event>
 	{
 		public TestMachine()

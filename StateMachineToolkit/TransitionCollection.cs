@@ -37,191 +37,192 @@ using System.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
-	public abstract partial class StateMachine<TState, TEvent>
-	{
-		/// <summary>
-		/// The TransitionCollection represents a collection of Transitions. 
-		/// Each <see cref="State"/> object has its own 
-		/// TransitionCollection for holding its Transitions.<para/>
-		/// When a Transition is added to a State's <see cref="State.Transitions"/>, 
-		/// it is registered with an event ID. This event ID is a value identifying an event a 
-		/// <see cref="State"/> can receive. When a <see cref="State"/> 
-		/// receives an event, it uses the event's ID to check to see if it has any Transitions for that 
-		/// event (as described above).
-		/// </summary>
-		public class TransitionCollection
-		{
-			#region TransitionCollection Members
+    public abstract partial class StateMachine<TState, TEvent>
+    {
+        /// <summary>
+        /// The TransitionCollection represents a collection of Transitions. 
+        /// Each <see cref="State"/> object has its own 
+        /// TransitionCollection for holding its Transitions.<para/>
+        /// When a Transition is added to a State's <see cref="State.Transitions"/>, 
+        /// it is registered with an event ID. This event ID is a value identifying an event a 
+        /// <see cref="State"/> can receive. When a <see cref="State"/> 
+        /// receives an event, it uses the event's ID to check to see if it has any Transitions for that 
+        /// event (as described above).
+        /// </summary>
+        public class TransitionCollection
+        {
+            #region TransitionCollection Members
 
-			#region Fields
+            #region Fields
 
-			// The owner of the collection.
-			private readonly State owner;
+            // The owner of the collection.
+            private readonly State m_owner;
 
-			// The table of transitions.
-			private readonly Dictionary<TEvent, List<Transition>> transitions
-				= new Dictionary<TEvent, List<Transition>>();
+            // The table of transitions.
+            private readonly Dictionary<TEvent, List<Transition>> m_transitions
+                = new Dictionary<TEvent, List<Transition>>();
 
-			#endregion
+            #endregion
 
-			#region Construction
+            #region Construction
 
-			/// <summary>
-			/// Initializes a new instance of the TransitionCollection class with 
-			/// the specified number of events.
-			/// </summary>
-			/// <param name="owner">
-			/// The state that owns the TransitionCollection.
-			/// </param>
-			public TransitionCollection(State owner)
-			{
-				this.owner = owner;
-			}
+            /// <summary>
+            /// Initializes a new instance of the TransitionCollection class with 
+            /// the specified number of events.
+            /// </summary>
+            /// <param name="owner">
+            /// The state that owns the TransitionCollection.
+            /// </param>
+            public TransitionCollection(State owner)
+            {
+                m_owner = owner;
+            }
 
-			#endregion
+            #endregion
 
-			#region Methods
+            #region Methods
 
-			/// <summary>
-			/// Adds a Transition to the collection for the specified event ID.
-			/// </summary>
-			/// <param name="eventID">
-			/// The event ID associated with the Transition.
-			/// </param>
-			/// <param name="trans">
-			/// The Transition to add.
-			/// </param>
-			/// <remarks>
-			/// When a Transition is added to the collection, it is associated with
-			/// the specified event ID. When a State receives an event, it looks up
-			/// the event ID in its TransitionCollection to see if there are any 
-			/// Transitions for the specified event. 
-			/// </remarks>
-			public void Add(TEvent eventID, Transition trans)
-			{
-				#region Preconditions
+            /// <summary>
+            /// Adds a Transition to the collection for the specified event ID.
+            /// </summary>
+            /// <param name="eventID">
+            /// The event ID associated with the Transition.
+            /// </param>
+            /// <param name="trans">
+            /// The Transition to add.
+            /// </param>
+            /// <remarks>
+            /// When a Transition is added to the collection, it is associated with
+            /// the specified event ID. When a State receives an event, it looks up
+            /// the event ID in its TransitionCollection to see if there are any 
+            /// Transitions for the specified event. 
+            /// </remarks>
+            public void Add(TEvent eventID, Transition trans)
+            {
+                #region Preconditions
 
-				if (trans.Source != null)
-				{
-					throw new InvalidOperationException(
-						"This Transition has already been added to another State.");
-				}
+                if (trans.Source != null)
+                {
+                    throw new InvalidOperationException(
+                        "This Transition has already been added to another State.");
+                }
 
-				#endregion
+                #endregion
 
-				// Set the transition's source.
-				trans.Source = owner;
+                // Set the transition's source.
+                trans.Source = m_owner;
 
-				// If there are no Transitions for the specified event ID.
-				if (!transitions.ContainsKey(eventID))
-				{
-					// Create new list of Transitions for the specified event ID.
-					transitions[eventID] = new List<Transition>();
-				}
+                // If there are no Transitions for the specified event ID.
+                if (!m_transitions.ContainsKey(eventID))
+                {
+                    // Create new list of Transitions for the specified event ID.
+                    m_transitions[eventID] = new List<Transition>();
+                }
 
-				// Add Transition.
-				transitions[eventID].Add(trans);
-			}
+                // Add Transition.
+                m_transitions[eventID].Add(trans);
+            }
 
-			/// <summary>
-			/// Adds a Transition to the collection for the specified event ID.
-			/// </summary>
-			/// <param name="eventID">
-			/// The event ID associated with the Transition.
-			/// </param>
-			/// <param name="targetState">
-			/// The target state of the transtion.
-			/// </param>
-			/// <param name="actions">
-			/// Optional array of actions, to be performed during the transition.
-			/// </param>
-			/// <remarks>
-			/// When a Transition is added to the collection, it is associated with
-			/// the specified event ID. When a State receives an event, it looks up
-			/// the event ID in its TransitionCollection to see if there are any 
-			/// Transitions for the specified event. 
-			/// </remarks>
-			public void Add(TEvent eventID, State targetState, params ActionHandler[] actions)
-			{
-				Add(eventID, null, targetState, actions);
-			}
-			/// <summary>
-			/// Adds a Transition to the collection for the specified event ID.
-			/// </summary>
-			/// <param name="eventID">
-			/// The event ID associated with the Transition.
-			/// </param>
-			/// <param name="guard">
-			/// The guard to test to determine whether the transition should take 
-			/// place.
-			/// </param>
-			/// <param name="targetState">
-			/// The target state of the transtion.
-			/// </param>
-			/// <param name="actions">
-			/// Optional array of actions, to be performed during the transition.
-			/// </param>
-			/// <remarks>
-			/// When a Transition is added to the collection, it is associated with
-			/// the specified event ID. When a State receives an event, it looks up
-			/// the event ID in its TransitionCollection to see if there are any 
-			/// Transitions for the specified event. 
-			/// </remarks>
-			public void Add(TEvent eventID, GuardHandler guard, State targetState, params ActionHandler[] actions)
-			{
-				Transition trans = new Transition(guard, targetState);
-				foreach (ActionHandler action in actions)
-				{
-					if(action == null) continue;
-					trans.Actions.Add(action);
-				}
-				Add(eventID, trans);
-			}
+            /// <summary>
+            /// Adds a Transition to the collection for the specified event ID.
+            /// </summary>
+            /// <param name="eventID">
+            /// The event ID associated with the Transition.
+            /// </param>
+            /// <param name="targetState">
+            /// The target state of the transtion.
+            /// </param>
+            /// <param name="actions">
+            /// Optional array of actions, to be performed during the transition.
+            /// </param>
+            /// <remarks>
+            /// When a Transition is added to the collection, it is associated with
+            /// the specified event ID. When a State receives an event, it looks up
+            /// the event ID in its TransitionCollection to see if there are any 
+            /// Transitions for the specified event. 
+            /// </remarks>
+            public void Add(TEvent eventID, State targetState, params ActionHandler[] actions)
+            {
+                Add(eventID, null, targetState, actions);
+            }
 
-			/// <summary>
-			/// Removes the specified Transition at the specified event ID.
-			/// </summary>
-			/// <param name="eventID">
-			/// The event ID associated with the Transition.
-			/// </param>
-			/// <param name="trans">
-			/// The Transition to remove.
-			/// </param>
-			public void Remove(TEvent eventID, Transition trans)
-			{
-				if (!transitions.ContainsKey(eventID))
-					return;
+            /// <summary>
+            /// Adds a Transition to the collection for the specified event ID.
+            /// </summary>
+            /// <param name="eventID">
+            /// The event ID associated with the Transition.
+            /// </param>
+            /// <param name="guard">
+            /// The guard to test to determine whether the transition should take 
+            /// place.
+            /// </param>
+            /// <param name="targetState">
+            /// The target state of the transtion.
+            /// </param>
+            /// <param name="actions">
+            /// Optional array of actions, to be performed during the transition.
+            /// </param>
+            /// <remarks>
+            /// When a Transition is added to the collection, it is associated with
+            /// the specified event ID. When a State receives an event, it looks up
+            /// the event ID in its TransitionCollection to see if there are any 
+            /// Transitions for the specified event. 
+            /// </remarks>
+            public void Add(TEvent eventID, GuardHandler guard, State targetState, params ActionHandler[] actions)
+            {
+                Transition trans = new Transition(guard, targetState);
+                foreach (ActionHandler action in actions)
+                {
+                    if (action == null) continue;
+                    trans.Actions.Add(action);
+                }
+                Add(eventID, trans);
+            }
 
-				// If there are Transitions at the specified event id.
-				transitions[eventID].Remove(trans);
+            /// <summary>
+            /// Removes the specified Transition at the specified event ID.
+            /// </summary>
+            /// <param name="eventID">
+            /// The event ID associated with the Transition.
+            /// </param>
+            /// <param name="trans">
+            /// The Transition to remove.
+            /// </param>
+            public void Remove(TEvent eventID, Transition trans)
+            {
+                if (!m_transitions.ContainsKey(eventID))
+                    return;
 
-				// If there are no more Transitions at the specified event id.
-				if (transitions[eventID].Count == 0)
-				{
-					// Indicate that there are no Transitions at this event id.
-					transitions.Remove(eventID);
-				}
-			}
+                // If there are Transitions at the specified event id.
+                m_transitions[eventID].Remove(trans);
 
-			#endregion
+                // If there are no more Transitions at the specified event id.
+                if (m_transitions[eventID].Count == 0)
+                {
+                    // Indicate that there are no Transitions at this event id.
+                    m_transitions.Remove(eventID);
+                }
+            }
 
-			#region Properties
+            #endregion
 
-			/// <summary>
-			/// Gets a collection of Transitions at the specified event ID.
-			/// </summary>
-			/// <remarks>
-			/// If there are no Transitions at the specified event ID, the value
-			/// of the collection will be null.
-			/// </remarks>
-			public IEnumerable<Transition> this[TEvent eventID]
-			{
-				get { return transitions.ContainsKey(eventID) ? transitions[eventID] : null; }
-			}
+            #region Properties
 
-			#endregion
+            /// <summary>
+            /// Gets a collection of Transitions at the specified event ID.
+            /// </summary>
+            /// <remarks>
+            /// If there are no Transitions at the specified event ID, the value
+            /// of the collection will be null.
+            /// </remarks>
+            public IEnumerable<Transition> this[TEvent eventID]
+            {
+                get { return m_transitions.ContainsKey(eventID) ? m_transitions[eventID] : null; }
+            }
 
-			#endregion
-		}
-	}
+            #endregion
+
+            #endregion
+        }
+    }
 }

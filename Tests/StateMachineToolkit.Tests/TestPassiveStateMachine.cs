@@ -1,11 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading;
-using NUnit.Framework;
-using Sanford.StateMachineToolkit;
-
-namespace StateMachineToolkit.Tests.Passive
+﻿namespace StateMachineToolkit.Tests.Passive
 {
+	using System;
+	using System.Diagnostics;
+	using System.Threading;
+	using NUnit.Framework;
+	using Sanford.StateMachineToolkit;
+
 	/// <summary>
 	/// The error-handling behavior of the SM should be as follows:
 	/// A standard sequence is:
@@ -46,7 +46,7 @@ namespace StateMachineToolkit.Tests.Passive
 				m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
 		}
 
-		private void registerMachineEvents(StateMachine<StateID, EventID> machine)
+		private void registerMachineEvents(IStateMachine<State, Event> machine)
 		{
 			m_beginDispatchEvent = new EventTester();
 			m_transitionDeclinedEvent = new EventTester();
@@ -63,250 +63,251 @@ namespace StateMachineToolkit.Tests.Passive
 		{
 			var machine = new TestMachine();
 			registerMachineEvents(machine);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, false);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void SimpleTransitionTest2()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			machine.AddTransition(StateID.S1, EventID.S1_to_S2, StateID.S2);
+			var machine = new TestMachine<State, Event>();
+			machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 			registerMachineEvents(machine);
-			machine.Start(StateID.S1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Start(State.S1);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, false);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void GuardException()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, args => { throw new Exception(); }, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, args => { throw new Exception(); }, s2);
 
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, true, false, true);
-			Assert.AreEqual(StateID.S1, machine.CurrentStateID);
+			Assert.AreEqual(State.S1, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void EntryExceptionOnInit()
 		{
-			TransitionErrorEventArgs<StateID, EventID> args;
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1, () => { throw new Exception(); }, null);
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			TransitionErrorEventArgs<State, Event> args;
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1, () => { throw new Exception(); }, null);
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 			registerMachineEvents(machine);
 			args = null;
 			machine.ExceptionThrown += (sender, e) => args = e;
 			machine.Start(s1);
 			assertMachineEvents(false, false, false, true);
-			Assert.AreEqual(StateID.S1, machine.CurrentStateID);
+			Assert.AreEqual(State.S1, machine.CurrentStateID);
 			Assert.AreEqual(false, args.MachineInitialized);
 		}
 
 		[Test]
 		public void EntryExceptionOnSend()
 		{
-			TransitionErrorEventArgs<StateID, EventID> errorEventArgs;
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2, () => { throw new Exception(); }, null);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			TransitionErrorEventArgs<State, Event> errorEventArgs;
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2, () => { throw new Exception(); }, null);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 			errorEventArgs = null;
 			machine.ExceptionThrown += (sender, args) => errorEventArgs = args;
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
 
-			Assert.AreEqual(StateID.S1, errorEventArgs.SourceStateID);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
-			Assert.AreEqual(EventID.S1_to_S2, errorEventArgs.EventID);
+			Assert.AreEqual(State.S1, errorEventArgs.SourceStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
+			Assert.AreEqual(Event.S1_to_S2, errorEventArgs.EventID);
 		}
 
 		[Test]
 		public void ExitException()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1, null, () => { throw new Exception(); });
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1, null, () => { throw new Exception(); });
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void TransitionActions_ThrowsException()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
 			var count = 0;
-			s1.Transitions.Add(EventID.S1_to_S2, s2, args =>
+			s1.Transitions.Add(Event.S1_to_S2, s2, args =>
 			                                        	{
 			                                        		count++;
 			                                        		throw new Exception();
 			                                        	});
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 			Assert.AreEqual(1, count);
 		}
 
 		[Test]
 		public void TransitionActions_ThrowsExceptionTwice()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
 			var count = 0;
 			ActionHandler actionHandler = args =>
 			                              	{
 			                              		count++;
 			                              		throw new Exception();
 			                              	};
-			s1.Transitions.Add(EventID.S1_to_S2, s2, actionHandler, actionHandler);
+			s1.Transitions.Add(Event.S1_to_S2, s2, actionHandler, actionHandler);
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 			Assert.AreEqual(2, count);
 		}
 
 		[Test]
 		public void TransitionDeclined()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1, null, () => { throw new Exception(); });
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1, null, () => { throw new Exception(); });
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.S2_to_S1);
+			machine.Send(Event.S2_to_S1);
 			machine.Execute();
 			assertMachineEvents(true, true, false, false);
-			Assert.AreEqual(StateID.S1, machine.CurrentStateID);
+			Assert.AreEqual(State.S1, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void TransitionDeclined_ThrowsError()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1, null, () => { throw new Exception(); });
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1, null, () => { throw new Exception(); });
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 			registerMachineEvents(machine);
 			machine.TransitionDeclined += (sender, e) => { throw new Exception(); };
 			machine.Start(s1);
-			machine.Send(EventID.S2_to_S1);
+			machine.Send(Event.S2_to_S1);
 			machine.Execute();
 			assertMachineEvents(true, true, false, true);
-			Assert.AreEqual(StateID.S1, machine.CurrentStateID);
+			Assert.AreEqual(State.S1, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void BeginDispatch()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
-			machine.BeginDispatch += (sender, e) =>
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
+		    IPassiveStateMachine<State, Event> m = machine;
+            m.BeginDispatch += (sender, e) =>
 			                         	{
-			                         		Assert.AreEqual(StateID.S1, machine.CurrentStateID);
-			                         		Assert.AreEqual(EventID.S1_to_S2, e.EventID);
-			                         		Assert.AreEqual(StateID.S1, e.SourceStateID);
+                                            Assert.AreEqual(State.S1, m.CurrentStateID);
+			                         		Assert.AreEqual(Event.S1_to_S2, e.EventID);
+			                         		Assert.AreEqual(State.S1, e.SourceStateID);
 			                         		Assert.AreEqual(123, e.EventArgs[0]);
 			                         	};
 
-			registerMachineEvents(machine);
+			registerMachineEvents(m);
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2, 123);
-			machine.Execute();
+            m.Send(Event.S1_to_S2, 123);
+            m.Execute();
 			assertMachineEvents(true, false, true, false);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void BeginDispatch_ThrowsError()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 
 			registerMachineEvents(machine);
 			machine.BeginDispatch += (sender, e) => { throw new Exception(); };
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void TransitionCompleted_ThrowsError()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s2 = machine.CreateState(StateID.S2);
-			s1.Transitions.Add(EventID.S1_to_S2, s2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s2 = machine.CreateState(State.S2);
+			s1.Transitions.Add(Event.S1_to_S2, s2);
 
 			registerMachineEvents(machine);
 			machine.TransitionCompleted += (sender, e) => { throw new Exception(); };
 			machine.Start(s1);
-			machine.Send(EventID.S1_to_S2);
+			machine.Send(Event.S1_to_S2);
 			machine.Execute();
 			assertMachineEvents(true, false, true, true);
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 		}
 
 		[Test]
 		public void Superstate_should_handle_event_when_guard_of_substate_does_not_pass()
 		{
-			var machine = new TestMachine<StateID, EventID>();
-			var s1 = machine.CreateState(StateID.S1);
-			var s1_1 = machine.CreateState(StateID.S1_1);
-			var s1_2 = machine.CreateState(StateID.S1_2);
-			var s2 = machine.CreateState(StateID.S2);
+			var machine = new TestMachine<State, Event>();
+			var s1 = machine.CreateState(State.S1);
+			var s1_1 = machine.CreateState(State.S1_1);
+			var s1_2 = machine.CreateState(State.S1_2);
+			var s2 = machine.CreateState(State.S2);
 
 			s1.Substates.Add(s1_1);
 			s1.Substates.Add(s1_2);
 			s1.InitialState = s1_1;
-			s1_1.Transitions.Add(EventID.E1, s1_2);
-			s1_2.Transitions.Add(EventID.E1, args => false, s1_1);
-			s1.Transitions.Add(EventID.E1, s2);
+			s1_1.Transitions.Add(Event.E1, s1_2);
+			s1_2.Transitions.Add(Event.E1, args => false, s1_1);
+			s1.Transitions.Add(Event.E1, s2);
 
 			registerMachineEvents(machine);
 			machine.Start(s1);
-			machine.Send(EventID.E1);
+			machine.Send(Event.E1);
 			machine.Execute();
-			Assert.AreEqual(StateID.S1_2, machine.CurrentStateID);
-			machine.Send(EventID.E1);
+			Assert.AreEqual(State.S1_2, machine.CurrentStateID);
+			machine.Send(Event.E1);
 			machine.Execute();
-			Assert.AreEqual(StateID.S2, machine.CurrentStateID);
+			Assert.AreEqual(State.S2, machine.CurrentStateID);
 			assertMachineEvents(true, false, true, false);
 		}
 	}
@@ -358,19 +359,19 @@ namespace StateMachineToolkit.Tests.Passive
 		}
 	}
 
-	public class TestMachine : PassiveStateMachine<StateID, EventID>
+	public class TestMachine : PassiveStateMachine<State, Event>
 	{
 		public TestMachine()
 		{
-			AddTransition(StateID.S1, EventID.S1_to_S2, StateID.S2);
-			AddTransition(StateID.S2, EventID.S2_to_S1, StateID.S1);
+			AddTransition(Passive.State.S1, Event.S1_to_S2, Passive.State.S2);
+			AddTransition(Passive.State.S2, Event.S2_to_S1, Passive.State.S1);
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
-			Initialize(StateID.S1);
+			Initialize(Passive.State.S1);
 // ReSharper restore DoNotCallOverridableMethodsInConstructor
 		}
 	}
 
-	public enum StateID
+	public enum State
 	{
 		S1,
 		S2,
@@ -378,7 +379,7 @@ namespace StateMachineToolkit.Tests.Passive
 		S1_2,
 	}
 
-	public enum EventID
+	public enum Event
 	{
 		S1_to_S2,
 		S2_to_S1,

@@ -36,84 +36,84 @@ using System;
 
 namespace Sanford.StateMachineToolkit
 {
-	public abstract partial class StateMachine<TState, TEvent>
-	{
-	/// <summary>
-	/// Represents the result of a transition.
-	/// </summary>
-		internal class TransitionResult
-		{
-			#region TransitionResult Members
+    public abstract partial class StateMachine<TState, TEvent>
+    {
+        /// <summary>
+        /// Represents the result of a transition.
+        /// </summary>
+        internal class TransitionResult
+        {
+            #region TransitionResult Members
 
-			#region Fields
+            #region Fields
 
-			private readonly bool hasFired;
+            private readonly bool m_hasFired;
 
-			private readonly State newState;
+            private readonly State m_newState;
 
-			private readonly Exception error;
+            private readonly Exception m_error;
 
-			#endregion
+            #endregion
 
-			#region Construction
+            #region Construction
 
-			/// <summary>
-			/// Initializes a new instance of the TransitionResult class.
-			/// </summary>
-			/// <param name="hasFired">
-			/// Indicates whether or not the Transition fired.
-			/// </param>
-			/// <param name="newState">
-			/// The resulting state of the Transition.
-			/// </param>
-			/// <param name="error">
-			/// The resulting exception of the Transition if one was thrown.
-			/// </param>
-			public TransitionResult(bool hasFired, State newState, Exception error)
-			{
-				this.hasFired = hasFired;
-				this.newState = newState;
-				this.error = error;
-			}
+            /// <summary>
+            /// Initializes a new instance of the TransitionResult class.
+            /// </summary>
+            /// <param name="hasFired">
+            /// Indicates whether or not the Transition fired.
+            /// </param>
+            /// <param name="newState">
+            /// The resulting state of the Transition.
+            /// </param>
+            /// <param name="error">
+            /// The resulting exception of the Transition if one was thrown.
+            /// </param>
+            public TransitionResult(bool hasFired, State newState, Exception error)
+            {
+                m_hasFired = hasFired;
+                m_newState = newState;
+                m_error = error;
+            }
 
-			#endregion
+            #endregion
 
-			#region Properties
+            #region Properties
 
-			/// <summary>
-			/// Gets a value indicating whether or not the transition fired.
-			/// </summary>
-			public bool HasFired
-			{
-				get { return hasFired; }
-			}
+            /// <summary>
+            /// Gets a value indicating whether or not the transition fired.
+            /// </summary>
+            public bool HasFired
+            {
+                get { return m_hasFired; }
+            }
 
-			/// <summary>
-			/// Gets the exception that was a result of firing the Transition.
-			/// </summary>
-			/// <remarks>
-			/// This property will be null if the Transition did not fire or if it
-			/// did fire but no exception took place.
-			/// </remarks>
-			public Exception Error
-			{
-				get { return error; }
-			}
+            /// <summary>
+            /// Gets the exception that was a result of firing the Transition.
+            /// </summary>
+            /// <remarks>
+            /// This property will be null if the Transition did not fire or if it
+            /// did fire but no exception took place.
+            /// </remarks>
+            public Exception Error
+            {
+                get { return m_error; }
+            }
 
-			/// <summary>
-			/// Gets the state that is a result of firing the Transition.
-			/// </summary>
-			/// <remarks>
-			/// This property will be null if the Transition did not fire.
-			/// </remarks>
-			public State NewState
-			{
-				get { return newState; }
-			}
+            /// <summary>
+            /// Gets the state that is a result of firing the Transition.
+            /// </summary>
+            /// <remarks>
+            /// This property will be null if the Transition did not fire.
+            /// </remarks>
+            public State NewState
+            {
+                get { return m_newState; }
+            }
 
-			#endregion
+            #endregion
 
-			#endregion
-		}
-	}
+            #endregion
+        }
+    }
 }

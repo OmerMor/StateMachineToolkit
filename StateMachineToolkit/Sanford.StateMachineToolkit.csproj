@@ -105,6 +105,7 @@
     <Compile Include="ActiveStateMachine.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Interfaces.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

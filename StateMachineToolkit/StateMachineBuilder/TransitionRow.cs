@@ -12,159 +12,159 @@ using System.Xml.Serialization;
 
 namespace Sanford.StateMachineToolkit.StateMachineBuilder
 {
-	/// <summary>
-	/// Represents a row of data describing a state transition in a 
-	/// TransitionRowCollection.
-	/// </summary>
-	public sealed class TransitionRow : IEditableObject
-	{
-		#region TransitionRow Members
+    /// <summary>
+    /// Represents a row of data describing a state transition in a 
+    /// TransitionRowCollection.
+    /// </summary>
+    public sealed class TransitionRow : IEditableObject
+    {
+        #region TransitionRow Members
 
-		#region Structs
+        #region Structs
 
-		// Represents the transition's properties.
-		private struct TransitionProperties
-		{
-			public string eventName;
-			public string guard;
-			public string target;
-		}
+        // Represents the transition's properties.
+        private struct TransitionProperties
+        {
+            public string eventName;
+            public string guard;
+            public string target;
+        }
 
-		#endregion
+        #endregion
 
-		#region Fields
+        #region Fields
 
-		// The transition's current property values.
-		private TransitionProperties trans;
+        // The transition's current property values.
+        private TransitionProperties trans;
 
-		// The transition's previous property values.
-		private TransitionProperties backupTrans;
+        // The transition's previous property values.
+        private TransitionProperties backupTrans;
 
-		// Indicates whether or not the TransitionRow is being edited.
-		private bool isEditing;
+        // Indicates whether or not the TransitionRow is being edited.
+        private bool isEditing;
 
-		// Indicates whether or not the TransitionRow is new.
-		private bool isNew = true;
+        // Indicates whether or not the TransitionRow is new.
+        private bool isNew = true;
 
-		// The transition's actions.
-		private readonly ActionRowCollection actions = new ActionRowCollection();
+        // The transition's actions.
+        private readonly ActionRowCollection actions = new ActionRowCollection();
 
-		#endregion
+        #endregion
 
-		#region Events
+        #region Events
 
-		/// <summary>
-		/// Raised when an edit has been cancelled.
-		/// </summary>
-		internal event EventHandler EditCancelled;
+        /// <summary>
+        /// Raised when an edit has been cancelled.
+        /// </summary>
+        internal event EventHandler EditCancelled;
 
-		#endregion
+        #endregion
 
-		#region Construction
+        #region Construction
 
-		#endregion
+        #endregion
 
-		#region Methods
+        #region Methods
 
-		// Raises the EditCancelled event.
-		private void OnEditCancelled()
-		{
-			EventHandler handler = EditCancelled;
+        // Raises the EditCancelled event.
+        private void OnEditCancelled()
+        {
+            EventHandler handler = EditCancelled;
 
-			if (handler != null)
-			{
-				handler(this, EventArgs.Empty);
-			}
-		}
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
+            }
+        }
 
-		#endregion
+        #endregion
 
-		#region Properties
+        #region Properties
 
-		/// <summary>
-		/// Gets the event that triggered the transition.
-		/// </summary>
-		[XmlAttribute("event")]
-		public string Event
-		{
-			get { return trans.eventName; }
-			set { trans.eventName = value; }
-		}
+        /// <summary>
+        /// Gets the event that triggered the transition.
+        /// </summary>
+        [XmlAttribute("event")]
+        public string Event
+        {
+            get { return trans.eventName; }
+            set { trans.eventName = value; }
+        }
 
-		/// <summary>
-		/// Gets the guard that is evaluated to determine whether or not the 
-		/// transition will fire.
-		/// </summary>
-		[XmlAttribute("guard")]
-		public string Guard
-		{
-			get { return trans.guard; }
-			set { trans.guard = value; }
-		}
+        /// <summary>
+        /// Gets the guard that is evaluated to determine whether or not the 
+        /// transition will fire.
+        /// </summary>
+        [XmlAttribute("guard")]
+        public string Guard
+        {
+            get { return trans.guard; }
+            set { trans.guard = value; }
+        }
 
-		/// <summary>
-		/// Gets the target state of the transition.
-		/// </summary>
-		[XmlAttribute("target")]
-		public string Target
-		{
-			get { return trans.target; }
-			set { trans.target = value; }
-		}
+        /// <summary>
+        /// Gets the target state of the transition.
+        /// </summary>
+        [XmlAttribute("target")]
+        public string Target
+        {
+            get { return trans.target; }
+            set { trans.target = value; }
+        }
 
-		/// <summary>
-		/// Gets the actions.
-		/// </summary>
-		/// <value>The actions.</value>
-		[XmlElement("action", typeof (ActionRow))]
-		public ActionRowCollection Actions
-		{
-			get { return actions; }
-		}
+        /// <summary>
+        /// Gets the actions.
+        /// </summary>
+        /// <value>The actions.</value>
+        [XmlElement("action", typeof (ActionRow))]
+        public ActionRowCollection Actions
+        {
+            get { return actions; }
+        }
 
-		#endregion
+        #endregion
 
-		#endregion
+        #endregion
 
-		#region IEditableObject Members
+        #region IEditableObject Members
 
-		/// <summary>
-		/// Begins an edit on a TransitionRow.
-		/// </summary>
-		public void BeginEdit()
-		{
-			if (isEditing) return;
-			backupTrans = trans;
-			isEditing = true;
-		}
+        /// <summary>
+        /// Begins an edit on a TransitionRow.
+        /// </summary>
+        public void BeginEdit()
+        {
+            if (isEditing) return;
+            backupTrans = trans;
+            isEditing = true;
+        }
 
-		/// <summary>
-		/// Discards changes since the last BeginEdit call.
-		/// </summary>
-		public void CancelEdit()
-		{
-			if (!isEditing) return;
-			trans = backupTrans;
-			isEditing = false;
+        /// <summary>
+        /// Discards changes since the last BeginEdit call.
+        /// </summary>
+        public void CancelEdit()
+        {
+            if (!isEditing) return;
+            trans = backupTrans;
+            isEditing = false;
 
-			if (isNew)
-			{
-				OnEditCancelled();
-			}
-		}
+            if (isNew)
+            {
+                OnEditCancelled();
+            }
+        }
 
-		/// <summary>
-		/// Pushes changes since the last BeginEdit or IBindingList.AddNew call 
-		/// into the underlying StateRow.
-		/// </summary>
-		public void EndEdit()
-		{
-			if (!isEditing) return;
-			backupTrans = new TransitionProperties();
-			isEditing = false;
-			isNew = false;
-		}
+        /// <summary>
+        /// Pushes changes since the last BeginEdit or IBindingList.AddNew call 
+        /// into the underlying StateRow.
+        /// </summary>
+        public void EndEdit()
+        {
+            if (!isEditing) return;
+            backupTrans = new TransitionProperties();
+            isEditing = false;
+            isNew = false;
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }
