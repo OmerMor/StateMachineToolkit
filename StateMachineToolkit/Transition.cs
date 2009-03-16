@@ -35,6 +35,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using JetBrains.Annotations;
 
 namespace Sanford.StateMachineToolkit
 {
@@ -49,7 +50,7 @@ namespace Sanford.StateMachineToolkit
         /// that is the target of the Transition..
         /// </summary>
         [DebuggerDisplay("{m_source.ID}-->{m_target.ID}")]
-        public class Transition
+        protected sealed class Transition
         {
             #region Transition Members
 
@@ -62,7 +63,7 @@ namespace Sanford.StateMachineToolkit
             private readonly State m_target;
 
             // The guard to evaluate to determine whether the transition should fire.
-            private readonly GuardHandler m_guard;
+            private readonly GuardHandler m_guard = s_emptyGuard;
 
             // The actions to perform during the transition.
             private readonly IList<ActionHandler> m_actions = new List<ActionHandler>();
@@ -73,6 +74,8 @@ namespace Sanford.StateMachineToolkit
             // The result if the transition did not fire.
             private static readonly TransitionResult s_notFiredResult =
                 new TransitionResult(false, null, null);
+
+            private static readonly GuardHandler s_emptyGuard = delegate { return true; };
 
             #endregion
 
@@ -121,7 +124,7 @@ namespace Sanford.StateMachineToolkit
             /// </param>
             public Transition(GuardHandler guard, State target)
             {
-                m_guard = guard;
+                m_guard = guard ?? s_emptyGuard;
                 m_target = target;
             }
 
@@ -149,7 +152,7 @@ namespace Sanford.StateMachineToolkit
                 }
 
                 // If the transition should fire.
-                OnBeginTransition();
+                currentStateMachineOnBeginTransition();
 
                 State newState = origin;
 
@@ -170,7 +173,7 @@ namespace Sanford.StateMachineToolkit
 
                     newState = Target.EnterByHistory();
                 }
-                    // Else if this is an internal transition.
+                // Else if this is an internal transition.
                 else
                 {
                     performActions(args);
@@ -273,7 +276,7 @@ namespace Sanford.StateMachineToolkit
                 // If there is a guard and it does not evaluate to true.
                 try
                 {
-                    return Guard == null || Guard(args);
+                    return Guard(args);
                 }
                 catch (Exception ex)
                 {
@@ -282,7 +285,7 @@ namespace Sanford.StateMachineToolkit
                         string.Format("During the transition {0}.{1} an exception was thrown inside a guard.",
                                       context.SourceState, context.CurrentEvent);
                     GuardException guardException = new GuardException(message, ex);
-                    OnExceptionThrown(guardException);
+                    currentStateMachineOnExceptionThrown(guardException);
                     return false;
                 }
             }
@@ -308,7 +311,7 @@ namespace Sanford.StateMachineToolkit
                                 "During the transition {0}.{1} --> {2} an exception was thrown inside a transition action handler.",
                                 sourceId, context.CurrentEvent, targetId);
                         ActionException actionException = new ActionException(message, ex);
-                        OnExceptionThrown(actionException);
+                        currentStateMachineOnExceptionThrown(actionException);
                         m_exceptionResult = actionException;
                     }
                 }
@@ -325,6 +328,7 @@ namespace Sanford.StateMachineToolkit
             /// <remarks>
             /// If no guard is necessary, this value may be null.
             /// </remarks>
+            [NotNull]
             public GuardHandler Guard
             {
                 get { return m_guard; }

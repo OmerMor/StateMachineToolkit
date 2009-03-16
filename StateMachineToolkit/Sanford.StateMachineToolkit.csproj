@@ -88,10 +88,6 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Sanford.Collections, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\Sanford.Collections.dll</HintPath>
-    </Reference>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -99,53 +95,105 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Collections\Deque.cs">
+      <Link>Collections\Deque.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\Deque.cs">
+      <Link>Collections\Generic\Deque.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\Deque.Enumerator.cs">
+      <Link>Collections\Generic\Deque.Enumerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\Deque.Node.cs">
+      <Link>Collections\Generic\Deque.Node.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\Deque.Synchronized.cs">
+      <Link>Collections\Generic\Deque.Synchronized.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\ICommand.cs">
+      <Link>Collections\Generic\ICommand.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\PriorityQueue.cs">
+      <Link>Collections\Generic\PriorityQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\UndoableList.cs">
+      <Link>Collections\Generic\UndoableList.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\Generic\UndoManager.cs">
+      <Link>Collections\Generic\UndoManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\Array.cs">
+      <Link>Collections\ImmutableCollections\Array.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\ArrayList.cs">
+      <Link>Collections\ImmutableCollections\ArrayList.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\AvlEnumerator.cs">
+      <Link>Collections\ImmutableCollections\AVL Tree Classes\AvlEnumerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\AvlNode.cs">
+      <Link>Collections\ImmutableCollections\AVL Tree Classes\AvlNode.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\IAvlNode.cs">
+      <Link>Collections\ImmutableCollections\AVL Tree Classes\IAvlNode.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\NullAvlNode.cs">
+      <Link>Collections\ImmutableCollections\AVL Tree Classes\NullAvlNode.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalEnumerator.cs">
+      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalEnumerator.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalTopNode.cs">
+      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalTopNode.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalTreeNode.cs">
+      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalTreeNode.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\RandomAccessList.cs">
+      <Link>Collections\ImmutableCollections\RandomAccessList.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\SortedList.cs">
+      <Link>Collections\ImmutableCollections\SortedList.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\ImmutableCollections\Stack.cs">
+      <Link>Collections\ImmutableCollections\Stack.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\PriorityQueue.cs">
+      <Link>Collections\PriorityQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\Collections\SkipList.cs">
+      <Link>Collections\SkipList.cs</Link>
+    </Compile>
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\Threading\AsyncResult.cs">
+      <Link>Threading\AsyncResult.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\DelegateQueue.AsyncResult.cs">
+      <Link>Threading\DelegateQueue.AsyncResult.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\DelegateQueue.cs">
+      <Link>Threading\DelegateQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\DelegateScheduler.cs">
+      <Link>Threading\DelegateScheduler.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\DelegateScheduler.Task.cs">
+      <Link>Threading\DelegateScheduler.Task.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\InvokeCompletedEventArgs.cs">
+      <Link>Threading\InvokeCompletedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\Threading\PostCompletedEventArgs.cs">
+      <Link>Threading\PostCompletedEventArgs.cs</Link>
+    </Compile>
     <Compile Include="ActiveStateMachine.cs" />
+    <Compile Include="JetBrains.Annotations.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\ActionInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\ConstructorBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\EventEnumeratorBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\FieldBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\GuardInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\HistoryInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\InitializeMethodBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\InitialStateInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\MethodBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\RelationshipInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\StateEnumeratorBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\StateInitializeBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CodeGeneration\TransitionInitializeBuilder.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="NonGenericStateMachine.cs" />
@@ -154,30 +202,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="StateMachine.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\ActionRow.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\ActionRowCollection.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\StateMachineBuilder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\StateMachineBuilderException.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\StateRow.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\StateRowCollection.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\TransitionRow.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StateMachineBuilder\TransitionRowCollection.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SubstateCollection.cs">
@@ -209,12 +233,6 @@
       <ProductName>.NET Framework 3.5</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Threading\Sanford.Threading.csproj">
-      <Project>{EA5579CB-695C-4C59-9BFC-27EB9600451D}</Project>
-      <Name>Sanford.Threading</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Class Diagrams\StateMachine.cd" />

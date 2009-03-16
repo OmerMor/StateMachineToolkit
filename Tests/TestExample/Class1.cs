@@ -1,4 +1,5 @@
 using System;
+using Sanford.StateMachineToolkit;
 
 namespace TestExample
 {
@@ -14,7 +15,10 @@ namespace TestExample
 		private static void Main(string[] args)
 		{
 			Example e = new Example();
-
+            e.TransitionCompleted += 
+                ((sender, eventArgs) =>
+                 Console.WriteLine("\t{0} : {1} --> {2}", eventArgs.EventID, eventArgs.SourceStateID,
+                                   eventArgs.TargetStateID));
 			Console.WriteLine();
 			e.SendA();
 
@@ -30,10 +34,19 @@ namespace TestExample
 			Console.WriteLine();
 			e.SendH();
 
-			Console.WriteLine();
-			e.SendH();
+            Console.WriteLine();
+            e.SendH();
 
-			//e.Dispose();
+            Console.WriteLine();
+            e.SendF();
+
+            Console.WriteLine();
+            e.SendH();
+
+            Console.WriteLine();
+            e.SendH();
+
+            //e.Dispose();
 
 			Console.Read();
 		}

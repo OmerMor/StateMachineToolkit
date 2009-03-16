@@ -26,8 +26,8 @@ namespace Sanford.StateMachineToolkit
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
     public abstract class ActiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>, IDisposable, IActiveStateMachine<TState, TEvent> 
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         #region Fields
 
@@ -71,42 +71,20 @@ namespace Sanford.StateMachineToolkit
             m_queue.PostCompleted +=
                 delegate(object sender, PostCompletedEventArgs args)
                     {
-                        if (args.Error != null)
-                        {
-                            OnExceptionThrown(
-                                new TransitionErrorEventArgs<TState, TEvent>(
-                                    CurrentEventContext, args.Error));
-                        }
+                        if (args.Error == null) return;
+                        OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
+                                              CurrentEventContext, args.Error));
                     };
             m_queue.InvokeCompleted +=
                 delegate(object sender, InvokeCompletedEventArgs args)
                     {
-                        if (args.Error != null)
-                        {
-                            OnExceptionThrown(
-                                new TransitionErrorEventArgs<TState, TEvent>(
-                                    CurrentEventContext, args.Error));
-                        }
+                        if (args.Error == null) return;
+                        OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
+                                              CurrentEventContext, args.Error));
                     };
         }
 
-        /// <summary>
-        /// Generic function delegate with a return value, and no arguments.
-        /// </summary>
-        /// <param name="arg">The return argument.</param>
-        /// <typeparam name="T">The type of the return argument.</typeparam>
-        private delegate void Func<T>(T arg);
-
         #region Properties
-
-        /// <summary>
-        /// Gets the state machine type: active or passive.
-        /// </summary>
-        /// <value></value>
-        public override StateMachineType StateMachineType
-        {
-            get { return StateMachineType.Active; }
-        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is disposed.
@@ -157,7 +135,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public override void Send(TEvent eventID, object[] args)
+        public override void Send(TEvent eventID, params object[] args)
         {
             AssertMachineIsValid();
             m_queue.Post(delegate { Dispatch(eventID, args); }, null);
@@ -337,19 +315,19 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventID">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventID, object[] args)
+        protected override void SendPriority(TEvent eventID, params object[] args)
         {
             AssertMachineIsValid();
             m_queue.PostPriority(delegate { Dispatch(eventID, args); }, null);
         }
 
-        private void synchronizedSend<T>(Func<T> func, T arg)
+        private void synchronizedSend<T>(Action<T> action, T arg)
         {
-            SyncContext.Send(delegate { func(arg); }, null);
+            SyncContext.Send(delegate { action(arg); }, null);
         }
-        private void synchronizedPost<T>(Func<T> func, T arg)
+        private void synchronizedPost<T>(Action<T> action, T arg)
         {
-            SyncContext.Post(delegate { func(arg); }, null);
+            SyncContext.Post(delegate { action(arg); }, null);
         }
 
         #endregion
@@ -359,7 +337,7 @@ namespace Sanford.StateMachineToolkit
     /// An empty implementation of <see cref="SynchronizationContext"/>
     /// which always invokes the delegates on the calling thread.
     /// </summary>
-    public class NullSynchronizationContext : SynchronizationContext
+    public sealed class NullSynchronizationContext : SynchronizationContext
     {
         /// <summary>
         /// Creates a copy of the synchronization context.

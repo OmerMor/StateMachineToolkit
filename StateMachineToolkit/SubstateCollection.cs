@@ -59,7 +59,7 @@ namespace Sanford.StateMachineToolkit
         /// <see cref="State"/>; you cannot add a <see cref="State"/> to the 
         /// <see cref="State.Substates"/> collection of more than one <see cref="State"/>.
         /// </summary>
-        public class SubstateCollection : IEnumerable<State>
+        protected class SubstateCollection : IEnumerable<State>
         {
             #region SubstateCollection Members
 
@@ -164,6 +164,11 @@ namespace Sanford.StateMachineToolkit
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return GetEnumerator();
+            }
+
+            public void Clear()
+            {
+                m_substates.Clear();
             }
         }
     }

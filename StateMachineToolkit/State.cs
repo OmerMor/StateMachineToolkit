@@ -39,6 +39,22 @@ namespace Sanford.StateMachineToolkit
     public abstract partial class StateMachine<TState, TEvent>
     {
         /// <summary>
+        /// The event handlers of a state.
+        /// </summary>
+        public interface IStateEventHandlers
+        {
+            /// <summary>
+            /// Occurs when entering the state.
+            /// </summary>
+            event EntryHandler EntryHandler;
+
+            /// <summary>
+            /// Occurs when leaving the state.
+            /// </summary>
+            event ExitHandler ExitHandler;
+        }
+
+        /// <summary>
         /// The State class represents a state a <see cref="StateMachine{TState,TEvent}"/> can be in during 
         /// its lifecycle. 
         /// A State can be a substate and/or superstate to other States.<para/>
@@ -57,7 +73,7 @@ namespace Sanford.StateMachineToolkit
         /// current State, if necessary.
         /// </summary>
         [System.Diagnostics.DebuggerDisplay("{m_stateID}")]
-        public class State
+        protected sealed class State : IStateEventHandlers
         {
             #region State Members
 
@@ -73,10 +89,10 @@ namespace Sanford.StateMachineToolkit
             private State m_historyState;
 
             // The collection of substates for the State.
-            private SubstateCollection m_substates;
+            private readonly SubstateCollection m_substates;
 
             // The collection of Transitions for the State.
-            private TransitionCollection m_transitions;
+            private readonly TransitionCollection m_transitions;
 
             // The result if no transitions fired in response to an event.
             private static readonly TransitionResult s_notFiredResult =
@@ -91,7 +107,7 @@ namespace Sanford.StateMachineToolkit
             private int m_level;
 
             // A unique integer value representing the State's ID.
-            private TState m_stateID;
+            private readonly TState m_stateID;
 
             #endregion
 
@@ -115,46 +131,12 @@ namespace Sanford.StateMachineToolkit
             /// Initializes a new instance of the State class with the specified
             /// number of events it will handle.
             /// </summary>
-            /// <param name="stateID">
-            /// The State's ID.
+            /// <param name="stateID">The State's ID.</param>
+            /// Lookup method for getting the internal State object of the given state ID.
             /// </param>
             public State(TState stateID)
+                : this(stateID, null, null)
             {
-                InitializeState(stateID);
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the State class with the specified
-            /// number of events it will handle as well as its entry action.
-            /// </summary>
-            /// <param name="stateID">
-            /// The State's ID.
-            /// </param>
-            /// <param name="entryHandler">
-            /// The entry action.
-            /// </param>
-            public State(TState stateID, EntryHandler entryHandler)
-            {
-                EntryHandler = entryHandler;
-
-                InitializeState(stateID);
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the State class with the specified
-            /// number of events it will handle as well as its exit action.
-            /// </summary>
-            /// <param name="stateID">
-            /// The State's ID.
-            /// </param>
-            /// <param name="exitHandler">
-            /// The exit action.
-            /// </param>
-            public State(TState stateID, ExitHandler exitHandler)
-            {
-                ExitHandler = exitHandler;
-
-                InitializeState(stateID);
             }
 
             /// <summary>
@@ -173,26 +155,20 @@ namespace Sanford.StateMachineToolkit
             /// </param>
             public State(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
             {
-                EntryHandler = entryHandler;
-                ExitHandler = exitHandler;
+                EntryHandler += entryHandler ?? delegate { };
+                ExitHandler += exitHandler ?? delegate { };
 
-                InitializeState(stateID);
-            }
-
-            #endregion
-
-            #region Methods
-
-            // Initializes the State.
-            private void InitializeState(TState id)
-            {
-                m_stateID = id;
+                m_stateID = stateID;
 
                 m_substates = new SubstateCollection(this);
                 m_transitions = new TransitionCollection(this);
 
                 m_level = 1;
             }
+
+            #endregion
+
+            #region Methods
 
             /// <summary>
             /// Dispatches an event to the StateMachine.
@@ -245,8 +221,6 @@ namespace Sanford.StateMachineToolkit
             /// </summary>
             internal void Entry()
             {
-                // If an entry action exists for this state.
-                if (EntryHandler == null) return;
                 // Execute entry action.
                 try
                 {
@@ -265,7 +239,7 @@ namespace Sanford.StateMachineToolkit
                                           context.SourceState, context.CurrentEvent, ID);
 
                     EntryException entryException = new EntryException(message, ex);
-                    OnExceptionThrown(entryException);
+                    currentStateMachineOnExceptionThrown(entryException);
                 }
             }
 
@@ -288,7 +262,7 @@ namespace Sanford.StateMachineToolkit
                         string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
                                                       context.SourceState, context.CurrentEvent, ID);
                         ExitException exitException = new ExitException(message, ex);
-                        OnExceptionThrown(exitException);
+                        currentStateMachineOnExceptionThrown(exitException);
                     }
                 }
 

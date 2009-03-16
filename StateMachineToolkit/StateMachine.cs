@@ -40,14 +40,14 @@ namespace Sanford.StateMachineToolkit
 
     /// <summary>
     /// Represents the base class for all state machines. You do not derive your state machine classes from this 
-    /// class but rather from one  of its derived classes, either the <see cref="T:Sanford.StateMachineToolkit.ActiveStateMachine`2"/> 
+    /// class but rather from one of its derived classes, either the <see cref="T:Sanford.StateMachineToolkit.ActiveStateMachine`2"/> 
     /// class or the <see cref="T:Sanford.StateMachineToolkit.PassiveStateMachine`2"/> class.
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
     public abstract partial class StateMachine<TState, TEvent> : IStateMachine<TState, TEvent> 
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         #region StateMachine Members
 
@@ -77,7 +77,7 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// The current state.
         /// </summary>
-        private State m_currentState;
+        private TState m_currentStateId;
 
         /// <summary>
         /// Indicates whether the state machine has been initialized.
@@ -133,19 +133,15 @@ namespace Sanford.StateMachineToolkit
                     CurrentState != null, 
                     "CurrentStateID can't be use before the state machine was initialized.");
 
-                return CurrentState.ID;
+                return m_currentStateId;
             }
+            protected set { m_currentStateId = value; }
         }
-
-        /// <summary>
-        /// Gets the state machine type: active or passive.
-        /// </summary>
-        public abstract StateMachineType StateMachineType { get; }
 
         /// <summary>
         /// Gets the states of the state machine.
         /// </summary>
-        public StateMap States
+        protected StateMap States
         {
             get { return m_states; }
         }
@@ -176,8 +172,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         protected State CurrentState
         {
-            get { return m_currentState; }
-            set { m_currentState = value; }
+            get { return States[m_currentStateId]; }
         }
 
         /// <summary>
@@ -189,6 +184,18 @@ namespace Sanford.StateMachineToolkit
         protected bool IsInitialized
         {
             get { return m_initialized && CurrentState != null; }
+        }
+
+        /// <summary>
+        /// Gets the <see cref="IStateEventHandlers"/> for the specified state.
+        /// </summary>
+        /// <value>The state.</value>
+        public IStateEventHandlers this[TState value]
+        {
+            get
+            {
+                return States[value];
+            }
         }
 
         #endregion
@@ -223,28 +230,6 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Creates a new <see cref="State"/> object.
-        /// </summary>
-        /// <param name="stateID">The underlying state ID.</param>
-        /// <returns>The new <see cref="State"/> object.</returns>
-        public State CreateState(TState stateID)
-        {
-            return new State(stateID);
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="State"/> object.
-        /// </summary>
-        /// <param name="stateID">The underlying state ID.</param>
-        /// <param name="entryHandler">An entry handler that will be executed when entering the state.</param>
-        /// <param name="exitHandler">An exit handler that will be executed when leaving the state.</param>
-        /// <returns>The new <see cref="State"/> object.</returns>
-        public State CreateState(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
-        {
-            return new State(stateID, entryHandler, exitHandler);
-        }
-
-        /// <summary>
         /// Sends an event to the state machine, that might trigger a transition.
         /// </summary>
         /// <param name="eventID">The event.</param>
@@ -260,6 +245,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="additionalSubstates">Additional substates.</param>
         public void SetupSubstates(TState superState, HistoryType historyType, TState initialSubstate, params TState[] additionalSubstates)
         {
+            States[superState].Substates.Clear();
             States[superState].Substates.Add(States[initialSubstate]);
             foreach (TState substate in additionalSubstates)
             {
@@ -274,7 +260,7 @@ namespace Sanford.StateMachineToolkit
         /// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event 
         /// on the currently running state machine.
         /// </summary>
-        internal static void OnBeginTransition()
+        private static void currentStateMachineOnBeginTransition()
         {
             s_currentStateMachine.OnBeginTransition(s_currentStateMachine.CurrentEventContext);
         }
@@ -284,7 +270,7 @@ namespace Sanford.StateMachineToolkit
         /// on the currently running state machine.
         /// </summary>
         /// <param name="ex">The exception that was thrown.</param>
-        internal static void OnExceptionThrown(Exception ex)
+        private static void currentStateMachineOnExceptionThrown(Exception ex)
         {
             s_currentStateMachine.OnExceptionThrown(
                 new TransitionErrorEventArgs<TState, TEvent>(
@@ -340,7 +326,7 @@ namespace Sanford.StateMachineToolkit
                     return;
                 }
 
-                CurrentState = result.NewState;
+                CurrentStateID = result.NewState.ID;
 
                 TransitionCompletedEventArgs<TState, TEvent> eventArgs =
                     new TransitionCompletedEventArgs<TState, TEvent>(
@@ -424,7 +410,7 @@ namespace Sanford.StateMachineToolkit
                 superstate.Entry();
             }
 
-            CurrentState = initialState.EnterByHistory();
+            CurrentStateID = initialState.EnterByHistory().ID;
             s_currentStateMachine = this;
 
         }
@@ -523,7 +509,7 @@ namespace Sanford.StateMachineToolkit
         /// A readonly mapping from <typeparamref name="TState"/> ID to 
         /// <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent}.State"/> object.
         /// </summary>
-        public class StateMap
+        protected sealed class StateMap
         {
             /// <summary>
             /// Maps state IDs to state objects.
@@ -540,21 +526,26 @@ namespace Sanford.StateMachineToolkit
             {
                 get
                 {
-                    // lazy initialization
-                    if (!m_map.ContainsKey(state))
-                    {
-                        m_map.Add(state, new State(state));
-                    }
-
-                    return m_map[state];
+                    return LookupState(state);
                 }
+            }
+
+            public State LookupState(TState state)
+            {
+                // lazy initialization
+                if (!m_map.ContainsKey(state))
+                {
+                    m_map.Add(state, new State(state));
+                }
+
+                return m_map[state];
             }
         }
 
         /// <summary>
         /// A context with information about an event is being processed by the state machine.
         /// </summary>
-        public class EventContext
+        public sealed class EventContext
         {
             /// <summary>
             /// The source state ID.
@@ -629,21 +620,5 @@ namespace Sanford.StateMachineToolkit
         /// Raise an event
         /// </summary>
         RaiseExceptionEvent
-    }
-
-    /// <summary>
-    /// The type of the state machine.
-    /// </summary>
-    public enum StateMachineType
-    {
-        /// <summary>
-        /// Passive state machine.
-        /// </summary>
-        Passive,
-
-        /// <summary>
-        /// Active state machine.
-        /// </summary>
-        Active
     }
 }

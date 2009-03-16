@@ -49,7 +49,7 @@ namespace Sanford.StateMachineToolkit
         /// receives an event, it uses the event's ID to check to see if it has any Transitions for that 
         /// event (as described above).
         /// </summary>
-        public class TransitionCollection
+        protected class TransitionCollection
         {
             #region TransitionCollection Members
 

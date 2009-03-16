@@ -1,5 +1,4 @@
 using System;
-using Sanford.StateMachineToolkit;
 using Sanford.Threading;
 
 namespace Sanford.StateMachineToolkit
@@ -12,8 +11,8 @@ namespace Sanford.StateMachineToolkit
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
     public interface IStateMachine<TState, TEvent>
-        where TState : struct, IComparable, IFormattable
-        where TEvent : struct, IComparable, IFormattable
+        //where TState : struct, IComparable, IFormattable
+        //where TEvent : struct, IComparable, IFormattable
     {
         /// <summary>
         /// Occurs before a dispatch starts.
@@ -54,26 +53,44 @@ namespace Sanford.StateMachineToolkit
     }
 
     /// <summary>
-    /// Unlike the <see cref="ActiveStateMachine{TState,TEvent}"/> class, 
-    /// the PassiveStateMachine class does not run in its own thread. Sometimes using an active 
-    /// object is overkill. In those cases, it is  appropriate to derive your state machine from 
-    /// the PassiveStateMachine class.<para/>
-    /// Because the PassiveStateMachine is, well, passive, it has to be prodded to 
-    /// fire its transitions. You do this by calling its <see cref="Execute"/> method. After sending a 
-    /// PassiveStateMachine derived class one or more events, you then call <see cref="Execute"/>. 
-    /// The state machine responds by dequeueing all of the events in its event queue, 
-    /// dispatching them one right after the other. 
+    /// Represents a passive state machine.
     /// </summary>
-    /// <typeparam name="TState">The state enumeration type.</typeparam>
-    /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public interface IPassiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+    public interface IPassiveStateMachine
     {
         /// <summary>
         /// Executes pending events.
         /// </summary>
         void Execute();
+    }
+
+    /// <summary>
+    /// Unlike the <see cref="ActiveStateMachine{TState,TEvent}"/> class, 
+    /// the PassiveStateMachine class does not run in its own thread. Sometimes using an active 
+    /// object is overkill. In those cases, it is  appropriate to derive your state machine from 
+    /// the PassiveStateMachine class.<para/>
+    /// Because the PassiveStateMachine is, well, passive, it has to be prodded to 
+    /// fire its transitions. You do this by calling its <see cref="IPassiveStateMachine.Execute"/> method. After sending a 
+    /// PassiveStateMachine derived class one or more events, you then call <see cref="IPassiveStateMachine.Execute"/>. 
+    /// The state machine responds by dequeueing all of the events in its event queue, 
+    /// dispatching them one right after the other. 
+    /// </summary>
+    /// <typeparam name="TState">The state enumeration type.</typeparam>
+    /// <typeparam name="TEvent">The event enumeration type.</typeparam>
+    public interface IPassiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>, IPassiveStateMachine
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+    {
+    }
+
+    /// <summary>
+    /// Represents an active state machine.
+    /// </summary>
+    public interface IActiveStateMachine
+    {
+        /// <summary>
+        /// Waits for pending events.
+        /// </summary>
+        void WaitForPendingEvents();
     }
 
     /// <summary>
@@ -84,9 +101,9 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public interface IActiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>
-        where TState : struct, IComparable, IFormattable
-        where TEvent : struct, IComparable, IFormattable
+    public interface IActiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>, IActiveStateMachine
+        //where TState : struct, IComparable, IFormattable
+        //where TEvent : struct, IComparable, IFormattable
     {
         /// <summary>
         /// Sends an event to the StateMachine, and blocks until it processing ends.
@@ -98,10 +115,5 @@ namespace Sanford.StateMachineToolkit
         /// The data accompanying the event.
         /// </param>
         void SendSynchronously(TEvent eventID, params object[] args);
-
-        /// <summary>
-        /// Waits for pending events.
-        /// </summary>
-        void WaitForPendingEvents();
     }
 }

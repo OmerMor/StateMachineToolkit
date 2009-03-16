@@ -3,7 +3,7 @@
     /// <summary>
     /// A base non-generic active state machine.
     /// </summary>
-    public abstract class ActiveStateMachine : ActiveStateMachine<int, int>
+    public class ActiveStateMachine : ActiveStateMachine<int, int>
     {
     }
 

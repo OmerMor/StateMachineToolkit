@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using NUnit.Framework;
 using Sanford.StateMachineToolkit;
-using Timer=System.Threading.Timer;
 
 namespace StateMachineToolkit.Tests.Active
 {
@@ -51,14 +49,16 @@ namespace StateMachineToolkit.Tests.Active
 				m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
 		}
 
-		private void registerMachineEvents(IStateMachine<State, Event> machine)
+        private void registerMachineEvents<TState, TEvent>(IStateMachine<TState, TEvent> machine)
 		{
-			m_beginDispatchEvent = new EventTester();
+            m_beginDispatchEvent = new EventTester();
+            m_beginTransitionEvent = new EventTester();
 			m_transitionDeclinedEvent = new EventTester();
 			m_transitionCompletedEvent = new EventTester();
 			m_exceptionThrownEvent = new EventTester();
 			m_lastException = null;
-			machine.BeginDispatch += (sender, e) => m_beginDispatchEvent.Set();
+            machine.BeginDispatch += (sender, e) => m_beginDispatchEvent.Set();
+            machine.BeginTransition += (sender, e) => m_beginTransitionEvent.Set();
 			machine.TransitionDeclined += (sender, e) => m_transitionDeclinedEvent.Set();
 			machine.TransitionCompleted += (sender, e) => m_transitionCompletedEvent.Set();
 			machine.ExceptionThrown += (sender, e) =>
@@ -69,18 +69,32 @@ namespace StateMachineToolkit.Tests.Active
 			                           	};
 		}
 
-		[Test]
-		public void SimpleTransitionTest()
-		{
-			using (var machine = new TestMachine())
-			{
-				registerMachineEvents(machine);
-				machine.Send(Event.S1_to_S2);
-				machine.WaitForPendingEvents();
-				assertMachineEvents(true, false, true, false);
-				Assert.AreEqual(State.S2, machine.CurrentStateID);
-			}
-		}
+        [Test]
+        public void SimpleTransitionTest()
+        {
+            using (var machine = new TestMachine())
+            {
+                registerMachineEvents(machine);
+                machine.Send(Event.S1_to_S2);
+                machine.WaitForPendingEvents();
+                assertMachineEvents(true, false, true, false);
+                Assert.AreEqual(State.S2, machine.CurrentStateID);
+            }
+        }
+        [Test]
+        public void Test_machine_with_String_state_and_Int32_event_types()
+        {
+            using (var machine = new TestMachine<string,int>())
+            {
+                machine.AddTransition("S1", 12, "S2");
+                registerMachineEvents(machine);
+                machine.Start("S1");
+                machine.Send(12);
+                machine.WaitForPendingEvents();
+                assertMachineEvents(true, false, true, false);
+                Assert.AreEqual("S2", machine.CurrentStateID);
+            }
+        }
 
 		[Test]
 		public void SimpleTransitionTest2()
@@ -137,7 +151,7 @@ namespace StateMachineToolkit.Tests.Active
 			TransitionErrorEventArgs<State, Event> args;
 			using (var machine = new TestMachine<State, Event>())
 			{
-				machine.States[State.S1].EntryHandler += throwException;
+				machine[State.S1].EntryHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 				registerMachineEvents(machine);
 				args = null;
@@ -157,7 +171,7 @@ namespace StateMachineToolkit.Tests.Active
 			TransitionErrorEventArgs<State, Event> errorEventArgs;
 			using (var machine = new TestMachine<State, Event>())
 			{
-				machine.States[State.S2].EntryHandler += throwException;
+				machine[State.S2].EntryHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 				errorEventArgs = null;
 				machine.ExceptionThrown += (sender, args) => errorEventArgs = args;
@@ -179,7 +193,7 @@ namespace StateMachineToolkit.Tests.Active
 		{
 			using (var machine = new TestMachine<State, Event>())
 			{
-				machine.States[State.S1].ExitHandler += throwException;
+				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
@@ -232,7 +246,7 @@ namespace StateMachineToolkit.Tests.Active
 		{
 			using (var machine = new TestMachine<State, Event>())
 			{
-				machine.States[State.S1].ExitHandler += throwException;
+				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 				registerMachineEvents(machine);
@@ -258,7 +272,7 @@ namespace StateMachineToolkit.Tests.Active
 		{
 			using (var machine = new TestMachine<State, Event>())
 			{
-				machine.States[State.S1].ExitHandler += throwException;
+				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 				registerMachineEvents(machine);
@@ -368,28 +382,24 @@ namespace StateMachineToolkit.Tests.Active
 							calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
 						};
 				};
-			Form form = null;
-			try
-			{
-				ThreadPool.QueueUserWorkItem(
-					state =>
-					{
-						form = new Form();
-						form.Load += onLoad;
-						form.Load += (sender, e) => loadedEvent.Set();
-						Application.Run(form);
-					});
-				loadedEvent.AssertWasCalled("Form was not loaded.");
-				Assert.IsNotNull(machine);
-				machine.Start(State.S1);
-				machine.Send(Event.S1_to_S2);
-				machine.WaitForPendingEvents();
-				Assert.IsTrue(calledInUiThread);
-			}
-			finally
-			{
-				form.Close();
-			}
+		    Form form = null;
+            ThreadPool.QueueUserWorkItem(
+                state =>
+                    {
+                        using (form = new Form())
+                        {
+                            form.Load += onLoad;
+                            form.Load += (sender, e) => loadedEvent.Set();
+                            Application.Run(form);
+                        }
+                    });
+            loadedEvent.AssertWasCalled("Form was not loaded.");
+            Assert.IsNotNull(machine);
+            machine.Start(State.S1);
+            machine.Send(Event.S1_to_S2);
+            machine.WaitForPendingEvents();
+            Assert.IsTrue(calledInUiThread);
+		    form.Invoke((MethodInvoker) (() => form.Close()));
 		}
 
 		[Test]
@@ -407,28 +417,22 @@ namespace StateMachineToolkit.Tests.Active
 					finishedEvent.Set();
 				}
 			});
-			Form form = null;
-			try
-			{
-				ThreadPool.QueueUserWorkItem(
-					state =>
-						{
-							form = new Form();
-							form.Load += onLoad;
-							Application.Run(form);
-						});
-				var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
-				Assert.IsTrue(finished);
-			}
-			finally
-			{
-				form.Close();
-			}
+		    using (var form = new Form())
+		    {
+	            ThreadPool.QueueUserWorkItem(
+	                state =>
+	                    {
+	                        form.Load += onLoad;
+	                        Application.Run(form);
+	                    });
+	            var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
+	            Assert.IsTrue(finished);
+		    }
 		}
 
 	}
 
-	public class EventTester
+	public sealed class EventTester
 	{
 		private readonly AutoResetEvent wasCalledEvent = new AutoResetEvent(false);
 		private readonly TimeSpan m_timeout;
@@ -468,9 +472,9 @@ namespace StateMachineToolkit.Tests.Active
 		}
 	}
 
-	public class TestMachine<TState, TEvent> : ActiveStateMachine<TState, TEvent>
-		where TEvent : struct, IComparable, IFormattable
-		where TState : struct, IComparable, IFormattable
+	public sealed class TestMachine<TState, TEvent> : ActiveStateMachine<TState, TEvent>
+		//where TEvent : struct, IComparable, IFormattable
+		//where TState : struct, IComparable, IFormattable
 	{
 		public void Start(TState initialState)
 		{
@@ -478,86 +482,7 @@ namespace StateMachineToolkit.Tests.Active
 		}
 	}
 	
-    public class TraficLightStateMachine : ActiveStateMachine<TraficLightStates,TraficLightEvents>
-    {
-        private readonly Timer m_timer;
-        private static readonly TimeSpan INTERVAL = TimeSpan.FromSeconds(2);
-
-        public TraficLightStateMachine()
-        {
-            AddTransition(TraficLightStates.Off,        TraficLightEvents.Start,        TraficLightStates.On,   x => start());
-            AddTransition(TraficLightStates.On,         TraficLightEvents.Stop,         TraficLightStates.Off,  x => stop());
-            AddTransition(TraficLightStates.Red,        TraficLightEvents.TimeEvent,    TraficLightStates.RedYellow);
-            AddTransition(TraficLightStates.RedYellow,  TraficLightEvents.TimeEvent,    TraficLightStates.Green);
-            AddTransition(TraficLightStates.Green,      TraficLightEvents.TimeEvent,    TraficLightStates.Yellow);
-            AddTransition(TraficLightStates.Yellow,     TraficLightEvents.TimeEvent,    TraficLightStates.Red);
-
-            SetupSubstates(TraficLightStates.On, HistoryType.None, TraficLightStates.Red,
-                           TraficLightStates.RedYellow, TraficLightStates.Green, TraficLightStates.Yellow);
-
-            m_timer = new Timer(state => Send(TraficLightEvents.TimeEvent));
-
-            Initialize(TraficLightStates.Off);
-        }
-
-        private void start()
-        {
-            m_timer.Change(INTERVAL, INTERVAL);
-        }
-        private void stop()
-        {
-            m_timer.Change(Timeout.Infinite, Timeout.Infinite);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            SendPriority(TraficLightEvents.Stop);
-            WaitForPendingEvents();
-
-            m_timer.Dispose();
-            base.Dispose(disposing);
-        }
-    }
-
-    public class TrafficLightApp
-    {
-        public void Main()
-        {
-            using(var form = new Form())
-            using (var sm = new TraficLightStateMachine())
-            {
-                var state = new Label {Location = new Point {X = 20, Y = 20}};
-                sm.TransitionCompleted += (sender, args) => state.Text = args.TargetStateID.ToString();
-                var start = new Button {Text = "Start", Location = new Point {X = 20, Y = 60}};
-                var stop = new Button {Text = "Stop", Location = new Point {X = 20, Y = 100}};
-
-                start.Click += (sender, args) => sm.Send(TraficLightEvents.Start);
-                stop.Click += (sender, args) => sm.SendSynchronously(TraficLightEvents.Stop);
-
-                form.Controls.AddRange(new Control[] {state, start, stop});
-
-                Application.Run(form);
-            }
-        }
-    }
-
-    public enum TraficLightStates
-    {
-        On,
-        Off,
-        Green,
-        Yellow,
-        Red,
-        RedYellow
-    }
-    public enum TraficLightEvents
-    {
-        Start,
-        Stop,
-        TimeEvent
-    }
-
-	public class TestMachine : ActiveStateMachine<State, Event>
+	public sealed class TestMachine : ActiveStateMachine<State, Event>
 	{
 		public TestMachine()
 		{
@@ -582,34 +507,5 @@ namespace StateMachineToolkit.Tests.Active
 		S1_to_S2,
 		S2_to_S1,
 		E1,
-	}
-
-	public class _<T>
-	{
-		public class SM
-		{
-			public void Init(State s)
-			{
-			}
-
-			public void Send(T t)
-			{
-			}
-		}
-
-		public class State
-		{
-			public static void Foo()
-			{
-				var sm = new _<int>.SM();
-				var state = new _<int>.State();
-				sm.Init(state);
-				sm.Send(3);
-			}
-		}
-		public class Transition
-		{
-			
-		}
 	}
 }

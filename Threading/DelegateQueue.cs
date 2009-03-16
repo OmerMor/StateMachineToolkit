@@ -43,7 +43,7 @@ namespace Sanford.Threading
 	/// <summary>
 	/// Represents an asynchronous queue of delegates.
 	/// </summary>
-	public partial class DelegateQueue : SynchronizationContext, IComponent, ISynchronizeInvoke
+	public sealed partial class DelegateQueue : SynchronizationContext, IComponent, ISynchronizeInvoke
 	{
 		#region DelegateQueue Members
 
@@ -148,7 +148,7 @@ namespace Sanford.Threading
 
 		#region Methods
 
-		protected virtual void Dispose(bool disposing)
+	    private void Dispose(bool disposing)
 		{
 			if (!disposing) return;
 			lock (m_lockObject)
@@ -442,7 +442,7 @@ namespace Sanford.Threading
 		}
 
 		// Raises the InvokeCompleted event.
-		protected virtual void OnInvokeCompleted(InvokeCompletedEventArgs e)
+	    private void OnInvokeCompleted(InvokeCompletedEventArgs e)
 		{
 			EventHandler<InvokeCompletedEventArgs> handler = InvokeCompleted;
 
@@ -453,7 +453,7 @@ namespace Sanford.Threading
 		}
 
 		// Raises the PostCompleted event.
-		protected virtual void OnPostCompleted(PostCompletedEventArgs e)
+	    private void OnPostCompleted(PostCompletedEventArgs e)
 		{
 			EventHandler<PostCompletedEventArgs> handler = PostCompleted;
 
@@ -464,7 +464,7 @@ namespace Sanford.Threading
 		}
 
 		// Raises the Disposed event.
-		protected virtual void OnDisposed(EventArgs e)
+	    private void OnDisposed(EventArgs e)
 		{
 			EventHandler handler = Disposed;
 

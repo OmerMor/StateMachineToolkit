@@ -111,10 +111,6 @@
       <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
-    <ProjectReference Include="..\..\Threading\Sanford.Threading.csproj">
-      <Project>{EA5579CB-695C-4C59-9BFC-27EB9600451D}</Project>
-      <Name>Sanford.Threading</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs">
@@ -147,6 +143,9 @@
       <ProductName>.NET Framework 3.5</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

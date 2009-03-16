@@ -37,9 +37,9 @@ using System.Diagnostics;
 
 namespace Sanford.Threading
 {
-	partial class DelegateScheduler
+    sealed partial class DelegateScheduler
 	{
-		private class Task : IComparable
+		private sealed class Task : IComparable
 		{
 			// The number of times left to invoke the delegate associated with this Task.
 			private int count;

@@ -17,12 +17,15 @@ namespace TestExample
 	public enum StateID
 	{
 		S1 = 8,
+	    S0,
+	    S11,
+	    S2,
+	    S21,
+	    S211
 	}
 
 	public abstract class ExampleBase : PassiveStateMachine<StateID, EventID>
 	{
-		private State stateS0, stateS1, stateS11, stateS2, stateS21, stateS211;
-
 		private GuardHandler guardFooIsTrue, guardFooIsFalse;
 
 		private ActionHandler actionSetFooToFalse, actionSetFooToTrue;
@@ -39,19 +42,24 @@ namespace TestExample
 			InitializeActions();
 			InitializeTransitions();
 			InitializeRelationships();
-			InitializeHistoryTypes();
-			InitializeInitialStates();
-			Initialize(stateS0);
+			Initialize(StateID.S0);
 		}
 
 		private void InitializeStates()
 		{
-			stateS0 = CreateState(StateID.S1, EntryS0, ExitS0);
-			stateS1 = CreateState(StateID.S1, EntryS1, ExitS1);
-			stateS11 = CreateState(StateID.S1, EntryS11, ExitS11);
-			stateS2 = CreateState(StateID.S1, EntryS2, ExitS2);
-			stateS21 = CreateState(StateID.S1, EntryS21, ExitS21);
-			stateS211 = CreateState(StateID.S1, EntryS211, ExitS211);
+		    this[StateID.S0].EntryHandler += EntryS0;
+		    this[StateID.S1].EntryHandler += EntryS1;
+		    this[StateID.S11].EntryHandler += EntryS11;
+		    this[StateID.S2].EntryHandler += EntryS2;
+		    this[StateID.S21].EntryHandler += EntryS21;
+		    this[StateID.S211].EntryHandler += EntryS211;
+
+		    this[StateID.S0].ExitHandler += ExitS0;
+		    this[StateID.S1].ExitHandler += ExitS1;
+		    this[StateID.S11].ExitHandler += ExitS11;
+		    this[StateID.S2].ExitHandler += ExitS2;
+		    this[StateID.S21].ExitHandler += ExitS21;
+		    this[StateID.S211].ExitHandler += ExitS211;
 		}
 
 		private void InitializeGuards()
@@ -68,47 +76,28 @@ namespace TestExample
 
 		private void InitializeTransitions()
 		{
-			stateS0.Transitions.Add(EventID.E, null, stateS211);
-			stateS1.Transitions.Add(EventID.D, null, stateS0);
-			stateS1.Transitions.Add(EventID.C, null, stateS2);
-			stateS1.Transitions.Add(EventID.A, null, stateS1);
-			stateS1.Transitions.Add(EventID.F, null, stateS211);
-			stateS1.Transitions.Add(EventID.B, null, stateS11);
-			stateS11.Transitions.Add(EventID.G, null, stateS211);
-			stateS11.Transitions.Add(EventID.H, guardFooIsTrue, null, actionSetFooToFalse);
-			stateS2.Transitions.Add(EventID.C, null, stateS1);
-			stateS2.Transitions.Add(EventID.F, null, stateS11);
-			stateS21.Transitions.Add(EventID.B, null, stateS211);
-			stateS21.Transitions.Add(EventID.H, guardFooIsFalse, stateS21, actionSetFooToTrue);
-			stateS211.Transitions.Add(EventID.D, null, stateS21);
-			stateS211.Transitions.Add(EventID.G, null, stateS0);
+            AddTransition(StateID.S0, EventID.E, null, StateID.S211);
+            AddTransition(StateID.S1, EventID.D, null, StateID.S0);
+            AddTransition(StateID.S1, EventID.C, null, StateID.S2);
+            AddTransition(StateID.S1, EventID.A, null, StateID.S1);
+            AddTransition(StateID.S1, EventID.F, null, StateID.S211);
+            AddTransition(StateID.S1, EventID.B, null, StateID.S11);
+            AddTransition(StateID.S11, EventID.G, null, StateID.S211);
+            AddTransition(StateID.S11, EventID.H, guardFooIsTrue, StateID.S11, actionSetFooToFalse);
+            AddTransition(StateID.S2, EventID.C, null, StateID.S1);
+            AddTransition(StateID.S2, EventID.F, null, StateID.S11);
+            AddTransition(StateID.S21, EventID.B, null, StateID.S211);
+            AddTransition(StateID.S21, EventID.H, guardFooIsFalse, StateID.S21, actionSetFooToTrue);
+            AddTransition(StateID.S211, EventID.D, null, StateID.S21);
+            AddTransition(StateID.S211, EventID.G, null, StateID.S0);
 		}
 
 		private void InitializeRelationships()
 		{
-			stateS0.Substates.Add(stateS1);
-			stateS1.Substates.Add(stateS11);
-			stateS0.Substates.Add(stateS2);
-			stateS2.Substates.Add(stateS21);
-			stateS21.Substates.Add(stateS211);
-		}
-
-		private void InitializeHistoryTypes()
-		{
-			stateS0.HistoryType = HistoryType.None;
-			stateS1.HistoryType = HistoryType.None;
-			stateS11.HistoryType = HistoryType.None;
-			stateS2.HistoryType = HistoryType.None;
-			stateS21.HistoryType = HistoryType.None;
-			stateS211.HistoryType = HistoryType.None;
-		}
-
-		private void InitializeInitialStates()
-		{
-			stateS0.InitialState = stateS1;
-			stateS1.InitialState = stateS11;
-			stateS2.InitialState = stateS21;
-			stateS21.InitialState = stateS211;
+            SetupSubstates(StateID.S0, HistoryType.None, StateID.S1, StateID.S2);
+            SetupSubstates(StateID.S1, HistoryType.None, StateID.S11);
+            SetupSubstates(StateID.S2, HistoryType.None, StateID.S21);
+            SetupSubstates(StateID.S21, HistoryType.None, StateID.S211);
 		}
 
 		protected virtual void EntryS0()
@@ -167,7 +156,7 @@ namespace TestExample
 
 		protected abstract void SetFooToTrue(object[] args);
 
-		public override void Send(EventID eventID, object[] args)
+		public override void Send(EventID eventID, params object[] args)
 		{
 			base.Send(eventID, args);
 			Execute();

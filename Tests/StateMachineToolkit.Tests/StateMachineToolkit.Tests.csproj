@@ -45,6 +45,7 @@
     <Compile Include="TestPassiveStateMachine.cs" />
     <Compile Include="TestActiveStateMachine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TrafficLightDemo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">

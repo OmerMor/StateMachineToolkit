@@ -18,8 +18,8 @@ namespace Sanford.StateMachineToolkit
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
     public abstract class PassiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>,
                                                                 IPassiveStateMachine<TState, TEvent>
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         private readonly Deque<StateMachineEvent> eventDeque = new Deque<StateMachineEvent>();
 
@@ -52,7 +52,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventID">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public override void Send(TEvent eventID, object[] args)
+        public override void Send(TEvent eventID, params object[] args)
         {
             AssertMachineIsValid();
             eventDeque.PushBack(new StateMachineEvent(eventID, args));
@@ -65,7 +65,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventID">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventID, object[] args)
+        protected override void SendPriority(TEvent eventID, params object[] args)
         {
             AssertMachineIsValid();
             eventDeque.PushFront(new StateMachineEvent(eventID, args));
@@ -82,17 +82,9 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Gets the state machine type: active or passive.
-        /// </summary>
-        public override StateMachineType StateMachineType
-        {
-            get { return StateMachineType.Passive; }
-        }
-
-        /// <summary>
         /// Encapsulates an event that was sent to the state machine.
         /// </summary>
-        private class StateMachineEvent
+        private sealed class StateMachineEvent
         {
             private readonly TEvent m_eventId;
 

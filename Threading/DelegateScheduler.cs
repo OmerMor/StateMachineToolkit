@@ -44,7 +44,7 @@ namespace Sanford.Threading
 	/// <summary>
 	/// Provides functionality for timestamped delegate invocation.
 	/// </summary>
-	public partial class DelegateScheduler : IComponent
+	public sealed partial class DelegateScheduler : IComponent
 	{
 		#region DelegateScheduler Members
 
@@ -125,7 +125,7 @@ namespace Sanford.Threading
 
 		#region Methods
 
-		protected virtual void Dispose(bool disposing)
+	    private void Dispose(bool disposing)
 		{
 			if (!disposing) return;
 			Stop();
@@ -378,7 +378,7 @@ namespace Sanford.Threading
 		}
 
 		// Raises the Disposed event.
-		protected virtual void OnDisposed(EventArgs e)
+	    private void OnDisposed(EventArgs e)
 		{
 			EventHandler handler = Disposed;
 
@@ -389,7 +389,7 @@ namespace Sanford.Threading
 		}
 
 		// Raises the InvokeCompleted event.
-		protected virtual void OnInvokeCompleted(InvokeCompletedEventArgs e)
+	    private void OnInvokeCompleted(InvokeCompletedEventArgs e)
 		{
 			EventHandler<InvokeCompletedEventArgs> handler = InvokeCompleted;
 

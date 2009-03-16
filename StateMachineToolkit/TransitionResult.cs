@@ -41,7 +41,7 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Represents the result of a transition.
         /// </summary>
-        internal class TransitionResult
+        protected sealed class TransitionResult
         {
             #region TransitionResult Members
 

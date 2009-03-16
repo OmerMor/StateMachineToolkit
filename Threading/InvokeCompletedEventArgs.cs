@@ -39,7 +39,7 @@ namespace Sanford.Threading
 	/// <summary>
 	/// Represents information about the InvokeCompleted event.
 	/// </summary>
-	public class InvokeCompletedEventArgs : EventArgs
+	public sealed class InvokeCompletedEventArgs : EventArgs
 	{
 		private readonly Delegate method;
 

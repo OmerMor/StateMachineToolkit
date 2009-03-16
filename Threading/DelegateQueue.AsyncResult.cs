@@ -2,7 +2,7 @@ using System;
 
 namespace Sanford.Threading
 {
-	public partial class DelegateQueue
+	public sealed partial class DelegateQueue
 	{
 		private enum NotificationType
 		{
@@ -14,7 +14,7 @@ namespace Sanford.Threading
 		/// <summary>
 		/// Implements the IAsyncResult interface for the DelegateQueue class.
 		/// </summary>
-		private class DelegateQueueAsyncResult : AsyncResult
+		private sealed class DelegateQueueAsyncResult : AsyncResult
 		{
 			// The delegate to be invoked.
 			private readonly Delegate method;

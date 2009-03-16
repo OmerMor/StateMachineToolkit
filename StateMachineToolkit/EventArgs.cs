@@ -43,8 +43,8 @@ namespace Sanford.StateMachineToolkit
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <typeparam name="TEvent">The type of the event.</typeparam>
     public class TransitionEventArgs<TState, TEvent> : EventArgs
-        where TState : struct, IComparable, IFormattable
-        where TEvent : struct, IComparable, IFormattable
+        //where TState : struct, IComparable, IFormattable
+        //where TEvent : struct, IComparable, IFormattable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TransitionEventArgs{TState, TEvent}"/> class.
@@ -109,8 +109,8 @@ namespace Sanford.StateMachineToolkit
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <typeparam name="TEvent">The type of the event.</typeparam>
     public class TransitionErrorEventArgs<TState, TEvent> : TransitionEventArgs<TState, TEvent>
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TransitionErrorEventArgs{TState, TEvent}"/> class.
@@ -161,8 +161,8 @@ namespace Sanford.StateMachineToolkit
     /// Event data for the <see cref="StateMachine{TState,TEvent}.TransitionCompleted"/> event.
     /// </summary>
     public class TransitionCompletedEventArgs<TState, TEvent> : TransitionErrorEventArgs<TState, TEvent>
-        where TState : struct, IComparable, IFormattable /*, IConvertible*/
-        where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TState : struct, IComparable, IFormattable /*, IConvertible*/
+        //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TransitionCompletedEventArgs{TState, TEvent}"/> class.
