@@ -2,17 +2,24 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using JetBrains.Annotations;
 using Sanford.StateMachineToolkit;
 using Timer=System.Threading.Timer;
 
 namespace StateMachineToolkit.Tests.Active
 {
+    [UsedImplicitly]
     public class TrafficLightApp
     {
+        [UsedImplicitly]
         public void Main()
         {
+            TraficLightStates traficLightState = TraficLightStates.Yellow;
             using(var form = new Form())
-            using (var sm = new TraficLightStateMachine())
+            using (var sm = new TraficLightStateMachine(
+                new ExternalStateStorage<TraficLightStates>(
+                    () => traficLightState,
+                    newState => traficLightState = newState)))
             {
                 var state = new Label {Location = new Point {X = 20, Y = 20}};
                 sm.TransitionCompleted += (sender, args) => state.Text = args.TargetStateID.ToString();
@@ -29,15 +36,15 @@ namespace StateMachineToolkit.Tests.Active
         }
     }
 
-    public class TraficLightStateMachine : ActiveStateMachine<TraficLightStates, TraficLightEvents>
+    public sealed class TraficLightStateMachine : ActiveStateMachine<TraficLightStates, TraficLightEvents>
     {
         private readonly Timer m_timer;
         private static readonly TimeSpan INTERVAL = TimeSpan.FromSeconds(2);
-
-        public TraficLightStateMachine()
+        public TraficLightStateMachine(IStateStorage<TraficLightStates> stateStorage)
+            : base(stateStorage)
         {
-            AddTransition(TraficLightStates.Off, TraficLightEvents.Start, TraficLightStates.On, x => start());
-            AddTransition(TraficLightStates.On, TraficLightEvents.Stop, TraficLightStates.Off, x => stop());
+            AddTransition(TraficLightStates.Off, TraficLightEvents.Start, TraficLightStates.On);
+            AddTransition(TraficLightStates.On, TraficLightEvents.Stop, TraficLightStates.Off);
             AddTransition(TraficLightStates.Red, TraficLightEvents.TimeEvent, TraficLightStates.RedYellow);
             AddTransition(TraficLightStates.RedYellow, TraficLightEvents.TimeEvent, TraficLightStates.Green);
             AddTransition(TraficLightStates.Green, TraficLightEvents.TimeEvent, TraficLightStates.Yellow);
@@ -46,15 +53,24 @@ namespace StateMachineToolkit.Tests.Active
             SetupSubstates(TraficLightStates.On, HistoryType.None, TraficLightStates.Red,
                            TraficLightStates.RedYellow, TraficLightStates.Green, TraficLightStates.Yellow);
 
-            m_timer = new Timer(state => Send(TraficLightEvents.TimeEvent));
+            this[TraficLightStates.On].EntryHandler += start;
+            this[TraficLightStates.On].ExitHandler += stop;
 
-            Initialize(TraficLightStates.Off);
+            m_timer = new Timer(s => Send(TraficLightEvents.TimeEvent));
+
+            Initialize();
+        }
+
+        public TraficLightStateMachine()
+            : this(new InternalStateStorage<TraficLightStates>(TraficLightStates.Yellow))
+        {
         }
 
         private void start()
         {
             m_timer.Change(INTERVAL, INTERVAL);
         }
+
         private void stop()
         {
             m_timer.Change(Timeout.Infinite, Timeout.Infinite);

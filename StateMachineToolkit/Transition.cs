@@ -50,7 +50,7 @@ namespace Sanford.StateMachineToolkit
         /// that is the target of the Transition..
         /// </summary>
         [DebuggerDisplay("{m_source.ID}-->{m_target.ID}")]
-        protected sealed class Transition
+        private sealed class Transition
         {
             #region Transition Members
 
@@ -144,7 +144,7 @@ namespace Sanford.StateMachineToolkit
             /// <returns>
             /// A TransitionResult object representing the results of the transition.
             /// </returns>
-            internal TransitionResult Fire(State origin, object[] args)
+            internal TransitionResult fire(State origin, object[] args)
             {
                 if (!shouldFire(args))
                 {

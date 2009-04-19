@@ -15,12 +15,12 @@ namespace TrafficLightDemo
 
 		public TrafficLight()
 		{
-			States[StateID.On].EntryHandler += EntryOn;
-			States[StateID.Off].EntryHandler += EntryOff;
-			States[StateID.Red].EntryHandler += EntryRed;
-			States[StateID.Yellow].EntryHandler += EntryYellow;
-			States[StateID.Green].EntryHandler += EntryGreen;
-			States[StateID.Disposed].EntryHandler += EntryDisposed;
+            this[StateID.On].EntryHandler += EntryOn;
+            this[StateID.Off].EntryHandler += EntryOff;
+            this[StateID.Red].EntryHandler += EntryRed;
+            this[StateID.Yellow].EntryHandler += EntryYellow;
+            this[StateID.Green].EntryHandler += EntryGreen;
+            this[StateID.Disposed].EntryHandler += EntryDisposed;
 
 			SetupSubstates(StateID.On, HistoryType.Shallow, StateID.Red, StateID.Yellow, StateID.Green);
 

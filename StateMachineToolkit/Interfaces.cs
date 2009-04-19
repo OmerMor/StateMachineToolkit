@@ -47,9 +47,9 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Sends an event to the state machine, that might trigger a transition.
         /// </summary>
-        /// <param name="eventID">The event.</param>
+        /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        void Send(TEvent eventID, params object[] args);
+        void Send(TEvent eventId, params object[] args);
     }
 
     /// <summary>
@@ -108,12 +108,12 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Sends an event to the StateMachine, and blocks until it processing ends.
         /// </summary>
-        /// <param name="eventID">
+        /// <param name="eventId">
         /// The event ID.
         /// </param>
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        void SendSynchronously(TEvent eventID, params object[] args);
+        void SendSynchronously(TEvent eventId, params object[] args);
     }
 }

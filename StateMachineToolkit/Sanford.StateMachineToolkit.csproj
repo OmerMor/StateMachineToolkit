@@ -189,6 +189,7 @@
       <Link>Threading\PostCompletedEventArgs.cs</Link>
     </Compile>
     <Compile Include="ActiveStateMachine.cs" />
+    <Compile Include="IStateStorage.cs" />
     <Compile Include="JetBrains.Annotations.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Exceptions.cs" />

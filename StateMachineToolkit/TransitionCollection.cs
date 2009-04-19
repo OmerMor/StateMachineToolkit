@@ -49,7 +49,7 @@ namespace Sanford.StateMachineToolkit
         /// receives an event, it uses the event's ID to check to see if it has any Transitions for that 
         /// event (as described above).
         /// </summary>
-        protected class TransitionCollection
+        private class TransitionCollection
         {
             #region TransitionCollection Members
 
@@ -85,7 +85,7 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Adds a Transition to the collection for the specified event ID.
             /// </summary>
-            /// <param name="eventID">
+            /// <param name="eventId">
             /// The event ID associated with the Transition.
             /// </param>
             /// <param name="trans">
@@ -97,7 +97,7 @@ namespace Sanford.StateMachineToolkit
             /// the event ID in its TransitionCollection to see if there are any 
             /// Transitions for the specified event. 
             /// </remarks>
-            public void Add(TEvent eventID, Transition trans)
+            public void Add(TEvent eventId, Transition trans)
             {
                 #region Preconditions
 
@@ -113,20 +113,20 @@ namespace Sanford.StateMachineToolkit
                 trans.Source = m_owner;
 
                 // If there are no Transitions for the specified event ID.
-                if (!m_transitions.ContainsKey(eventID))
+                if (!m_transitions.ContainsKey(eventId))
                 {
                     // Create new list of Transitions for the specified event ID.
-                    m_transitions[eventID] = new List<Transition>();
+                    m_transitions[eventId] = new List<Transition>();
                 }
 
                 // Add Transition.
-                m_transitions[eventID].Add(trans);
+                m_transitions[eventId].Add(trans);
             }
 
             /// <summary>
             /// Adds a Transition to the collection for the specified event ID.
             /// </summary>
-            /// <param name="eventID">
+            /// <param name="eventId">
             /// The event ID associated with the Transition.
             /// </param>
             /// <param name="targetState">
@@ -141,15 +141,15 @@ namespace Sanford.StateMachineToolkit
             /// the event ID in its TransitionCollection to see if there are any 
             /// Transitions for the specified event. 
             /// </remarks>
-            public void Add(TEvent eventID, State targetState, params ActionHandler[] actions)
+            public void Add(TEvent eventId, State targetState, params ActionHandler[] actions)
             {
-                Add(eventID, null, targetState, actions);
+                Add(eventId, null, targetState, actions);
             }
 
             /// <summary>
             /// Adds a Transition to the collection for the specified event ID.
             /// </summary>
-            /// <param name="eventID">
+            /// <param name="eventId">
             /// The event ID associated with the Transition.
             /// </param>
             /// <param name="guard">
@@ -168,7 +168,7 @@ namespace Sanford.StateMachineToolkit
             /// the event ID in its TransitionCollection to see if there are any 
             /// Transitions for the specified event. 
             /// </remarks>
-            public void Add(TEvent eventID, GuardHandler guard, State targetState, params ActionHandler[] actions)
+            public void Add(TEvent eventId, GuardHandler guard, State targetState, params ActionHandler[] actions)
             {
                 Transition trans = new Transition(guard, targetState);
                 foreach (ActionHandler action in actions)
@@ -176,31 +176,31 @@ namespace Sanford.StateMachineToolkit
                     if (action == null) continue;
                     trans.Actions.Add(action);
                 }
-                Add(eventID, trans);
+                Add(eventId, trans);
             }
 
             /// <summary>
             /// Removes the specified Transition at the specified event ID.
             /// </summary>
-            /// <param name="eventID">
+            /// <param name="eventId">
             /// The event ID associated with the Transition.
             /// </param>
             /// <param name="trans">
             /// The Transition to remove.
             /// </param>
-            public void Remove(TEvent eventID, Transition trans)
+            public void Remove(TEvent eventId, Transition trans)
             {
-                if (!m_transitions.ContainsKey(eventID))
+                if (!m_transitions.ContainsKey(eventId))
                     return;
 
                 // If there are Transitions at the specified event id.
-                m_transitions[eventID].Remove(trans);
+                m_transitions[eventId].Remove(trans);
 
                 // If there are no more Transitions at the specified event id.
-                if (m_transitions[eventID].Count == 0)
+                if (m_transitions[eventId].Count == 0)
                 {
                     // Indicate that there are no Transitions at this event id.
-                    m_transitions.Remove(eventID);
+                    m_transitions.Remove(eventId);
                 }
             }
 
@@ -215,9 +215,9 @@ namespace Sanford.StateMachineToolkit
             /// If there are no Transitions at the specified event ID, the value
             /// of the collection will be null.
             /// </remarks>
-            public IEnumerable<Transition> this[TEvent eventID]
+            public IEnumerable<Transition> this[TEvent eventId]
             {
-                get { return m_transitions.ContainsKey(eventID) ? m_transitions[eventID] : null; }
+                get { return m_transitions.ContainsKey(eventId) ? m_transitions[eventId] : null; }
             }
 
             #endregion

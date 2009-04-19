@@ -59,7 +59,7 @@ namespace Sanford.StateMachineToolkit
         /// <see cref="State"/>; you cannot add a <see cref="State"/> to the 
         /// <see cref="State.Substates"/> collection of more than one <see cref="State"/>.
         /// </summary>
-        protected class SubstateCollection : IEnumerable<State>
+        private sealed class SubstateCollection : IEnumerable<State>
         {
             #region SubstateCollection Members
 

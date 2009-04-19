@@ -1,3 +1,6 @@
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable VirtualMemberNeverOverriden.Global
+
 using System;
 using Sanford.Collections.Generic;
 
@@ -21,16 +24,22 @@ namespace Sanford.StateMachineToolkit
         //where TState : struct, IComparable, IFormattable /*, IConvertible*/
         //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
-        private readonly Deque<StateMachineEvent> eventDeque = new Deque<StateMachineEvent>();
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent}"/> class.
+        /// </summary>
+        /// <param name="stateStorage">The state storage.</param>
+        protected PassiveStateMachine(IStateStorage<TState> stateStorage) : base(stateStorage)
+        {
+        }
 
         /// <summary>
-        /// Initializes the StateMachine's initial state.
+        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent}"/> class.
         /// </summary>
-        /// <param name="initialState">The state that will initially receive events from the StateMachine.</param>
-        protected override void Initialize(State initialState)
+        protected PassiveStateMachine()
         {
-            InitializeStateMachine(initialState);
         }
+
+        private readonly Deque<StateMachineEvent> m_eventDeque = new Deque<StateMachineEvent>();
 
         /// <summary>
         /// Executes pending events.
@@ -39,9 +48,9 @@ namespace Sanford.StateMachineToolkit
         {
             StateMachineEvent e;
 
-            while (eventDeque.Count > 0)
+            while (m_eventDeque.Count > 0)
             {
-                e = eventDeque.PopFront();
+                e = m_eventDeque.PopFront();
 
                 Dispatch(e.EventID, e.GetArgs());
             }
@@ -50,25 +59,12 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Sends an event to the state machine, that might trigger a transition.
         /// </summary>
-        /// <param name="eventID">The event.</param>
+        /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public override void Send(TEvent eventID, params object[] args)
+        public override void Send(TEvent eventId, params object[] args)
         {
             AssertMachineIsValid();
-            eventDeque.PushBack(new StateMachineEvent(eventID, args));
-        }
-
-        /// <summary>
-        /// Sends an event to the state machine, that might trigger a transition.
-        /// This event will have precedence over other pending events that were sent using
-        /// the <see cref="Send"/> method.
-        /// </summary>
-        /// <param name="eventID">The event.</param>
-        /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventID, params object[] args)
-        {
-            AssertMachineIsValid();
-            eventDeque.PushFront(new StateMachineEvent(eventID, args));
+            m_eventDeque.PushBack(new StateMachineEvent(eventId, args));
         }
 
         /// <summary>
@@ -79,6 +75,28 @@ namespace Sanford.StateMachineToolkit
         {
             OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(CurrentEventContext, ex));
             //throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
+        }
+
+        /// <summary>
+        /// Initializes the StateMachine's initial state.
+        /// </summary>
+        /// <param name="initialState">The state that will initially receive events from the StateMachine.</param>
+        protected override void Initialize(TState initialState)
+        {
+            InitializeStateMachine(initialState);
+        }
+
+        /// <summary>
+        /// Sends an event to the state machine, that might trigger a transition.
+        /// This event will have precedence over other pending events that were sent using
+        /// the <see cref="Send"/> method.
+        /// </summary>
+        /// <param name="eventId">The event.</param>
+        /// <param name="args">Optional event arguments.</param>
+        protected override void SendPriority(TEvent eventId, params object[] args)
+        {
+            AssertMachineIsValid();
+            m_eventDeque.PushFront(new StateMachineEvent(eventId, args));
         }
 
         /// <summary>
@@ -121,3 +139,6 @@ namespace Sanford.StateMachineToolkit
         }
     }
 }
+
+// ReSharper enable MemberCanBePrivate.Global
+// ReSharper enable VirtualMemberNeverOverriden.Global

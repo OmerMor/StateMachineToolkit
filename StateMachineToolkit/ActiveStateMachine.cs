@@ -1,3 +1,6 @@
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable VirtualMemberNeverOverriden.Global
+
 namespace Sanford.StateMachineToolkit
 {
     using System;
@@ -32,9 +35,9 @@ namespace Sanford.StateMachineToolkit
         #region Fields
 
         /// <summary>
-        /// The synchronization context, for executing callbacks on the origin thread.
+        /// Indicates whether the instance was already disposed.
         /// </summary>
-        private readonly SynchronizationContext m_syncContext;
+        private bool m_isDisposed;
 
         /// <summary>
         /// Used for queuing events.
@@ -42,9 +45,9 @@ namespace Sanford.StateMachineToolkit
         private readonly DelegateQueue m_queue = new DelegateQueue();
 
         /// <summary>
-        /// Indicates whether the instance was already disposed.
+        /// The synchronization context, for executing callbacks on the origin thread.
         /// </summary>
-        private bool m_isDisposed;
+        private readonly SynchronizationContext m_syncContext;
 
         /// <summary>
         /// Indicates whether the current event was sent synchronously.
@@ -57,7 +60,15 @@ namespace Sanford.StateMachineToolkit
         /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
         /// </summary>
         protected ActiveStateMachine()
-            : this(SynchronizationContext.Current ?? new NullSynchronizationContext())
+            : this(defaultSynchronizationContext)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// </summary>
+        protected ActiveStateMachine(IStateStorage<TState> stateStorage)
+            : this(stateStorage, defaultSynchronizationContext)
         {
         }
 
@@ -65,26 +76,52 @@ namespace Sanford.StateMachineToolkit
         /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
         /// </summary>
         /// <param name="syncContext">The synchronization context.</param>
-        protected ActiveStateMachine(SynchronizationContext syncContext)
+        protected ActiveStateMachine(IStateStorage<TState> stateStorage, SynchronizationContext syncContext)
+            : base(stateStorage)
         {
             m_syncContext = syncContext;
             m_queue.PostCompleted +=
                 delegate(object sender, PostCompletedEventArgs args)
-                    {
-                        if (args.Error == null) return;
-                        OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
-                                              CurrentEventContext, args.Error));
-                    };
+                {
+                    if (args.Error == null) return;
+                    OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
+                                          CurrentEventContext, args.Error));
+                };
             m_queue.InvokeCompleted +=
                 delegate(object sender, InvokeCompletedEventArgs args)
-                    {
-                        if (args.Error == null) return;
-                        OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
-                                              CurrentEventContext, args.Error));
-                    };
+                {
+                    if (args.Error == null) return;
+                    OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
+                                          CurrentEventContext, args.Error));
+                };
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// </summary>
+        /// <param name="syncContext">The synchronization context.</param>
+        protected ActiveStateMachine(SynchronizationContext syncContext)
+            : this(new InternalStateStorage<TState>(), syncContext)
+        {
         }
 
         #region Properties
+
+        /// <summary>
+        /// Gets the ID of the current state.
+        /// </summary>
+        /// <remarks>Thread safe.</remarks>
+        /// <value></value>
+        public override TState CurrentStateID
+        {
+            get 
+            {
+                TState currentState = default(TState);
+                SendOrPostCallback fetchState = delegate { currentState = base.CurrentStateID; };
+                m_queue.Send(fetchState, null);
+                return currentState;
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is disposed.
@@ -129,28 +166,28 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Sends an event to the StateMachine.
         /// </summary>
-        /// <param name="eventID">
+        /// <param name="eventId">
         /// The event ID.
         /// </param>
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public override void Send(TEvent eventID, params object[] args)
+        public override void Send(TEvent eventId, params object[] args)
         {
             AssertMachineIsValid();
-            m_queue.Post(delegate { Dispatch(eventID, args); }, null);
+            m_queue.Post(delegate { Dispatch(eventId, args); }, null);
         }
 
         /// <summary>
         /// Sends an event to the StateMachine, and blocks until it processing ends.
         /// </summary>
-        /// <param name="eventID">
+        /// <param name="eventId">
         /// The event ID.
         /// </param>
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public void SendSynchronously(TEvent eventID, params object[] args)
+        public void SendSynchronously(TEvent eventId, params object[] args)
         {
             AssertMachineIsValid();
             m_queue.Send(
@@ -159,7 +196,7 @@ namespace Sanford.StateMachineToolkit
                         m_synchronousInvocation = true;
                         try
                         {
-                            Dispatch(eventID, args);
+                            Dispatch(eventId, args);
                         }
                         finally
                         {
@@ -216,7 +253,7 @@ namespace Sanford.StateMachineToolkit
         /// Initializes the StateMachine's initial state.
         /// </summary>
         /// <param name="initialState">The state that will initially receive events from the StateMachine.</param>
-        protected override void Initialize(State initialState)
+        protected override void Initialize(TState initialState)
         {
             Exception initException = null;
             m_queue.Send(
@@ -313,12 +350,17 @@ namespace Sanford.StateMachineToolkit
         /// This event will have precedence over other pending events that were sent using
         /// the <see cref="Send"/> method.
         /// </summary>
-        /// <param name="eventID">The event.</param>
+        /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventID, params object[] args)
+        protected override void SendPriority(TEvent eventId, params object[] args)
         {
             AssertMachineIsValid();
-            m_queue.PostPriority(delegate { Dispatch(eventID, args); }, null);
+            m_queue.PostPriority(delegate { Dispatch(eventId, args); }, null);
+        }
+
+        private static SynchronizationContext defaultSynchronizationContext
+        {
+            get { return SynchronizationContext.Current ?? new NullSynchronizationContext(); }
         }
 
         private void synchronizedSend<T>(Action<T> action, T arg)
@@ -371,3 +413,6 @@ namespace Sanford.StateMachineToolkit
         }
     }
 }
+
+// ReSharper enable MemberCanBePrivate.Global
+// ReSharper enable VirtualMemberNeverOverriden.Global

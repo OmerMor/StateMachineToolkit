@@ -32,6 +32,9 @@
 
 #endregion
 
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable VirtualMemberNeverOverriden.Global
+
 namespace Sanford.StateMachineToolkit
 {
     using System;
@@ -51,18 +54,31 @@ namespace Sanford.StateMachineToolkit
     {
         #region StateMachine Members
 
-        #region Fields
+        #region .ctor
 
-        /// <summary>
-        /// The states of the state machine.
-        /// </summary>
-        private readonly StateMap m_states = new StateMap();
+        public StateMachine(IStateStorage<TState> stateStorage)
+        {
+            m_stateStorage = stateStorage;
+        }
+
+        public StateMachine() : this(new InternalStateStorage<TState>())
+        {
+        }
+
+        #endregion
+
+        #region Fields
 
         /// <summary>
         /// The return value of the last action.
         /// </summary>
         [ThreadStatic]
         private static StateMachine<TState, TEvent> s_currentStateMachine;
+
+        /// <summary>
+        /// The states of the state machine.
+        /// </summary>
+        private readonly StateMap m_states = new StateMap();
 
         /// <summary>
         /// The results of the action performed during the last transition.
@@ -74,10 +90,14 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         private EventContext m_currentEventContext;
 
+/*
         /// <summary>
         /// The current state.
         /// </summary>
         private TState m_currentStateId;
+*/
+
+        private readonly IStateStorage<TState> m_stateStorage;
 
         /// <summary>
         /// Indicates whether the state machine has been initialized.
@@ -118,32 +138,28 @@ namespace Sanford.StateMachineToolkit
         #region Properties
 
         /// <summary>
-        /// Gets the ID of the current state.
+        /// Gets the <see cref="IStateEventHandlers"/> for the specified state.
         /// </summary>
-        public TState CurrentStateID
+        /// <value>The state.</value>
+        public IStateEventHandlers this[TState value]
         {
             get
             {
-                if (!m_initialized)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                Debug.Assert(
-                    CurrentState != null, 
-                    "CurrentStateID can't be use before the state machine was initialized.");
-
-                return m_currentStateId;
+                return states[value];
             }
-            protected set { m_currentStateId = value; }
         }
 
         /// <summary>
-        /// Gets the states of the state machine.
+        /// Gets the ID of the current state.
         /// </summary>
-        protected StateMap States
+        public virtual TState CurrentStateID
         {
-            get { return m_states; }
+            get
+            {
+                AssertMachineIsValid();
+                return StateStorage.Value;
+            }
+            protected set { StateStorage.Value = value; }
         }
 
         /// <summary>
@@ -170,9 +186,9 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Gets or sets the current state.
         /// </summary>
-        protected State CurrentState
+        private State CurrentState
         {
-            get { return States[m_currentStateId]; }
+            get { return states[CurrentStateID]; }
         }
 
         /// <summary>
@@ -183,19 +199,20 @@ namespace Sanford.StateMachineToolkit
         /// </value>
         protected bool IsInitialized
         {
-            get { return m_initialized && CurrentState != null; }
+            get { return m_initialized; }
+        }
+
+        protected IStateStorage<TState> StateStorage
+        {
+            get { return m_stateStorage; }
         }
 
         /// <summary>
-        /// Gets the <see cref="IStateEventHandlers"/> for the specified state.
+        /// Gets the states of the state machine.
         /// </summary>
-        /// <value>The state.</value>
-        public IStateEventHandlers this[TState value]
+        private StateMap states
         {
-            get
-            {
-                return States[value];
-            }
+            get { return m_states; }
         }
 
         #endregion
@@ -207,12 +224,12 @@ namespace Sanford.StateMachineToolkit
         /// implicitly added to the state machine if necesseray. 
         /// </summary>
         /// <param name="source">The source state.</param>
-        /// <param name="eventID">The event that will trigger the transition.</param>
+        /// <param name="eventId">The event that will trigger the transition.</param>
         /// <param name="target">The target state.</param>
         /// <param name="actions">Optional actions that will be performed during the transition.</param>
-        public void AddTransition(TState source, TEvent eventID, TState target, params ActionHandler[] actions)
+        public void AddTransition(TState source, TEvent eventId, TState target, params ActionHandler[] actions)
         {
-            States[source].Transitions.Add(eventID, States[target], actions);
+            states[source].Transitions.Add(eventId, states[target], actions);
         }
 
         /// <summary>
@@ -220,21 +237,21 @@ namespace Sanford.StateMachineToolkit
         /// implicitly added to the state machine if necessary. 
         /// </summary>
         /// <param name="source">The source state.</param>
-        /// <param name="eventID">The event that will trigger the transition.</param>
+        /// <param name="eventId">The event that will trigger the transition.</param>
         /// <param name="guard">A transition guard.</param>
         /// <param name="target">The target state.</param>
         /// <param name="actions">Optional actions that will be performed during the transition.</param>
-        public void AddTransition(TState source, TEvent eventID, GuardHandler guard, TState target, params ActionHandler[] actions)
+        public void AddTransition(TState source, TEvent eventId, GuardHandler guard, TState target, params ActionHandler[] actions)
         {
-            States[source].Transitions.Add(eventID, guard, States[target], actions);
+            states[source].Transitions.Add(eventId, guard, states[target], actions);
         }
 
         /// <summary>
         /// Sends an event to the state machine, that might trigger a transition.
         /// </summary>
-        /// <param name="eventID">The event.</param>
+        /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public abstract void Send(TEvent eventID, params object[] args);
+        public abstract void Send(TEvent eventId, params object[] args);
 
         /// <summary>
         /// Setups substates for hierarchical state machine.
@@ -245,36 +262,15 @@ namespace Sanford.StateMachineToolkit
         /// <param name="additionalSubstates">Additional substates.</param>
         public void SetupSubstates(TState superState, HistoryType historyType, TState initialSubstate, params TState[] additionalSubstates)
         {
-            States[superState].Substates.Clear();
-            States[superState].Substates.Add(States[initialSubstate]);
+            states[superState].Substates.Clear();
+            states[superState].Substates.Add(states[initialSubstate]);
             foreach (TState substate in additionalSubstates)
             {
-                States[superState].Substates.Add(States[substate]);
+                states[superState].Substates.Add(states[substate]);
             }
 
-            States[superState].HistoryType = historyType;
-            States[superState].InitialState = States[initialSubstate];
-        }
-
-        /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event 
-        /// on the currently running state machine.
-        /// </summary>
-        private static void currentStateMachineOnBeginTransition()
-        {
-            s_currentStateMachine.OnBeginTransition(s_currentStateMachine.CurrentEventContext);
-        }
-
-        /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event
-        /// on the currently running state machine.
-        /// </summary>
-        /// <param name="ex">The exception that was thrown.</param>
-        private static void currentStateMachineOnExceptionThrown(Exception ex)
-        {
-            s_currentStateMachine.OnExceptionThrown(
-                new TransitionErrorEventArgs<TState, TEvent>(
-                    s_currentStateMachine.CurrentEventContext, ex));
+            states[superState].HistoryType = historyType;
+            states[superState].InitialState = states[initialSubstate];
         }
 
         /// <summary>
@@ -292,24 +288,25 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Dispatches events to the current state.
         /// </summary>
-        /// <param name="eventID">
+        /// <param name="eventId">
         /// The event ID.
         /// </param>
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        protected virtual void Dispatch(TEvent eventID, object[] args)
+        protected virtual void Dispatch(TEvent eventId, object[] args)
         {
             // Reset action result.
             ActionResult = null;
-            CurrentEventContext = new EventContext(CurrentStateID, eventID, args);
+            State currentState = CurrentState;
+            CurrentEventContext = new EventContext(currentState.ID, eventId, args);
             s_currentStateMachine = this;
             try
             {
                 OnBeginDispatch(CurrentEventContext);
 
                 // Dispatch event to the current state.
-                TransitionResult result = CurrentState.Dispatch(eventID, args);
+                TransitionResult result = currentState.Dispatch(eventId, args);
 
 /*
                 // report errors
@@ -326,11 +323,12 @@ namespace Sanford.StateMachineToolkit
                     return;
                 }
 
-                CurrentStateID = result.NewState.ID;
+                TState newStateId = result.NewState.ID;
+                CurrentStateID = newStateId;
 
                 TransitionCompletedEventArgs<TState, TEvent> eventArgs =
                     new TransitionCompletedEventArgs<TState, TEvent>(
-                        CurrentState.ID, CurrentEventContext, ActionResult, result.Error);
+                        newStateId, CurrentEventContext, ActionResult, result.Error);
 
                 OnTransitionCompleted(eventArgs);
             }
@@ -351,6 +349,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="ex">The exception.</param>
         protected abstract void HandleDispatchException(Exception ex);
 
+/*
         /// <summary>
         /// Initializes the StateMachine's initial state.
         /// </summary>
@@ -359,28 +358,35 @@ namespace Sanford.StateMachineToolkit
         /// </param>
         protected abstract void Initialize(State initialState);
 
+*/
         /// <summary>
         /// Initializes the StateMachine's initial state.
         /// </summary>
-        /// <param name="initialStateID">
+        /// <param name="initialStateId">
         /// The state that will initially receive events from the StateMachine.
         /// </param>
-        protected void Initialize(TState initialStateID)
+        protected abstract void Initialize(TState initialStateId);
+
+        /// <summary>
+        /// Initializes the StateMachine's initial state.
+        /// </summary>
+        protected void Initialize()
         {
-            Initialize(States[initialStateID]);
+            Initialize(StateStorage.Value);
         }
 
         /// <summary>
         /// Initializes the StateMachine's initial state.
         /// </summary>
-        /// <param name="initialState">
+        /// <param name="initialStateId">
         /// The state that will initially receive events from the StateMachine.
         /// </param>
-        protected void InitializeStateMachine(State initialState)
+        protected void InitializeStateMachine(TState initialStateId)
         {
+            State initialState = states[initialStateId];
             if (initialState == null)
             {
-                throw new ArgumentNullException("initialState");
+                throw new ArgumentException("Machine was not setup with given initial state.", "initialStateId");
             }
 
             if (m_initialized)
@@ -390,7 +396,6 @@ namespace Sanford.StateMachineToolkit
 
             m_initialized = true;
             s_currentStateMachine = this;
-
             State superstate = initialState;
             Stack<State> superstateStack = new Stack<State>();
 
@@ -497,9 +502,30 @@ namespace Sanford.StateMachineToolkit
         /// This event will have precedence over other pending events that were sent using
         /// the <see cref="Send"/> method.
         /// </summary>
-        /// <param name="eventID">The event.</param>
+        /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected abstract void SendPriority(TEvent eventID, params object[] args);
+        protected abstract void SendPriority(TEvent eventId, params object[] args);
+
+        /// <summary>
+        /// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event 
+        /// on the currently running state machine.
+        /// </summary>
+        private static void currentStateMachineOnBeginTransition()
+        {
+            s_currentStateMachine.OnBeginTransition(s_currentStateMachine.CurrentEventContext);
+        }
+
+        /// <summary>
+        /// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event
+        /// on the currently running state machine.
+        /// </summary>
+        /// <param name="ex">The exception that was thrown.</param>
+        private static void currentStateMachineOnExceptionThrown(Exception ex)
+        {
+            s_currentStateMachine.OnExceptionThrown(
+                new TransitionErrorEventArgs<TState, TEvent>(
+                    s_currentStateMachine.CurrentEventContext, ex));
+        }
 
         #endregion
 
@@ -509,7 +535,7 @@ namespace Sanford.StateMachineToolkit
         /// A readonly mapping from <typeparamref name="TState"/> ID to 
         /// <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent}.State"/> object.
         /// </summary>
-        protected sealed class StateMap
+        private sealed class StateMap
         {
             /// <summary>
             /// Maps state IDs to state objects.
@@ -526,11 +552,11 @@ namespace Sanford.StateMachineToolkit
             {
                 get
                 {
-                    return LookupState(state);
+                    return lookupState(state);
                 }
             }
 
-            public State LookupState(TState state)
+            private State lookupState(TState state)
             {
                 // lazy initialization
                 if (!m_map.ContainsKey(state))
@@ -622,3 +648,6 @@ namespace Sanford.StateMachineToolkit
         RaiseExceptionEvent
     }
 }
+
+// ReSharper restore MemberCanBePrivate.Global
+// ReSharper restore VirtualMemberNeverOverriden.Global

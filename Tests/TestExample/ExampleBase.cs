@@ -156,9 +156,9 @@ namespace TestExample
 
 		protected abstract void SetFooToTrue(object[] args);
 
-		public override void Send(EventID eventID, params object[] args)
+		public override void Send(EventID eventId, params object[] args)
 		{
-			base.Send(eventID, args);
+			base.Send(eventId, args);
 			Execute();
 		}
 	}

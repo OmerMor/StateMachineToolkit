@@ -72,8 +72,8 @@ namespace Sanford.StateMachineToolkit
         /// (if one was performed). State machines use this information to update their 
         /// current State, if necessary.
         /// </summary>
-        [System.Diagnostics.DebuggerDisplay("{m_stateID}")]
-        protected sealed class State : IStateEventHandlers
+        [System.Diagnostics.DebuggerDisplay("{m_stateId}")]
+        private sealed class State : IStateEventHandlers
         {
             #region State Members
 
@@ -107,7 +107,7 @@ namespace Sanford.StateMachineToolkit
             private int m_level;
 
             // A unique integer value representing the State's ID.
-            private readonly TState m_stateID;
+            private readonly TState m_stateId;
 
             #endregion
 
@@ -131,11 +131,11 @@ namespace Sanford.StateMachineToolkit
             /// Initializes a new instance of the State class with the specified
             /// number of events it will handle.
             /// </summary>
-            /// <param name="stateID">The State's ID.</param>
+            /// <param name="stateId">The State's ID.</param>
             /// Lookup method for getting the internal State object of the given state ID.
             /// </param>
-            public State(TState stateID)
-                : this(stateID, null, null)
+            public State(TState stateId)
+                : this(stateId, null, null)
             {
             }
 
@@ -144,7 +144,7 @@ namespace Sanford.StateMachineToolkit
             /// number of events it will handle as well as its entry and exit 
             /// actions.
             /// </summary>
-            /// <param name="stateID">
+            /// <param name="stateId">
             /// The State's ID.
             /// </param>
             /// <param name="entryHandler">
@@ -153,12 +153,12 @@ namespace Sanford.StateMachineToolkit
             /// <param name="exitHandler">
             /// The exit action.
             /// </param>
-            public State(TState stateID, EntryHandler entryHandler, ExitHandler exitHandler)
+            public State(TState stateId, EntryHandler entryHandler, ExitHandler exitHandler)
             {
                 EntryHandler += entryHandler ?? delegate { };
                 ExitHandler += exitHandler ?? delegate { };
 
-                m_stateID = stateID;
+                m_stateId = stateId;
 
                 m_substates = new SubstateCollection(this);
                 m_transitions = new TransitionCollection(this);
@@ -173,48 +173,20 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Dispatches an event to the StateMachine.
             /// </summary>
-            /// <param name="eventID"></param>
+            /// <param name="eventId"></param>
             /// <param name="args">
             /// The arguments accompanying the event.
             /// </param>
             /// <returns>
             /// The results of the dispatch.
             /// </returns>
-            internal TransitionResult Dispatch(TEvent eventID, object[] args)
+            internal TransitionResult Dispatch(TEvent eventId, object[] args)
             {
-                return dispatch(this, eventID, args);
+                return dispatch(this, eventId, args);
             }
 
             // Recursively goes up the the state hierarchy until a state is found 
             // that will handle the event.
-            private TransitionResult dispatch(State origin, TEvent eventID, object[] args)
-            {
-                TransitionResult transResult = s_notFiredResult;
-
-                // If there are any Transitions for this event.
-                if (m_transitions[eventID] != null)
-                {
-                    // Iterate through the Transitions until one of them fires.
-                    foreach (Transition trans in m_transitions[eventID])
-                    {
-                        transResult = trans.Fire(origin, args);
-                        if (transResult.HasFired)
-                        {
-                            // Break out of loop. We're finished.
-                            return transResult;
-                        }
-                    }
-                }
-                // Else if there are no Transitions for this event and there is a 
-                // superstate.
-                if (Superstate != null)
-                {
-                    // Dispatch the event to the superstate.
-                    transResult = Superstate.dispatch(origin, eventID, args);
-                }
-
-                return transResult;
-            }
 
             /// <summary>
             /// Enters the state.
@@ -248,24 +220,19 @@ namespace Sanford.StateMachineToolkit
             /// </summary>
             internal void Exit()
             {
-                // If an exit action exists for this state.
-                if (ExitHandler != null)
+                try
                 {
-                    try
-                    {
-                        // Execute exit action.
-                        ExitHandler();
-                    }
-                    catch (Exception ex)
-                    {
-                        EventContext context = s_currentStateMachine.CurrentEventContext;
-                        string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
-                                                      context.SourceState, context.CurrentEvent, ID);
-                        ExitException exitException = new ExitException(message, ex);
-                        currentStateMachineOnExceptionThrown(exitException);
-                    }
+                    // Execute exit action.
+                    ExitHandler();
                 }
-
+                catch (Exception ex)
+                {
+                    EventContext context = s_currentStateMachine.CurrentEventContext;
+                    string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
+                                                  context.SourceState, context.CurrentEvent, ID);
+                    ExitException exitException = new ExitException(message, ex);
+                    currentStateMachineOnExceptionThrown(exitException);
+                }
 
                 // If there is a superstate.
                 if (m_superstate != null)
@@ -281,38 +248,50 @@ namespace Sanford.StateMachineToolkit
             // already been called).
             internal State EnterByHistory()
             {
-                State result = this;
-
-                // If there is no history type.
                 switch (HistoryType)
                 {
                     case HistoryType.None:
-                        if (m_initialState != null)
-                        {
-                            // Enter the initial state.
-                            result = m_initialState.enterShallow();
-                        }
-                        break;
+                        // If there is no history type
+                        return m_initialState == null ? this : m_initialState.enterShallow();
                     case HistoryType.Shallow:
-                        if (m_historyState != null)
-                        {
-                            // Enter history state in shallow mode.
-                            result = m_historyState.enterShallow();
-                        }
-                        break;
+                        return m_historyState == null ? this : m_historyState.enterShallow();
                     case HistoryType.Deep:
-                        if (m_historyState != null)
-                        {
-                            // Enter history state in deep mode.
-                            result = m_historyState.enterDeep();
-                        }
-                        break;
+                        return m_historyState == null ? this : m_historyState.enterDeep();
+                    default:
+                        throw new InvalidOperationException("Invalid HistoryType");
                 }
-
-                return result;
             }
 
             // Enters the state in via its history in shallow mode.
+            private TransitionResult dispatch(State origin, TEvent eventId, object[] args)
+            {
+                TransitionResult transResult = s_notFiredResult;
+
+                // If there are any Transitions for this event.
+                if (m_transitions[eventId] != null)
+                {
+                    // Iterate through the Transitions until one of them fires.
+                    foreach (Transition trans in m_transitions[eventId])
+                    {
+                        transResult = trans.fire(origin, args);
+                        if (transResult.HasFired)
+                        {
+                            // Break out of loop. We're finished.
+                            return transResult;
+                        }
+                    }
+                }
+                // Else if there are no Transitions for this event and there is a 
+                // superstate.
+                if (Superstate != null)
+                {
+                    // Dispatch the event to the superstate.
+                    transResult = Superstate.dispatch(origin, eventId, args);
+                }
+
+                return transResult;
+            }
+
             private State enterShallow()
             {
                 Entry();
@@ -351,17 +330,57 @@ namespace Sanford.StateMachineToolkit
             #region Properties
 
             /// <summary>
+            /// Gets or sets the history type.
+            /// </summary>
+            public HistoryType HistoryType
+            {
+                get { return m_historyType; }
+                set { m_historyType = value; }
+            }
+
+            /// <summary>
             /// Gets the State's ID.
             /// </summary>
             public TState ID
             {
-                get { return m_stateID; }
+                get { return m_stateId; }
+            }
+
+            /// <summary>
+            /// Gets or sets the initial state.
+            /// </summary>
+            /// <remarks>
+            /// If no initial state exists for this state, this property is null.
+            /// </remarks>
+            public State InitialState
+            {
+                get { return m_initialState; }
+                set
+                {
+                    #region Preconditions
+
+                    if (this == value)
+                    {
+                        throw new ArgumentException(
+                            "State cannot be an initial state to itself.", "value");
+                    }
+
+                    if (value.Superstate != this)
+                    {
+                        throw new ArgumentException(
+                            "State is not a direct substate.", "value");
+                    }
+
+                    #endregion
+
+                    m_initialState = m_historyState = value;
+                }
             }
 
             /// <summary>
             /// Gets the collection of substates.
             /// </summary>
-            public SubstateCollection Substates
+            internal SubstateCollection Substates
             {
                 get { return m_substates; }
             }
@@ -369,7 +388,7 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Gets the collection of transitions.
             /// </summary>
-            public TransitionCollection Transitions
+            internal TransitionCollection Transitions
             {
                 get { return m_transitions; }
             }
@@ -406,46 +425,6 @@ namespace Sanford.StateMachineToolkit
                         Level = m_superstate.Level + 1;
                     }
                 }
-            }
-
-            /// <summary>
-            /// Gets or sets the initial state.
-            /// </summary>
-            /// <remarks>
-            /// If no initial state exists for this state, this property is null.
-            /// </remarks>
-            public State InitialState
-            {
-                get { return m_initialState; }
-                set
-                {
-                    #region Preconditions
-
-                    if (this == value)
-                    {
-                        throw new ArgumentException(
-                            "State cannot be an initial state to itself.", "value");
-                    }
-
-                    if (value.Superstate != this)
-                    {
-                        throw new ArgumentException(
-                            "State is not a direct substate.", "value");
-                    }
-
-                    #endregion
-
-                    m_initialState = m_historyState = value;
-                }
-            }
-
-            /// <summary>
-            /// Gets or sets the history type.
-            /// </summary>
-            public HistoryType HistoryType
-            {
-                get { return m_historyType; }
-                set { m_historyType = value; }
             }
 
             /// <summary>

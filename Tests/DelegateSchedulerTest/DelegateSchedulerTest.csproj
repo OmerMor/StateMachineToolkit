@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{C99BD0E2-19BE-4EE0-80E6-6785F539CCBC}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -106,9 +106,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Threading\Sanford.Threading.csproj">
-      <Project>{EA5579CB-695C-4C59-9BFC-27EB9600451D}</Project>
-      <Name>Sanford.Threading</Name>
+    <ProjectReference Include="..\..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
+      <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
+      <Name>Sanford.StateMachineToolkit</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

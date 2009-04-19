@@ -7,10 +7,10 @@ namespace LightSwitchDemo
 	{
 		public LightSwitch()
 		{
-			States[StateID.Off].EntryHandler += EnterOff;
-			States[StateID.Off].ExitHandler += ExitOff;
-			States[StateID.On].EntryHandler += EnterOn;
-			States[StateID.On].ExitHandler += ExitOn;
+			this[StateID.Off].EntryHandler += EnterOff;
+            this[StateID.Off].ExitHandler += ExitOff;
+            this[StateID.On].EntryHandler += EnterOn;
+            this[StateID.On].ExitHandler += ExitOn;
 			AddTransition(StateID.Off, EventID.TurnOn, StateID.On, TurnOn);
 			AddTransition(StateID.On, EventID.TurnOff, StateID.Off, TurnOff);
 
