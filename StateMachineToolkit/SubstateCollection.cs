@@ -168,7 +168,12 @@ namespace Sanford.StateMachineToolkit
 
             public void Clear()
             {
+                foreach (State substate in m_substates)
+                {
+                    substate.Superstate = null;
+                }
                 m_substates.Clear();
+                m_owner.InitialState = null;
             }
         }
     }

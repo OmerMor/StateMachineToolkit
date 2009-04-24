@@ -365,7 +365,7 @@ namespace Sanford.StateMachineToolkit
                             "State cannot be an initial state to itself.", "value");
                     }
 
-                    if (value.Superstate != this)
+                    if (value != null && value.Superstate != this)
                     {
                         throw new ArgumentException(
                             "State is not a direct substate.", "value");

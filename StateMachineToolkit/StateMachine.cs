@@ -262,15 +262,18 @@ namespace Sanford.StateMachineToolkit
         /// <param name="additionalSubstates">Additional substates.</param>
         public void SetupSubstates(TState superState, HistoryType historyType, TState initialSubstate, params TState[] additionalSubstates)
         {
-            states[superState].Substates.Clear();
-            states[superState].Substates.Add(states[initialSubstate]);
+            State superstate = states[superState];
+            State initial = states[initialSubstate];
+
+            superstate.Substates.Clear();
+            superstate.Substates.Add(initial);
             foreach (TState substate in additionalSubstates)
             {
-                states[superState].Substates.Add(states[substate]);
+                superstate.Substates.Add(states[substate]);
             }
 
-            states[superState].HistoryType = historyType;
-            states[superState].InitialState = states[initialSubstate];
+            superstate.HistoryType = historyType;
+            superstate.InitialState = initial;
         }
 
         /// <summary>
