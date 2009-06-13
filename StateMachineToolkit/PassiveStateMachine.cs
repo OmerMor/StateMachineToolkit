@@ -7,7 +7,7 @@ using Sanford.Collections.Generic;
 namespace Sanford.StateMachineToolkit
 {
     /// <summary>
-    /// Unlike the <see cref="ActiveStateMachine{TState,TEvent}"/> class, 
+    /// Unlike the <see cref="ActiveStateMachine{TState,TEven,TArgst}"/> class, 
     /// the PassiveStateMachine class does not run in its own thread. Sometimes using an active 
     /// object is overkill. In those cases, it is  appropriate to derive your state machine from 
     /// the PassiveStateMachine class.<para/>
@@ -19,13 +19,15 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public abstract class PassiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>,
-                                                                IPassiveStateMachine<TState, TEvent>
+    /// <typeparam name="TArgs">The event arguments type.</typeparam>
+    public abstract class PassiveStateMachine<TState, TEvent, TArgs> 
+        : StateMachine<TState, TEvent, TArgs>, IPassiveStateMachine<TState, TEvent, TArgs> 
+        //where TArgs : EventArgs 
         //where TState : struct, IComparable, IFormattable /*, IConvertible*/
         //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent,TArgs}"/> class.
         /// </summary>
         /// <param name="stateStorage">The state storage.</param>
         protected PassiveStateMachine(IStateStorage<TState> stateStorage) : base(stateStorage)
@@ -33,7 +35,7 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         protected PassiveStateMachine()
         {
@@ -61,7 +63,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public override void Send(TEvent eventId, params object[] args)
+        public override void Send(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
             m_eventDeque.PushBack(new StateMachineEvent(eventId, args));
@@ -73,7 +75,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="ex">The exception.</param>
         protected override void HandleDispatchException(Exception ex)
         {
-            OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(CurrentEventContext, ex));
+            OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent, TArgs>(CurrentEventContext, ex));
             //throw new InvalidOperationException("Exception was thrown during dispatch.", ex);
         }
 
@@ -93,7 +95,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventId, params object[] args)
+        protected override void SendPriority(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
             m_eventDeque.PushFront(new StateMachineEvent(eventId, args));
@@ -106,14 +108,14 @@ namespace Sanford.StateMachineToolkit
         {
             private readonly TEvent m_eventId;
 
-            private readonly object[] m_args;
+            private readonly TArgs m_args;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="StateMachineEvent"/> class.
             /// </summary>
             /// <param name="eventId">The event ID.</param>
             /// <param name="args">The event arguments.</param>
-            public StateMachineEvent(TEvent eventId, object[] args)
+            public StateMachineEvent(TEvent eventId, TArgs args)
             {
                 m_eventId = eventId;
                 m_args = args;
@@ -123,7 +125,7 @@ namespace Sanford.StateMachineToolkit
             /// Gets the event arguments.
             /// </summary>
             /// <returns>The event arguments.</returns>
-            public object[] GetArgs()
+            public TArgs GetArgs()
             {
                 return m_args;
             }

@@ -36,7 +36,7 @@ using System;
 
 namespace Sanford.StateMachineToolkit
 {
-    public abstract partial class StateMachine<TState, TEvent>
+    public abstract partial class StateMachine<TState, TEvent, TArgs>
     {
         /// <summary>
         /// The event handlers of a state.
@@ -46,12 +46,12 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Occurs when entering the state.
             /// </summary>
-            event EntryHandler EntryHandler;
+            event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> EntryHandler;
 
             /// <summary>
             /// Occurs when leaving the state.
             /// </summary>
-            event ExitHandler ExitHandler;
+            event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> ExitHandler;
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Sanford.StateMachineToolkit
         /// <see cref="Dispatch(TEvent,object[])"/> method where the State originally received the event. 
         /// The results indicate whether or not a Transition fired, and if so, the resulting 
         /// State of the <see cref="Transition"/>. 
-        /// It also indicates whether or not an exception occurred during the  Transition's action 
+        /// It also indicates whether or not an exception occurred during the Transition's action 
         /// (if one was performed). State machines use this information to update their 
         /// current State, if necessary.
         /// </summary>
@@ -96,7 +96,7 @@ namespace Sanford.StateMachineToolkit
 
             // The result if no transitions fired in response to an event.
             private static readonly TransitionResult s_notFiredResult =
-                new TransitionResult(false, null, null);
+                new TransitionResult(false, default(TState), null);
 
             // Entry action.
 
@@ -116,12 +116,12 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Occurs when entering the state.
             /// </summary>
-            public event EntryHandler EntryHandler;
+            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> EntryHandler;
 
             /// <summary>
             /// Occurs when leaving the state.
             /// </summary>
-            public event ExitHandler ExitHandler;
+            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> ExitHandler;
 
             #endregion
 
@@ -153,7 +153,9 @@ namespace Sanford.StateMachineToolkit
             /// <param name="exitHandler">
             /// The exit action.
             /// </param>
-            public State(TState stateId, EntryHandler entryHandler, ExitHandler exitHandler)
+            public State(TState stateId, 
+                EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> entryHandler, 
+                EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> exitHandler)
             {
                 EntryHandler += entryHandler ?? delegate { };
                 ExitHandler += exitHandler ?? delegate { };
@@ -180,9 +182,9 @@ namespace Sanford.StateMachineToolkit
             /// <returns>
             /// The results of the dispatch.
             /// </returns>
-            internal TransitionResult Dispatch(TEvent eventId, object[] args)
+            internal TransitionResult Dispatch(EventContext context)
             {
-                return dispatch(this, eventId, args);
+                return dispatch(context);
             }
 
             // Recursively goes up the the state hierarchy until a state is found 
@@ -191,16 +193,16 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Enters the state.
             /// </summary>
-            internal void Entry()
+            internal void Entry(EventContext context)
             {
                 // Execute entry action.
                 try
                 {
-                    EntryHandler();
+                    EntryHandler(s_currentStateMachine,
+                                 new TransitionEventArgs<TState, TEvent, TArgs>(context));
                 }
                 catch (Exception ex)
                 {
-                    EventContext context = s_currentStateMachine.CurrentEventContext;
                     string message;
                     if (context == null) // state machine initialization phase only
                         message = string.Format("During the state machine initialization an exception was thrown inside the {0} state entry handler.",
@@ -218,16 +220,16 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Exits the state.
             /// </summary>
-            internal void Exit()
+            internal void Exit(EventContext context)
             {
                 try
                 {
                     // Execute exit action.
-                    ExitHandler();
+                    ExitHandler(s_currentStateMachine,
+                                new TransitionEventArgs<TState, TEvent, TArgs>(context));
                 }
                 catch (Exception ex)
                 {
-                    EventContext context = s_currentStateMachine.CurrentEventContext;
                     string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
                                                   context.SourceState, context.CurrentEvent, ID);
                     ExitException exitException = new ExitException(message, ex);
@@ -246,34 +248,34 @@ namespace Sanford.StateMachineToolkit
 
             // Enters the state by its history (assumes that the Entry method has 
             // already been called).
-            internal State EnterByHistory()
+            internal State EnterByHistory(EventContext context)
             {
                 switch (HistoryType)
                 {
                     case HistoryType.None:
                         // If there is no history type
-                        return m_initialState == null ? this : m_initialState.enterShallow();
+                        return m_initialState == null ? this : m_initialState.enterShallow(context);
                     case HistoryType.Shallow:
-                        return m_historyState == null ? this : m_historyState.enterShallow();
+                        return m_historyState == null ? this : m_historyState.enterShallow(context);
                     case HistoryType.Deep:
-                        return m_historyState == null ? this : m_historyState.enterDeep();
+                        return m_historyState == null ? this : m_historyState.enterDeep(context);
                     default:
                         throw new InvalidOperationException("Invalid HistoryType");
                 }
             }
 
             // Enters the state in via its history in shallow mode.
-            private TransitionResult dispatch(State origin, TEvent eventId, object[] args)
+            private TransitionResult dispatch(EventContext context)
             {
                 TransitionResult transResult = s_notFiredResult;
 
                 // If there are any Transitions for this event.
-                if (m_transitions[eventId] != null)
+                if (m_transitions[context.CurrentEvent] != null)
                 {
                     // Iterate through the Transitions until one of them fires.
-                    foreach (Transition trans in m_transitions[eventId])
+                    foreach (Transition trans in m_transitions[context.CurrentEvent])
                     {
-                        transResult = trans.fire(origin, args);
+                        transResult = trans.fire(context);
                         if (transResult.HasFired)
                         {
                             // Break out of loop. We're finished.
@@ -286,15 +288,15 @@ namespace Sanford.StateMachineToolkit
                 if (Superstate != null)
                 {
                     // Dispatch the event to the superstate.
-                    transResult = Superstate.dispatch(origin, eventId, args);
+                    transResult = Superstate.dispatch(context);
                 }
 
                 return transResult;
             }
 
-            private State enterShallow()
+            private State enterShallow(EventContext context)
             {
-                Entry();
+                Entry(context);
 
                 State result = this;
 
@@ -302,16 +304,16 @@ namespace Sanford.StateMachineToolkit
                 if (m_initialState != null)
                 {
                     // Enter the next level initial state.
-                    result = m_initialState.enterShallow();
+                    result = m_initialState.enterShallow(context);
                 }
 
                 return result;
             }
 
             // Enters the state via its history in deep mode.
-            private State enterDeep()
+            private State enterDeep(EventContext context)
             {
-                Entry();
+                Entry(context);
 
                 State result = this;
 
@@ -319,7 +321,7 @@ namespace Sanford.StateMachineToolkit
                 if (m_historyState != null)
                 {
                     // Enter the next level history state.
-                    result = m_historyState.enterDeep();
+                    result = m_historyState.enterDeep(context);
                 }
 
                 return result;
@@ -449,27 +451,13 @@ namespace Sanford.StateMachineToolkit
             #endregion
         }
     }
-    /// <summary>
-    /// Represents the method that will perform an action during a state 
-    /// transition.
-    /// </summary>
-    public delegate void ActionHandler(object[] args);
+
 
     /// <summary>
     /// Represents the method that is evaluated to determine whether the state
     /// transition should fire.
     /// </summary>
-    public delegate bool GuardHandler(object[] args);
-
-    /// <summary>
-    /// Represents the method that is called when a state is entered.
-    /// </summary>
-    public delegate void EntryHandler();
-
-    /// <summary>
-    /// Represents the method that is called when a state is exited.
-    /// </summary>
-    public delegate void ExitHandler();
+    public delegate bool GuardHandler<TState, TEvent, TArgs>(object sender, TransitionEventArgs<TState, TEvent, TArgs> args);
 
     /// <summary>
     /// Specifies constants defining the type of history a state uses.

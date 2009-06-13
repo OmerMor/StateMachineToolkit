@@ -36,7 +36,7 @@ using System;
 
 namespace Sanford.StateMachineToolkit
 {
-    public abstract partial class StateMachine<TState, TEvent>
+    public abstract partial class StateMachine<TState, TEvent, TArgs>
     {
         /// <summary>
         /// Represents the result of a transition.
@@ -49,7 +49,7 @@ namespace Sanford.StateMachineToolkit
 
             private readonly bool m_hasFired;
 
-            private readonly State m_newState;
+            private readonly TState m_newState;
 
             private readonly Exception m_error;
 
@@ -69,7 +69,7 @@ namespace Sanford.StateMachineToolkit
             /// <param name="error">
             /// The resulting exception of the Transition if one was thrown.
             /// </param>
-            public TransitionResult(bool hasFired, State newState, Exception error)
+            public TransitionResult(bool hasFired, TState newState, Exception error)
             {
                 m_hasFired = hasFired;
                 m_newState = newState;
@@ -106,7 +106,7 @@ namespace Sanford.StateMachineToolkit
             /// <remarks>
             /// This property will be null if the Transition did not fire.
             /// </remarks>
-            public State NewState
+            public TState NewState
             {
                 get { return m_newState; }
             }

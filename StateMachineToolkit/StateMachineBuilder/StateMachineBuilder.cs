@@ -456,4 +456,20 @@ namespace Sanford.StateMachineToolkit.StateMachineBuilder
 
         #endregion
     }
+
+    /// <summary>
+    /// The type of the state machine.
+    /// </summary>
+    public enum StateMachineType
+    {
+        /// <summary>
+        /// Passive state machine.
+        /// </summary>
+        Passive,
+
+        /// <summary>
+        /// Active state machine.
+        /// </summary>
+        Active
+    }
 }

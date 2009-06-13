@@ -38,7 +38,7 @@ using System.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
-    public abstract partial class StateMachine<TState, TEvent>
+    public abstract partial class StateMachine<TState, TEvent, TArgs>
     {
         /// <summary>
         /// The SubstateCollection class represents a collection of substates. 

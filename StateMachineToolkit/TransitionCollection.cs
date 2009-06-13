@@ -37,7 +37,7 @@ using System.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
-    public abstract partial class StateMachine<TState, TEvent>
+    public abstract partial class StateMachine<TState, TEvent, TArgs>
     {
         /// <summary>
         /// The TransitionCollection represents a collection of Transitions. 
@@ -141,7 +141,7 @@ namespace Sanford.StateMachineToolkit
             /// the event ID in its TransitionCollection to see if there are any 
             /// Transitions for the specified event. 
             /// </remarks>
-            public void Add(TEvent eventId, State targetState, params ActionHandler[] actions)
+            public void Add(TEvent eventId, State targetState, params EventHandler<TransitionEventArgs<TState, TEvent, TArgs>>[] actions)
             {
                 Add(eventId, null, targetState, actions);
             }
@@ -168,13 +168,13 @@ namespace Sanford.StateMachineToolkit
             /// the event ID in its TransitionCollection to see if there are any 
             /// Transitions for the specified event. 
             /// </remarks>
-            public void Add(TEvent eventId, GuardHandler guard, State targetState, params ActionHandler[] actions)
+            public void Add(TEvent eventId, GuardHandler<TState, TEvent, TArgs> guard, State targetState, params EventHandler<TransitionEventArgs<TState, TEvent, TArgs>>[] actions)
             {
                 Transition trans = new Transition(guard, targetState);
-                foreach (ActionHandler action in actions)
+                foreach (EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> action in actions)
                 {
                     if (action == null) continue;
-                    trans.Actions.Add(action);
+                    trans.Actions += action;
                 }
                 Add(eventId, trans);
             }

@@ -37,19 +37,17 @@ using System.Threading;
 
 namespace Sanford.Threading
 {
-	public sealed class PostCompletedEventArgs : EventArgs
+	public sealed class PostCompletedEventArgs : CompletedEventArgs
 	{
 		private readonly SendOrPostCallback callback;
 
 		private readonly object state;
 
-		private readonly Exception error;
-
 		public PostCompletedEventArgs(SendOrPostCallback callback, object state, Exception error)
+            : base(error)
 		{
 			this.callback = callback;
 			this.state = state;
-			this.error = error;
 		}
 
 		public SendOrPostCallback Callback
@@ -60,11 +58,6 @@ namespace Sanford.Threading
 		public object State
 		{
 			get { return state; }
-		}
-
-		public Exception Error
-		{
-			get { return error; }
 		}
 	}
 }

@@ -43,12 +43,15 @@ namespace Sanford.StateMachineToolkit
 
     /// <summary>
     /// Represents the base class for all state machines. You do not derive your state machine classes from this 
-    /// class but rather from one of its derived classes, either the <see cref="T:Sanford.StateMachineToolkit.ActiveStateMachine`2"/> 
-    /// class or the <see cref="T:Sanford.StateMachineToolkit.PassiveStateMachine`2"/> class.
+    /// class but rather from one of its derived classes, either the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> 
+    /// class or the <see cref="PassiveStateMachine{TState,TEvent,TArgs}"/> class.
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public abstract partial class StateMachine<TState, TEvent> : IStateMachine<TState, TEvent> 
+    /// <typeparam name="TArgs">The event arguments type.</typeparam>
+    public abstract partial class StateMachine<TState, TEvent, TArgs> 
+        : IStateMachine<TState, TEvent, TArgs> 
+        //where TArgs : EventArgs 
         //where TState : struct, IComparable, IFormattable /*, IConvertible*/
         //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
@@ -73,7 +76,7 @@ namespace Sanford.StateMachineToolkit
         /// The return value of the last action.
         /// </summary>
         [ThreadStatic]
-        private static StateMachine<TState, TEvent> s_currentStateMachine;
+        private static StateMachine<TState, TEvent, TArgs> s_currentStateMachine;
 
         /// <summary>
         /// The states of the state machine.
@@ -111,27 +114,27 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Occurs before a dispatch starts.
         /// </summary>
-        public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
+        public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> BeginDispatch;
 
         /// <summary>
         /// Occurs before a transition starts.
         /// </summary>
-        public event EventHandler<TransitionEventArgs<TState, TEvent>> BeginTransition;
+        public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> BeginTransition;
 
         /// <summary>
         /// Occurs when an exception is thrown.
         /// </summary>
-        public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
+        public virtual event EventHandler<TransitionErrorEventArgs<TState, TEvent, TArgs>> ExceptionThrown;
 
         /// <summary>
         /// Occurs after a transition is completed.
         /// </summary>
-        public event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
+        public event EventHandler<TransitionCompletedEventArgs<TState, TEvent, TArgs>> TransitionCompleted;
 
         /// <summary>
         /// Occurs when a transition is declined.
         /// </summary>
-        public event EventHandler<TransitionEventArgs<TState, TEvent>> TransitionDeclined;
+        public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> TransitionDeclined;
 
         #endregion
 
@@ -227,7 +230,8 @@ namespace Sanford.StateMachineToolkit
         /// <param name="eventId">The event that will trigger the transition.</param>
         /// <param name="target">The target state.</param>
         /// <param name="actions">Optional actions that will be performed during the transition.</param>
-        public void AddTransition(TState source, TEvent eventId, TState target, params ActionHandler[] actions)
+        public void AddTransition(TState source, TEvent eventId, TState target, 
+            params EventHandler<TransitionEventArgs<TState,TEvent,TArgs>>[] actions)
         {
             states[source].Transitions.Add(eventId, states[target], actions);
         }
@@ -241,7 +245,9 @@ namespace Sanford.StateMachineToolkit
         /// <param name="guard">A transition guard.</param>
         /// <param name="target">The target state.</param>
         /// <param name="actions">Optional actions that will be performed during the transition.</param>
-        public void AddTransition(TState source, TEvent eventId, GuardHandler guard, TState target, params ActionHandler[] actions)
+        public void AddTransition(TState source, TEvent eventId, 
+            GuardHandler<TState, TEvent, TArgs> guard, TState target, 
+            params EventHandler<TransitionEventArgs<TState, TEvent, TArgs>>[] actions)
         {
             states[source].Transitions.Add(eventId, guard, states[target], actions);
         }
@@ -251,7 +257,12 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public abstract void Send(TEvent eventId, params object[] args);
+        public abstract void Send(TEvent eventId, TArgs args);
+
+        public void Send(TEvent eventId)
+        {
+            Send(eventId, default(TArgs));
+        }
 
         /// <summary>
         /// Setups substates for hierarchical state machine.
@@ -297,19 +308,20 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        protected virtual void Dispatch(TEvent eventId, object[] args)
+        protected virtual void Dispatch(TEvent eventId, TArgs args)
         {
             // Reset action result.
             ActionResult = null;
             State currentState = CurrentState;
-            CurrentEventContext = new EventContext(currentState.ID, eventId, args);
+            EventContext eventContext = new EventContext(currentState.ID, eventId, args);
+            CurrentEventContext = eventContext;
             s_currentStateMachine = this;
             try
             {
-                OnBeginDispatch(CurrentEventContext);
+                OnBeginDispatch(eventContext);
 
                 // Dispatch event to the current state.
-                TransitionResult result = currentState.Dispatch(eventId, args);
+                TransitionResult result = currentState.Dispatch(eventContext);
 
 /*
                 // report errors
@@ -322,16 +334,15 @@ namespace Sanford.StateMachineToolkit
                 // If a transition was fired as a result of this event.
                 if (!result.HasFired)
                 {
-                    OnTransitionDeclined(CurrentEventContext);
+                    OnTransitionDeclined(eventContext);
                     return;
                 }
 
-                TState newStateId = result.NewState.ID;
-                CurrentStateID = newStateId;
+                CurrentStateID = result.NewState;
 
-                TransitionCompletedEventArgs<TState, TEvent> eventArgs =
-                    new TransitionCompletedEventArgs<TState, TEvent>(
-                        newStateId, CurrentEventContext, ActionResult, result.Error);
+                TransitionCompletedEventArgs<TState, TEvent, TArgs> eventArgs =
+                    new TransitionCompletedEventArgs<TState, TEvent, TArgs>(
+                        result.NewState, eventContext, ActionResult, result.Error);
 
                 OnTransitionCompleted(eventArgs);
             }
@@ -415,10 +426,10 @@ namespace Sanford.StateMachineToolkit
             while (superstateStack.Count > 0)
             {
                 superstate = superstateStack.Pop();
-                superstate.Entry();
+                superstate.Entry(null);
             }
 
-            CurrentStateID = initialState.EnterByHistory().ID;
+            CurrentStateID = initialState.EnterByHistory(null).ID;
             s_currentStateMachine = this;
 
         }
@@ -429,7 +440,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="eventContext">The event context.</param>
         protected virtual void OnBeginDispatch(EventContext eventContext)
         {
-            RaiseSafeEvent(BeginDispatch, new TransitionEventArgs<TState, TEvent>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
+            RaiseSafeEvent(BeginDispatch, new TransitionEventArgs<TState, TEvent, TArgs>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
         }
 
         /// <summary>
@@ -438,35 +449,35 @@ namespace Sanford.StateMachineToolkit
         /// <param name="eventContext">The event context.</param>
         protected virtual void OnBeginTransition(EventContext eventContext)
         {
-            RaiseSafeEvent(BeginTransition, new TransitionEventArgs<TState, TEvent>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
+            RaiseSafeEvent(BeginTransition, new TransitionEventArgs<TState, TEvent, TArgs>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
         }
 
         /// <summary>
         /// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event.
         /// </summary>
         /// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent}"/> instance containing the event data.</param>
-        protected virtual void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
+        protected virtual void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent, TArgs> args)
         {
             RaiseSafeEvent(ExceptionThrown, args, ExceptionPolicy.Swallow);
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.TransitionCompleted"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.TransitionCompleted"/> event.
         /// </summary>
-        /// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent}"/> instance 
+        /// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent,TArgs}"/> instance 
         /// containing the event data.</param>
-        protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
+        protected virtual void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent, TArgs> args)
         {
             RaiseSafeEvent(TransitionCompleted, args, ExceptionPolicy.RaiseExceptionEvent);
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.TransitionDeclined"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.TransitionDeclined"/> event.
         /// </summary>
         /// <param name="eventContext">The event context.</param>
         protected virtual void OnTransitionDeclined(EventContext eventContext)
         {
-            RaiseSafeEvent(TransitionDeclined, new TransitionEventArgs<TState, TEvent>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
+            RaiseSafeEvent(TransitionDeclined, new TransitionEventArgs<TState, TEvent, TArgs>(eventContext), ExceptionPolicy.RaiseExceptionEvent);
         }
 
         /// <summary>
@@ -478,8 +489,8 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">The event arguments.</param>
         /// <param name="exceptionPolicy">if set to <see cref="ExceptionPolicy.RaiseExceptionEvent"/> 
         /// exceptions will trigger the <see cref="ExceptionThrown"/> event.</param>
-        protected void RaiseSafeEvent<TArgs>(EventHandler<TArgs> eventHandler, TArgs args, ExceptionPolicy exceptionPolicy)
-            where TArgs : EventArgs
+        protected void RaiseSafeEvent<TEventArgs>(EventHandler<TEventArgs> eventHandler, TEventArgs args, ExceptionPolicy exceptionPolicy)
+            where TEventArgs : EventArgs
         {
             try
             {
@@ -495,7 +506,7 @@ namespace Sanford.StateMachineToolkit
                 if (exceptionPolicy == ExceptionPolicy.RaiseExceptionEvent)
                 {
                     OnExceptionThrown(
-                        new TransitionErrorEventArgs<TState, TEvent>(CurrentEventContext, ex));
+                        new TransitionErrorEventArgs<TState, TEvent, TArgs>(CurrentEventContext, ex));
                 }
             }
         }
@@ -506,11 +517,11 @@ namespace Sanford.StateMachineToolkit
         /// the <see cref="Send"/> method.
         /// </summary>
         /// <param name="eventId">The event.</param>
-        /// <param name="args">Optional event arguments.</param>
-        protected abstract void SendPriority(TEvent eventId, params object[] args);
+        /// <param name="args">event arguments.</param>
+        protected abstract void SendPriority(TEvent eventId, TArgs args);
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event 
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.BeginTransition"/> event 
         /// on the currently running state machine.
         /// </summary>
         private static void currentStateMachineOnBeginTransition()
@@ -519,14 +530,14 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.ExceptionThrown"/> event
         /// on the currently running state machine.
         /// </summary>
         /// <param name="ex">The exception that was thrown.</param>
         private static void currentStateMachineOnExceptionThrown(Exception ex)
         {
             s_currentStateMachine.OnExceptionThrown(
-                new TransitionErrorEventArgs<TState, TEvent>(
+                new TransitionErrorEventArgs<TState, TEvent, TArgs>(
                     s_currentStateMachine.CurrentEventContext, ex));
         }
 
@@ -536,7 +547,7 @@ namespace Sanford.StateMachineToolkit
 
         /// <summary>
         /// A readonly mapping from <typeparamref name="TState"/> ID to 
-        /// <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent}.State"/> object.
+        /// <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent,TArgs}.State"/> object.
         /// </summary>
         private sealed class StateMap
         {
@@ -546,7 +557,7 @@ namespace Sanford.StateMachineToolkit
             private readonly Dictionary<TState, State> m_map = new Dictionary<TState, State>();
 
             /// <summary>
-            /// Gets the <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent}.State"/>
+            /// Gets the <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent,TArgs}.State"/>
             /// object with the specified <typeparamref name="TState"/> ID.
             /// </summary>
             /// <param name="state">The state ID.</param>
@@ -574,7 +585,8 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// A context with information about an event is being processed by the state machine.
         /// </summary>
-        public sealed class EventContext
+        [DebuggerDisplay("{m_sourceState},{m_currentEvent},{m_args}")]
+        public class EventContext : EventArgs
         {
             /// <summary>
             /// The source state ID.
@@ -589,15 +601,15 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// The event arguments.
             /// </summary>
-            private readonly object[] m_args;
+            private readonly TArgs m_args;
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="StateMachine{TState, TEvent}.EventContext"/> class.
+            /// Initializes a new instance of the <see cref="EventContext"/> class.
             /// </summary>
             /// <param name="sourceState">The source state.</param>
             /// <param name="currentEvent">The current event.</param>
             /// <param name="args">The event arguments.</param>
-            public EventContext(TState sourceState, TEvent currentEvent, object[] args)
+            public EventContext(TState sourceState, TEvent currentEvent, TArgs args)
             {
                 m_sourceState = sourceState;
                 m_currentEvent = currentEvent;
@@ -618,7 +630,7 @@ namespace Sanford.StateMachineToolkit
             /// Gets the event arguments.
             /// </summary>
             /// <value>The event arguments.</value>
-            public object[] Args
+            public TArgs Args
             {
                 [DebuggerStepThrough]
                 get { return m_args; }

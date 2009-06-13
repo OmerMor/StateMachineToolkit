@@ -36,10 +36,25 @@ using System;
 
 namespace Sanford.Threading
 {
-	/// <summary>
+    public abstract class CompletedEventArgs : EventArgs
+    {
+        private readonly Exception error;
+
+        protected CompletedEventArgs(Exception error)
+        {
+            this.error = error;
+        }
+
+        public Exception Error
+        {
+            get { return error; }
+        }
+    }
+
+    /// <summary>
 	/// Represents information about the InvokeCompleted event.
 	/// </summary>
-	public sealed class InvokeCompletedEventArgs : EventArgs
+	public sealed class InvokeCompletedEventArgs : CompletedEventArgs
 	{
 		private readonly Delegate method;
 
@@ -47,14 +62,12 @@ namespace Sanford.Threading
 
 		private readonly object result;
 
-		private readonly Exception error;
-
-		public InvokeCompletedEventArgs(Delegate method, object[] args, object result, Exception error)
+        public InvokeCompletedEventArgs(Delegate method, object[] args, object result, Exception error)
+            : base(error)
 		{
 			this.method = method;
 			this.args = args;
 			this.result = result;
-			this.error = error;
 		}
 
 		public object[] GetArgs()
@@ -70,11 +83,6 @@ namespace Sanford.Threading
 		public object Result
 		{
 			get { return result; }
-		}
-
-		public Exception Error
-		{
-			get { return error; }
 		}
 	}
 }

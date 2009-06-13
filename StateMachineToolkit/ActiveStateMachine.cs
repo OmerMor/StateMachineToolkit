@@ -28,7 +28,9 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public abstract class ActiveStateMachine<TState, TEvent> : StateMachine<TState, TEvent>, IDisposable, IActiveStateMachine<TState, TEvent> 
+    /// <typeparam name="TArgs">The event arguments type.</typeparam>
+    public abstract class ActiveStateMachine<TState, TEvent, TArgs> : StateMachine<TState, TEvent, TArgs>, IDisposable, IActiveStateMachine<TState, TEvent, TArgs> 
+        //where TArgs : EventArgs 
         //where TState : struct, IComparable, IFormattable /*, IConvertible*/
         //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
@@ -57,7 +59,7 @@ namespace Sanford.StateMachineToolkit
         #endregion
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         protected ActiveStateMachine()
             : this(defaultSynchronizationContext)
@@ -65,7 +67,7 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         protected ActiveStateMachine(IStateStorage<TState> stateStorage)
             : this(stateStorage, defaultSynchronizationContext)
@@ -73,31 +75,25 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         /// <param name="syncContext">The synchronization context.</param>
         protected ActiveStateMachine(IStateStorage<TState> stateStorage, SynchronizationContext syncContext)
             : base(stateStorage)
         {
             m_syncContext = syncContext;
-            m_queue.PostCompleted +=
-                delegate(object sender, PostCompletedEventArgs args)
-                {
-                    if (args.Error == null) return;
-                    OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
-                                          CurrentEventContext, args.Error));
-                };
-            m_queue.InvokeCompleted +=
-                delegate(object sender, InvokeCompletedEventArgs args)
-                {
-                    if (args.Error == null) return;
-                    OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(
-                                          CurrentEventContext, args.Error));
-                };
+            m_queue.PostCompleted += raiseExceptionEventOnError;
+            m_queue.InvokeCompleted += raiseExceptionEventOnError;
+        }
+
+        private void raiseExceptionEventOnError(object sender, CompletedEventArgs args)
+        {
+            if (args.Error == null) return;
+            OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent, TArgs>(CurrentEventContext, args.Error));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState, TEvent}"/> class.
+        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         /// <param name="syncContext">The synchronization context.</param>
         protected ActiveStateMachine(SynchronizationContext syncContext)
@@ -172,7 +168,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public override void Send(TEvent eventId, params object[] args)
+        public override void Send(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
             m_queue.Post(delegate { Dispatch(eventId, args); }, null);
@@ -187,7 +183,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public void SendSynchronously(TEvent eventId, params object[] args)
+        public void SendSynchronously(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
             m_queue.Send(
@@ -205,6 +201,12 @@ namespace Sanford.StateMachineToolkit
                     },
                 null);
         }
+
+        public void SendSynchronously(TEvent eventId)
+        {
+            SendSynchronously(eventId, default(TArgs));
+        }
+
 
         /// <summary>
         /// Waits for pending events.
@@ -282,11 +284,11 @@ namespace Sanford.StateMachineToolkit
         /// <param name="ex">The exception.</param>
         protected override void HandleDispatchException(Exception ex)
         {
-            OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent>(CurrentEventContext, ex));
+            OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent, TArgs>(CurrentEventContext, ex));
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.BeginDispatch"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.BeginDispatch"/> event.
         /// </summary>
         /// <param name="eventContext">The event context.</param>
         protected override void OnBeginDispatch(EventContext eventContext)
@@ -302,7 +304,7 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.BeginTransition"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.BeginTransition"/> event.
         /// </summary>
         /// <param name="eventContext">The event context.</param>
         protected override void OnBeginTransition(EventContext eventContext)
@@ -318,26 +320,26 @@ namespace Sanford.StateMachineToolkit
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.ExceptionThrown"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.ExceptionThrown"/> event.
         /// </summary>
-        /// <param name="args">The <see cref="TransitionErrorEventArgs{TState,TEvent}"/> instance containing the event data.</param>
-        protected override void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent> args)
+        /// <param name="args">The <see cref="TransitionErrorEventArgs{TState,TEvent,TArgs}"/> instance containing the event data.</param>
+        protected override void OnExceptionThrown(TransitionErrorEventArgs<TState, TEvent, TArgs> args)
         {
             synchronizedPost(base.OnExceptionThrown, args);
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.TransitionCompleted"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.TransitionCompleted"/> event.
         /// </summary>
-        /// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent}"/> instance
+        /// <param name="args">The <see cref="TransitionCompletedEventArgs{TState,TEvent,TArgs}"/> instance
         /// containing the event data.</param>
-        protected override void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent> args)
+        protected override void OnTransitionCompleted(TransitionCompletedEventArgs<TState, TEvent, TArgs> args)
         {
             synchronizedPost(base.OnTransitionCompleted, args);
         }
 
         /// <summary>
-        /// Raises the <see cref="StateMachine{TState,TEvent}.TransitionDeclined"/> event.
+        /// Raises the <see cref="StateMachine{TState,TEvent,TArgs}.TransitionDeclined"/> event.
         /// </summary>
         /// <param name="eventContext">The event context.</param>
         protected override void OnTransitionDeclined(EventContext eventContext)
@@ -352,7 +354,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        protected override void SendPriority(TEvent eventId, params object[] args)
+        protected override void SendPriority(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
             m_queue.PostPriority(delegate { Dispatch(eventId, args); }, null);

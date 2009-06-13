@@ -10,34 +10,35 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public interface IStateMachine<TState, TEvent>
+    public interface IStateMachine<TState, TEvent, TArgs>
         //where TState : struct, IComparable, IFormattable
         //where TEvent : struct, IComparable, IFormattable
+        //where TArgs : EventArgs
     {
         /// <summary>
         /// Occurs before a dispatch starts.
         /// </summary>
-        event EventHandler<TransitionEventArgs<TState, TEvent>> BeginDispatch;
+        event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> BeginDispatch;
 
         /// <summary>
         /// Occurs before a transition starts.
         /// </summary>
-        event EventHandler<TransitionEventArgs<TState, TEvent>> BeginTransition;
+        event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> BeginTransition;
 
         /// <summary>
         /// Occurs when an exception is thrown.
         /// </summary>
-        event EventHandler<TransitionErrorEventArgs<TState, TEvent>> ExceptionThrown;
+        event EventHandler<TransitionErrorEventArgs<TState, TEvent, TArgs>> ExceptionThrown;
 
         /// <summary>
         /// Occurs after a transition is completed.
         /// </summary>
-        event EventHandler<TransitionCompletedEventArgs<TState, TEvent>> TransitionCompleted;
+        event EventHandler<TransitionCompletedEventArgs<TState, TEvent, TArgs>> TransitionCompleted;
 
         /// <summary>
         /// Occurs when a transition is declined.
         /// </summary>
-        event EventHandler<TransitionEventArgs<TState, TEvent>> TransitionDeclined;
+        event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> TransitionDeclined;
 
         /// <summary>
         /// Gets the ID of the current state.
@@ -49,7 +50,9 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        void Send(TEvent eventId, params object[] args);
+        void Send(TEvent eventId, TArgs args);
+
+        void Send(TEvent eventId);
     }
 
     /// <summary>
@@ -76,7 +79,8 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public interface IPassiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>, IPassiveStateMachine
+    public interface IPassiveStateMachine<TState, TEvent, TArgs> : IStateMachine<TState, TEvent, TArgs>, IPassiveStateMachine
+        //where TArgs : EventArgs
         //where TState : struct, IComparable, IFormattable /*, IConvertible*/
         //where TEvent : struct, IComparable, IFormattable /*, IConvertible*/
     {
@@ -101,7 +105,8 @@ namespace Sanford.StateMachineToolkit
     /// </summary>
     /// <typeparam name="TState">The state enumeration type.</typeparam>
     /// <typeparam name="TEvent">The event enumeration type.</typeparam>
-    public interface IActiveStateMachine<TState, TEvent> : IStateMachine<TState, TEvent>, IActiveStateMachine
+    public interface IActiveStateMachine<TState, TEvent, TArgs> : IStateMachine<TState, TEvent, TArgs>, IActiveStateMachine
+        //where TArgs : EventArgs
         //where TState : struct, IComparable, IFormattable
         //where TEvent : struct, IComparable, IFormattable
     {
@@ -114,6 +119,8 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        void SendSynchronously(TEvent eventId, params object[] args);
+        void SendSynchronously(TEvent eventId, TArgs args);
+
+        void SendSynchronously(TEvent eventId);
     }
 }

@@ -304,7 +304,7 @@ namespace Sanford.Threading
 		// Responds to the timer's Elapsed event by running any tasks that are due.
 		private void HandleElapsed(object sender, ElapsedEventArgs e)
 		{
-			Debug.WriteLine("Signal time: " + e.SignalTime);
+			//Debug.WriteLine("Signal time: " + e.SignalTime);
 
 			lock (queue.SyncRoot)
 			{

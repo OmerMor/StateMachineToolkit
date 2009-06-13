@@ -39,7 +39,7 @@ using JetBrains.Annotations;
 
 namespace Sanford.StateMachineToolkit
 {
-    public abstract partial class StateMachine<TState, TEvent>
+    public abstract partial class StateMachine<TState, TEvent, TArgs>
     {
         /// <summary>
         /// The Transition class represents a transition from one <see cref="State"/> 
@@ -63,19 +63,19 @@ namespace Sanford.StateMachineToolkit
             private readonly State m_target;
 
             // The guard to evaluate to determine whether the transition should fire.
-            private readonly GuardHandler m_guard = s_emptyGuard;
+            private readonly GuardHandler<TState, TEvent, TArgs> m_guard = s_emptyGuard;
 
             // The actions to perform during the transition.
-            private readonly IList<ActionHandler> m_actions = new List<ActionHandler>();
+            //private readonly IList<ActionHandler<TArgs>> m_actions = new List<ActionHandler<TArgs>>();
 
             // If an exception is thrown from an action, represents the exception thrown.
             private Exception m_exceptionResult;
 
             // The result if the transition did not fire.
             private static readonly TransitionResult s_notFiredResult =
-                new TransitionResult(false, null, null);
+                new TransitionResult(false, default(TState), null);
 
-            private static readonly GuardHandler s_emptyGuard = delegate { return true; };
+            private static readonly GuardHandler<TState, TEvent, TArgs> s_emptyGuard = delegate { return true; };
 
             #endregion
 
@@ -107,7 +107,8 @@ namespace Sanford.StateMachineToolkit
             /// The guard to test to determine whether the transition should take 
             /// place.
             /// </param>
-            public Transition(GuardHandler guard) : this(guard, null)
+            public Transition(GuardHandler<TState, TEvent, TArgs> guard)
+                : this(guard, null)
             {
             }
 
@@ -122,7 +123,7 @@ namespace Sanford.StateMachineToolkit
             /// <param name="target">
             /// The target state of the transition.
             /// </param>
-            public Transition(GuardHandler guard, State target)
+            public Transition(GuardHandler<TState, TEvent, TArgs> guard, State target)
             {
                 m_guard = guard ?? s_emptyGuard;
                 m_target = target;
@@ -144,16 +145,16 @@ namespace Sanford.StateMachineToolkit
             /// <returns>
             /// A TransitionResult object representing the results of the transition.
             /// </returns>
-            internal TransitionResult fire(State origin, object[] args)
+            internal TransitionResult fire(EventContext context)
             {
-                if (!shouldFire(args))
+                if (!shouldFire(context))
                 {
                     return s_notFiredResult;
                 }
 
                 // If the transition should fire.
                 currentStateMachineOnBeginTransition();
-
+                State origin = s_currentStateMachine.states[context.SourceState];
                 State newState = origin;
 
                 // If this is not an internal transition.
@@ -165,26 +166,26 @@ namespace Sanford.StateMachineToolkit
                     // to the source state.
                     while (o != Source)
                     {
-                        o.Exit();
+                        o.Exit(context);
                         o = o.Superstate;
                     }
 
-                    fire(Source, Target, args);
+                    fire(Source, Target, context);
 
-                    newState = Target.EnterByHistory();
+                    newState = Target.EnterByHistory(context);
                 }
                 // Else if this is an internal transition.
                 else
                 {
-                    performActions(args);
+                    performActions(context);
                 }
 
-                return new TransitionResult(true, newState, m_exceptionResult);
+                return new TransitionResult(true, newState.ID, m_exceptionResult);
             }
 
             // Recursively traverses the state hierarchy, exiting states along 
             // the way, performing the action, and entering states to the target.
-            private void fire(State s, State t, object[] args)
+            private void fire(State s, State t, EventContext context)
             {
                 /*
                  * There are several state transition traversal cases:
@@ -220,67 +221,63 @@ namespace Sanford.StateMachineToolkit
                 // Handles case 3 after traversing from the source to the target.
                 if (s == Target)
                 {
-                    s.Exit();
-                    performActions(args);
-                    Target.Entry();
+                    s.Exit(context);
+                    performActions(context);
+                    Target.Entry(context);
                 }
-                    // Handles case 2 after traversing from the target to the source.
+                // Handles case 2 after traversing from the target to the source.
                 else if (s == t)
                 {
-                    performActions(args);
-                    return;
+                    performActions(context);
                 }
-                    // Handles case 4.
-                    // Handles case 5a after traversing the hierarchy until a common 
-                    // ancestor if found.
+                // Handles case 4.
+                // Handles case 5a after traversing the hierarchy until a common 
+                // ancestor if found.
                 else if (s.Superstate == t.Superstate)
                 {
-                    s.Exit();
-                    performActions(args);
-                    t.Entry();
+                    s.Exit(context);
+                    performActions(context);
+                    t.Entry(context);
                 }
+
+                /*
+                 * The following traverses the hierarchy until one of the above
+                 * conditions is met.
+                 */
+
+                // Handles case 3.
+                // Handles case 5b.
+                else if (s.Level > t.Level)
+                {
+                    s.Exit(context);
+                    fire(s.Superstate, t, context);
+                }
+                // Handles case 2.
+                // Handles case 5c.
+                else if (s.Level < t.Level)
+                {
+                    fire(s, t.Superstate, context);
+                    t.Entry(context);
+                }
+                // Handles case 5a.
                 else
                 {
-                    /*
-                     * The following traverses the hierarchy until one of the above
-                     * conditions is met.
-                     */
-
-                    // Handles case 3.
-                    // Handles case 5b.
-                    if (s.Level > t.Level)
-                    {
-                        s.Exit();
-                        fire(s.Superstate, t, args);
-                    }
-                        // Handles case 2.
-                        // Handles case 5c.
-                    else if (s.Level < t.Level)
-                    {
-                        fire(s, t.Superstate, args);
-                        t.Entry();
-                    }
-                        // Handles case 5a.
-                    else
-                    {
-                        s.Exit();
-                        fire(s.Superstate, t.Superstate, args);
-                        t.Entry();
-                    }
+                    s.Exit(context);
+                    fire(s.Superstate, t.Superstate, context);
+                    t.Entry(context);
                 }
             }
 
             // Returns a value indicating whether or not the transition should fire.
-            private bool shouldFire(object[] args)
+            private bool shouldFire(EventContext context)
             {
                 // If there is a guard and it does not evaluate to true.
                 try
                 {
-                    return Guard(args);
+                    return Guard(s_currentStateMachine, context);
                 }
                 catch (Exception ex)
                 {
-                    EventContext context = s_currentStateMachine.CurrentEventContext;
                     string message =
                         string.Format("During the transition {0}.{1} an exception was thrown inside a guard.",
                                       context.SourceState, context.CurrentEvent);
@@ -291,19 +288,18 @@ namespace Sanford.StateMachineToolkit
             }
 
             // Performs the transition's actions.
-            private void performActions(object[] args)
+            private void performActions(EventContext context)
             {
                 m_exceptionResult = null;
 
-                foreach (ActionHandler action in Actions)
+                foreach (EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> action in Actions.GetInvocationList())
                 {
                     try
                     {
-                        action(args);
+                        action(s_currentStateMachine, context);
                     }
                     catch (Exception ex)
                     {
-                        EventContext context = s_currentStateMachine.CurrentEventContext;
                         TState sourceId = m_source.ID;
                         TState targetId = m_target != null ? m_target.ID : sourceId;
                         string message =
@@ -329,18 +325,18 @@ namespace Sanford.StateMachineToolkit
             /// If no guard is necessary, this value may be null.
             /// </remarks>
             [NotNull]
-            public GuardHandler Guard
+            public GuardHandler<TState, TEvent, TArgs> Guard
             {
-                get { return m_guard; }
+                get
+                {
+                    return m_guard;
+                }
             }
 
             /// <summary>
             /// Gets the collection of actions.
             /// </summary>
-            public IList<ActionHandler> Actions
-            {
-                get { return m_actions; }
-            }
+            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> Actions = delegate {};
 
             /// <summary>
             /// Gets the target of the transition.
