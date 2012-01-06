@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
-  <Class Name="Sanford.StateMachineToolkit.ActiveStateMachine&lt;TState, TEvent&gt;">
-    <Position X="6.5" Y="1.25" Width="2.75" />
+  <Class Name="Sanford.StateMachineToolkit.ActiveStateMachine&lt;TState, TEvent, TArgs&gt;">
+    <Position X="7" Y="3.75" Width="2.75" />
     <Members>
       <Field Name="m_isDisposed" Hidden="true" />
       <Field Name="m_queue" Hidden="true" />
@@ -10,139 +10,108 @@
       <Method Name="synchronizedPost" Hidden="true" />
       <Method Name="synchronizedSend" Hidden="true" />
     </Members>
-    <InheritanceLine Type="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;" FixedToPoint="true">
-      <Path>
-        <Point X="6" Y="1.866" />
-        <Point X="6.5" Y="1.866" />
-      </Path>
-    </InheritanceLine>
     <TypeIdentifier>
-      <HashCode>gAAAAAAAACgEIRQAAEAAQBAAgACAAAgAAAGQAQgAAAA=</HashCode>
+      <HashCode>gAQAAAAAACgEIRQIAEAAQBAAgACAAAgAAAGQAQgAAgA=</HashCode>
       <FileName>ActiveStateMachine.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent&gt;">
-    <Position X="0.5" Y="1.25" Width="2.75" />
-    <Members>
-      <Field Name="eventDeque" Hidden="true" />
-    </Members>
+  <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent, TArgs&gt;">
+    <Position X="0.5" Y="3.75" Width="3" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
     <NestedTypes>
-      <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent&gt;.StateMachineEvent">
-        <Members>
-          <Field Name="m_args" Hidden="true" />
-          <Field Name="m_eventId" Hidden="true" />
-        </Members>
+      <Class Name="Sanford.StateMachineToolkit.PassiveStateMachine&lt;TState, TEvent, TArgs&gt;.StateMachineEvent">
         <TypeIdentifier>
           <NewMemberFileName>PassiveStateMachine.cs</NewMemberFileName>
         </TypeIdentifier>
       </Class>
     </NestedTypes>
-    <InheritanceLine Type="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;" FixedToPoint="true">
-      <Path>
-        <Point X="3.75" Y="1.898" />
-        <Point X="3.25" Y="1.898" />
-      </Path>
-    </InheritanceLine>
     <TypeIdentifier>
-      <HashCode>EAAAAAAAAAAAAQQAAEAAAAAAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <HashCode>AAAAgAAAAAAAAQQAAEAAAAAAAAAAAAAAAACAAAAAAAA=</HashCode>
       <FileName>PassiveStateMachine.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;">
-    <Position X="3.75" Y="0.5" Width="2.25" />
+  <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent, TArgs&gt;">
+    <Position X="4" Y="0.5" Width="2.5" />
     <Members>
+      <Property Name="CurrentState" Hidden="true" />
       <Method Name="currentStateMachineOnBeginTransition" Hidden="true" />
       <Method Name="currentStateMachineOnExceptionThrown" Hidden="true" />
       <Field Name="m_actionResult" Hidden="true" />
       <Field Name="m_currentEventContext" Hidden="true" />
-      <Field Name="m_currentState" Hidden="true" />
       <Field Name="m_initialized" Hidden="true" />
       <Field Name="m_states" Hidden="true" />
+      <Field Name="m_stateStorage" Hidden="true" />
       <Field Name="s_currentStateMachine" Hidden="true" />
+      <Property Name="states" Hidden="true" />
     </Members>
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
     <NestedTypes>
-      <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;.StateMap">
-        <Members>
-          <Field Name="m_map" Hidden="true" />
-        </Members>
+      <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent, TArgs&gt;.StateMap">
         <TypeIdentifier>
           <NewMemberFileName>StateMachine.cs</NewMemberFileName>
         </TypeIdentifier>
       </Class>
-      <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent&gt;.EventContext">
-        <Members>
-          <Field Name="m_args" Hidden="true" />
-          <Field Name="m_currentEvent" Hidden="true" />
-          <Field Name="m_sourceState" Hidden="true" />
-        </Members>
+      <Class Name="Sanford.StateMachineToolkit.StateMachine&lt;TState, TEvent, TArgs&gt;.EventContext">
         <TypeIdentifier>
           <NewMemberFileName>StateMachine.cs</NewMemberFileName>
         </TypeIdentifier>
       </Class>
     </NestedTypes>
     <TypeIdentifier>
-      <HashCode>AEwYAgAlAAECAQSAAEABQCAIgBBAAAoIAACABwgAAAA=</HashCode>
+      <HashCode>AAwYAgAlAAECAQSACEABYCAIgBAAAAoMAACABwgAEAA=</HashCode>
       <FileName>StateMachine.cs</FileName>
     </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="StateStorage" />
+    </ShowAsAssociation>
     <Lollipop Position="0.2" />
   </Class>
-  <Interface Name="Sanford.StateMachineToolkit.IStateMachine&lt;TState, TEvent&gt;">
-    <Position X="9.75" Y="3.25" Width="2.5" />
+  <Interface Name="Sanford.StateMachineToolkit.IStateMachine&lt;TState, TEvent, TArgs&gt;">
+    <Position X="12.25" Y="0.5" Width="2.75" />
     <TypeIdentifier>
       <HashCode>AAQAAAAhAAEAAAAAAEAAACAAAAAAAAAIAAAAAAAAAAA=</HashCode>
       <FileName>Interfaces.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Interface Name="Sanford.StateMachineToolkit.IPassiveStateMachine&lt;TState, TEvent&gt;">
-    <Position X="8" Y="7" Width="3" />
-    <InheritanceLine Type="Sanford.StateMachineToolkit.IPassiveStateMachine" FixedToPoint="true">
-      <Path>
-        <Point X="8.625" Y="6.231" />
-        <Point X="8.625" Y="6.625" />
-        <Point X="9.312" Y="6.625" />
-        <Point X="9.312" Y="7" />
-      </Path>
-    </InheritanceLine>
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>Interfaces.cs</FileName>
-    </TypeIdentifier>
-  </Interface>
-  <Interface Name="Sanford.StateMachineToolkit.IActiveStateMachine&lt;TState, TEvent&gt;">
-    <Position X="11.25" Y="7" Width="2.75" />
-    <InheritanceLine Type="Sanford.StateMachineToolkit.IActiveStateMachine" FixedToPoint="true">
-      <Path>
-        <Point X="13.375" Y="6.231" />
-        <Point X="13.375" Y="6.625" />
-        <Point X="12.812" Y="6.625" />
-        <Point X="12.812" Y="7" />
-      </Path>
-    </InheritanceLine>
+  <Interface Name="Sanford.StateMachineToolkit.IActiveStateMachine&lt;TState, TEvent, TArgs&gt;">
+    <Position X="10.25" Y="3.75" Width="3.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAA=</HashCode>
       <FileName>Interfaces.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Sanford.StateMachineToolkit.IActiveStateMachine">
-    <Position X="12.5" Y="5.25" Width="1.75" />
+    <Position X="10.25" Y="2" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Interfaces.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Sanford.StateMachineToolkit.IPassiveStateMachine">
-    <Position X="7.75" Y="5.25" Width="1.75" />
+    <Position X="15.25" Y="2" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Interfaces.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Sanford.StateMachineToolkit.IPassiveStateMachine&lt;TState, TEvent, TArgs&gt;" Collapsed="true">
+    <Position X="14" Y="3.75" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Sanford.StateMachineToolkit.IStateStorage&lt;T&gt;">
+    <Position X="8" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>IStateStorage.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Font Name="Tahoma" Size="8.25" />

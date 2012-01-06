@@ -241,8 +241,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Class Diagrams\StateMachine.cd" />
-    <None Include="Class Diagrams\State.cd" />
-    <None Include="Class Diagrams\Transition.cd" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

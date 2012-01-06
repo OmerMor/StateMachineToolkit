@@ -202,6 +202,12 @@ namespace Sanford.StateMachineToolkit
                 null);
         }
 
+        /// <summary>
+        /// Sends an event to the StateMachine, and blocks until it processing ends.
+        /// </summary>
+        /// <param name="eventId">
+        /// The event ID.
+        /// </param>
         public void SendSynchronously(TEvent eventId)
         {
             SendSynchronously(eventId, default(TArgs));

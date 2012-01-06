@@ -36,7 +36,7 @@ namespace TestExample
 			Initialize();
 		}
 
-		private void Initialize()
+		private new void Initialize()
 		{
 			InitializeStates();
 			InitializeGuards();

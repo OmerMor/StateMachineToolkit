@@ -514,7 +514,7 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Sends an event to the state machine, that might trigger a transition.
         /// This event will have precedence over other pending events that were sent using
-        /// the <see cref="Send"/> method.
+        /// the <see cref="Send(TEvent,TArgs)"/> method.
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">event arguments.</param>
