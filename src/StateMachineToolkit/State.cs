@@ -33,6 +33,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
 {
@@ -101,13 +102,11 @@ namespace Sanford.StateMachineToolkit
             // Entry action.
 
             // The State's history type.
-            private HistoryType m_historyType = HistoryType.None;
 
             // The level of the State within the State hierarchy.
             private int m_level;
 
             // A unique integer value representing the State's ID.
-            private readonly TState m_stateId;
 
             #endregion
 
@@ -116,28 +115,16 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Occurs when entering the state.
             /// </summary>
-            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> EntryHandler;
+            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> EntryHandler = delegate { };
 
             /// <summary>
             /// Occurs when leaving the state.
             /// </summary>
-            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> ExitHandler;
+            public event EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> ExitHandler = delegate { };
 
             #endregion
 
             #region Construction
-
-            /// <summary>
-            /// Initializes a new instance of the State class with the specified
-            /// number of events it will handle.
-            /// </summary>
-            /// <param name="stateId">The State's ID.</param>
-            /// Lookup method for getting the internal State object of the given state ID.
-            /// </param>
-            public State(TState stateId)
-                : this(stateId, null, null)
-            {
-            }
 
             /// <summary>
             /// Initializes a new instance of the State class with the specified
@@ -153,17 +140,14 @@ namespace Sanford.StateMachineToolkit
             /// <param name="exitHandler">
             /// The exit action.
             /// </param>
-            public State(TState stateId, 
-                EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> entryHandler, 
-                EventHandler<TransitionEventArgs<TState, TEvent, TArgs>> exitHandler)
+            public State(TState stateId, IEqualityComparer<TEvent> comparer = null)
             {
-                EntryHandler += entryHandler ?? delegate { };
-                ExitHandler += exitHandler ?? delegate { };
+                HistoryType = HistoryType.None;
 
-                m_stateId = stateId;
+                ID = stateId;
 
                 m_substates = new SubstateCollection(this);
-                m_transitions = new TransitionCollection(this);
+                m_transitions = new TransitionCollection(this, comparer);
 
                 m_level = 1;
             }
@@ -175,10 +159,7 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Dispatches an event to the StateMachine.
             /// </summary>
-            /// <param name="eventId"></param>
-            /// <param name="args">
-            /// The arguments accompanying the event.
-            /// </param>
+            /// <param name="context"></param>
             /// <returns>
             /// The results of the dispatch.
             /// </returns>
@@ -212,7 +193,7 @@ namespace Sanford.StateMachineToolkit
                             string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state entry handler.",
                                           context.SourceState, context.CurrentEvent, ID);
 
-                    EntryException entryException = new EntryException(message, ex);
+                    var entryException = new EntryException(message, ex);
                     currentStateMachineOnExceptionThrown(entryException);
                 }
             }
@@ -230,9 +211,9 @@ namespace Sanford.StateMachineToolkit
                 }
                 catch (Exception ex)
                 {
-                    string message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
+                    var message = string.Format("During the transition {0}.{1} an exception was thrown inside the {2} state exit handler.",
                                                   context.SourceState, context.CurrentEvent, ID);
-                    ExitException exitException = new ExitException(message, ex);
+                    var exitException = new ExitException(message, ex);
                     currentStateMachineOnExceptionThrown(exitException);
                 }
 
@@ -267,13 +248,13 @@ namespace Sanford.StateMachineToolkit
             // Enters the state in via its history in shallow mode.
             private TransitionResult dispatch(EventContext context)
             {
-                TransitionResult transResult = s_notFiredResult;
+                var transResult = s_notFiredResult;
 
                 // If there are any Transitions for this event.
                 if (m_transitions[context.CurrentEvent] != null)
                 {
                     // Iterate through the Transitions until one of them fires.
-                    foreach (Transition trans in m_transitions[context.CurrentEvent])
+                    foreach (var trans in m_transitions[context.CurrentEvent])
                     {
                         transResult = trans.fire(context);
                         if (transResult.HasFired)
@@ -298,7 +279,7 @@ namespace Sanford.StateMachineToolkit
             {
                 Entry(context);
 
-                State result = this;
+                var result = this;
 
                 // If the lowest level has not been reached.
                 if (m_initialState != null)
@@ -315,7 +296,7 @@ namespace Sanford.StateMachineToolkit
             {
                 Entry(context);
 
-                State result = this;
+                var result = this;
 
                 // If the lowest level has not been reached.
                 if (m_historyState != null)
@@ -334,19 +315,12 @@ namespace Sanford.StateMachineToolkit
             /// <summary>
             /// Gets or sets the history type.
             /// </summary>
-            public HistoryType HistoryType
-            {
-                get { return m_historyType; }
-                set { m_historyType = value; }
-            }
+            public HistoryType HistoryType { get; set; }
 
             /// <summary>
             /// Gets the State's ID.
             /// </summary>
-            public TState ID
-            {
-                get { return m_stateId; }
-            }
+            public TState ID { get; private set; }
 
             /// <summary>
             /// Gets or sets the initial state.
@@ -435,11 +409,11 @@ namespace Sanford.StateMachineToolkit
             internal int Level
             {
                 get { return m_level; }
-                set
+                private set
                 {
                     m_level = value;
 
-                    foreach (State substate in Substates)
+                    foreach (var substate in Substates)
                     {
                         substate.Level = m_level + 1;
                     }

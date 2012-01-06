@@ -1,6 +1,12 @@
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable VirtualMemberNeverOverriden.Global
 
+using System.Collections.Generic;
+
+#if NET40
+using System.Threading.Tasks;
+#endif
+
 namespace Sanford.StateMachineToolkit
 {
     using System;
@@ -37,40 +43,22 @@ namespace Sanford.StateMachineToolkit
         #region Fields
 
         /// <summary>
-        /// Indicates whether the instance was already disposed.
-        /// </summary>
-        private bool m_isDisposed;
-
-        /// <summary>
         /// Used for queuing events.
         /// </summary>
-        private readonly DelegateQueue m_queue = new DelegateQueue();
-
-        /// <summary>
-        /// The synchronization context, for executing callbacks on the origin thread.
-        /// </summary>
-        private readonly SynchronizationContext m_syncContext;
+        private DelegateQueue queue { get; set; }
 
         /// <summary>
         /// Indicates whether the current event was sent synchronously.
         /// </summary>
-        private bool m_synchronousInvocation;
+        private bool synchronousInvocation { get; set; }
 
         #endregion
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
-        protected ActiveStateMachine()
-            : this(defaultSynchronizationContext)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
-        /// </summary>
-        protected ActiveStateMachine(IStateStorage<TState> stateStorage)
-            : this(stateStorage, defaultSynchronizationContext)
+        protected ActiveStateMachine(IEqualityComparer<TEvent> comparer = null, IStateStorage<TState> stateStorage = null)
+            : this(defaultSynchronizationContext, comparer, stateStorage)
         {
         }
 
@@ -78,27 +66,21 @@ namespace Sanford.StateMachineToolkit
         /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
         /// </summary>
         /// <param name="syncContext">The synchronization context.</param>
-        protected ActiveStateMachine(IStateStorage<TState> stateStorage, SynchronizationContext syncContext)
-            : base(stateStorage)
+        /// <param name="comparer"> </param>
+        /// <param name="stateStorage"> </param>
+        protected ActiveStateMachine(SynchronizationContext syncContext, IEqualityComparer<TEvent> comparer = null, IStateStorage<TState> stateStorage = null)
+            : base(comparer, stateStorage)
         {
-            m_syncContext = syncContext;
-            m_queue.PostCompleted += raiseExceptionEventOnError;
-            m_queue.InvokeCompleted += raiseExceptionEventOnError;
+            SyncContext = syncContext;
+            queue = new DelegateQueue();
+            queue.PostCompleted += raiseExceptionEventOnError;
+            queue.InvokeCompleted += raiseExceptionEventOnError;
         }
 
         private void raiseExceptionEventOnError(object sender, CompletedEventArgs args)
         {
             if (args.Error == null) return;
             OnExceptionThrown(new TransitionErrorEventArgs<TState, TEvent, TArgs>(CurrentEventContext, args.Error));
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ActiveStateMachine{TState,TEvent,TArgs}"/> class.
-        /// </summary>
-        /// <param name="syncContext">The synchronization context.</param>
-        protected ActiveStateMachine(SynchronizationContext syncContext)
-            : this(new InternalStateStorage<TState>(), syncContext)
-        {
         }
 
         #region Properties
@@ -112,9 +94,9 @@ namespace Sanford.StateMachineToolkit
         {
             get 
             {
-                TState currentState = default(TState);
-                SendOrPostCallback fetchState = delegate { currentState = base.CurrentStateID; };
-                m_queue.Send(fetchState, null);
+                var currentState = default(TState);
+                SendOrPostCallback fetchState = state => currentState = base.CurrentStateID;
+                queue.Send(fetchState, null);
                 return currentState;
             }
         }
@@ -125,18 +107,12 @@ namespace Sanford.StateMachineToolkit
         /// <value>
         ///     <c>true</c> if this instance is disposed; otherwise, <c>false</c>.
         /// </value>
-        protected bool IsDisposed
-        {
-            get { return m_isDisposed; }
-        }
+        protected bool IsDisposed { get; private set; }
 
         /// <summary>
         /// The synchronization context, for executing callbacks on the origin thread.
         /// </summary>
-        protected SynchronizationContext SyncContext
-        {
-            get { return m_syncContext; }
-        }
+        protected SynchronizationContext SyncContext { get; private set; }
 
         #endregion
 
@@ -168,10 +144,10 @@ namespace Sanford.StateMachineToolkit
         /// <param name="args">
         /// The data accompanying the event.
         /// </param>
-        public override void Send(TEvent eventId, TArgs args)
+        public override void Send(TEvent eventId, TArgs args = default (TArgs))
         {
             AssertMachineIsValid();
-            m_queue.Post(delegate { Dispatch(eventId, args); }, null);
+            queue.Post(state => Dispatch(eventId, args), null);
         }
 
         /// <summary>
@@ -186,21 +162,33 @@ namespace Sanford.StateMachineToolkit
         public void SendSynchronously(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
-            m_queue.Send(
-                delegate
-                    {
-                        m_synchronousInvocation = true;
-                        try
-                        {
-                            Dispatch(eventId, args);
-                        }
-                        finally
-                        {
-                            m_synchronousInvocation = false;
-                        }
-                    },
-                null);
+            queue.Send(state =>
+            {
+                synchronousInvocation = true;
+                try
+                {
+                    Dispatch(eventId, args);
+                }
+                finally
+                {
+                    synchronousInvocation = false;
+                }
+            }, null);
         }
+
+#if NET40        
+        public Task<TState> SendAsync(TEvent eventId, TArgs args)
+        {
+            AssertMachineIsValid();
+            var tcs = new TaskCompletionSource<TState>();
+            queue.Post(state =>
+            {
+                Dispatch(eventId, args);
+                tcs.SetResult(CurrentStateID);
+            }, null);
+            return tcs.Task;
+        }
+#endif
 
         /// <summary>
         /// Sends an event to the StateMachine, and blocks until it processing ends.
@@ -220,7 +208,7 @@ namespace Sanford.StateMachineToolkit
         public void WaitForPendingEvents()
         {
             SendOrPostCallback nop = delegate { };
-            m_queue.Send(nop, null);
+            queue.Send(nop, null);
         }
 
         /// <summary>
@@ -251,8 +239,8 @@ namespace Sanford.StateMachineToolkit
                 return;
             }
 
-            m_isDisposed = true;
-            m_queue.Dispose();
+            IsDisposed = true;
+            queue.Dispose();
 
             GC.SuppressFinalize(this);
         }
@@ -264,19 +252,17 @@ namespace Sanford.StateMachineToolkit
         protected override void Initialize(TState initialState)
         {
             Exception initException = null;
-            m_queue.Send(
-                delegate
+            queue.Send(state =>
+                {
+                    try
                     {
-                        try
-                        {
-                            InitializeStateMachine(initialState);
-                        }
-                        catch (Exception ex)
-                        {
-                            initException = ex;
-                        }
-                    },
-                null);
+                        InitializeStateMachine(initialState);
+                    }
+                    catch (Exception ex)
+                    {
+                        initException = ex;
+                    }
+                }, null);
 
             if (initException != null)
             {
@@ -299,7 +285,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="eventContext">The event context.</param>
         protected override void OnBeginDispatch(EventContext eventContext)
         {
-            if (m_synchronousInvocation)
+            if (synchronousInvocation)
             {
                 base.OnBeginDispatch(eventContext);
             }
@@ -315,7 +301,7 @@ namespace Sanford.StateMachineToolkit
         /// <param name="eventContext">The event context.</param>
         protected override void OnBeginTransition(EventContext eventContext)
         {
-            if (m_synchronousInvocation)
+            if (synchronousInvocation)
             {
                 base.OnBeginTransition(eventContext);
             }
@@ -363,7 +349,7 @@ namespace Sanford.StateMachineToolkit
         protected override void SendPriority(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
-            m_queue.PostPriority(delegate { Dispatch(eventId, args); }, null);
+            queue.PostPriority(state => Dispatch(eventId, args), null);
         }
 
         private static SynchronizationContext defaultSynchronizationContext
@@ -373,11 +359,11 @@ namespace Sanford.StateMachineToolkit
 
         private void synchronizedSend<T>(Action<T> action, T arg)
         {
-            SyncContext.Send(delegate { action(arg); }, null);
+            SyncContext.Send(state => action(arg), null);
         }
         private void synchronizedPost<T>(Action<T> action, T arg)
         {
-            SyncContext.Post(delegate { action(arg); }, null);
+            SyncContext.Post(state => action(arg), null);
         }
 
         #endregion

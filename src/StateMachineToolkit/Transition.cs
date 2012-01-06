@@ -33,7 +33,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 
@@ -82,37 +81,6 @@ namespace Sanford.StateMachineToolkit
             #region Construction
 
             /// <summary>
-            /// Initializes a new instance of the Transition class.
-            /// </summary>
-            public Transition() : this(null, null)
-            {
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the Transition class with the 
-            /// specified target.
-            /// </summary>
-            /// <param name="target">
-            /// The target state of the transition.
-            /// </param>
-            public Transition(State target) : this(null, target)
-            {
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the Transition class with the 
-            /// specified guard.
-            /// </summary>
-            /// <param name="guard">
-            /// The guard to test to determine whether the transition should take 
-            /// place.
-            /// </param>
-            public Transition(GuardHandler<TState, TEvent, TArgs> guard)
-                : this(guard, null)
-            {
-            }
-
-            /// <summary>
             /// Initializes a new instance of the Transition class with the 
             /// specified guard and target.
             /// </summary>
@@ -123,7 +91,7 @@ namespace Sanford.StateMachineToolkit
             /// <param name="target">
             /// The target state of the transition.
             /// </param>
-            public Transition(GuardHandler<TState, TEvent, TArgs> guard, State target)
+            public Transition(GuardHandler<TState, TEvent, TArgs> guard = null, State target = null)
             {
                 m_guard = guard ?? s_emptyGuard;
                 m_target = target;
@@ -154,13 +122,13 @@ namespace Sanford.StateMachineToolkit
 
                 // If the transition should fire.
                 currentStateMachineOnBeginTransition();
-                State origin = s_currentStateMachine.states[context.SourceState];
-                State newState = origin;
+                var origin = s_currentStateMachine.states[context.SourceState];
+                var newState = origin;
 
                 // If this is not an internal transition.
                 if (Target != null)
                 {
-                    State o = origin;
+                    var o = origin;
 
                     // Unwind up from the state that originally received the event 
                     // to the source state.
@@ -278,10 +246,10 @@ namespace Sanford.StateMachineToolkit
                 }
                 catch (Exception ex)
                 {
-                    string message =
+                    var message =
                         string.Format("During the transition {0}.{1} an exception was thrown inside a guard.",
                                       context.SourceState, context.CurrentEvent);
-                    GuardException guardException = new GuardException(message, ex);
+                    var guardException = new GuardException(message, ex);
                     currentStateMachineOnExceptionThrown(guardException);
                     return false;
                 }
@@ -300,13 +268,13 @@ namespace Sanford.StateMachineToolkit
                     }
                     catch (Exception ex)
                     {
-                        TState sourceId = m_source.ID;
-                        TState targetId = m_target != null ? m_target.ID : sourceId;
-                        string message =
+                        var sourceId = m_source.ID;
+                        var targetId = m_target != null ? m_target.ID : sourceId;
+                        var message =
                             string.Format(
                                 "During the transition {0}.{1} --> {2} an exception was thrown inside a transition action handler.",
                                 sourceId, context.CurrentEvent, targetId);
-                        ActionException actionException = new ActionException(message, ex);
+                        var actionException = new ActionException(message, ex);
                         currentStateMachineOnExceptionThrown(actionException);
                         m_exceptionResult = actionException;
                     }

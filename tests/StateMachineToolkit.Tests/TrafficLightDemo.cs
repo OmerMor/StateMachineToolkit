@@ -42,7 +42,7 @@ namespace StateMachineToolkit.Tests.Active
         private readonly Timer m_timer;
         private static readonly TimeSpan INTERVAL = TimeSpan.FromSeconds(2);
         public TraficLightStateMachine(IStateStorage<TraficLightStates> stateStorage)
-            : base(stateStorage)
+            : base(stateStorage: stateStorage)
         {
             AddTransition(TraficLightStates.Off, TraficLightEvents.Start, TraficLightStates.On);
             AddTransition(TraficLightStates.On, TraficLightEvents.Stop, TraficLightStates.Off);

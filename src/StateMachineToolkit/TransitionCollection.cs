@@ -59,8 +59,7 @@ namespace Sanford.StateMachineToolkit
             private readonly State m_owner;
 
             // The table of transitions.
-            private readonly Dictionary<TEvent, List<Transition>> m_transitions
-                = new Dictionary<TEvent, List<Transition>>();
+            private readonly Dictionary<TEvent, List<Transition>> m_transitions;
 
             #endregion
 
@@ -73,8 +72,9 @@ namespace Sanford.StateMachineToolkit
             /// <param name="owner">
             /// The state that owns the TransitionCollection.
             /// </param>
-            public TransitionCollection(State owner)
+            public TransitionCollection(State owner, IEqualityComparer<TEvent> comparer = null)
             {
+                m_transitions = new Dictionary<TEvent, List<Transition>>(comparer);
                 m_owner = owner;
             }
 

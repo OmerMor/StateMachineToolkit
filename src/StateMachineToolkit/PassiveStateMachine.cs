@@ -2,6 +2,7 @@
 // ReSharper disable VirtualMemberNeverOverriden.Global
 
 using System;
+using System.Collections.Generic;
 using Sanford.Collections.Generic;
 
 namespace Sanford.StateMachineToolkit
@@ -29,32 +30,25 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Initializes a new instance of the <see cref="PassiveStateMachine{TState, TEvent,TArgs}"/> class.
         /// </summary>
+        /// <param name="comparer"> </param>
         /// <param name="stateStorage">The state storage.</param>
-        protected PassiveStateMachine(IStateStorage<TState> stateStorage) : base(stateStorage)
+        protected PassiveStateMachine(IEqualityComparer<TEvent> comparer = null, IStateStorage<TState> stateStorage = null)
+            : base(comparer, stateStorage)
         {
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PassiveStateMachine{TState,TEvent,TArgs}"/> class.
-        /// </summary>
-        protected PassiveStateMachine()
-        {
-        }
-
-        private readonly Deque<StateMachineEvent> m_eventDeque = new Deque<StateMachineEvent>();
+        private readonly Deque<EventContext> m_eventDeque = new Deque<EventContext>();
 
         /// <summary>
         /// Executes pending events.
         /// </summary>
         public void Execute()
         {
-            StateMachineEvent e;
-
             while (m_eventDeque.Count > 0)
             {
-                e = m_eventDeque.PopFront();
+                var eventContext = m_eventDeque.PopFront();
 
-                Dispatch(e.EventID, e.GetArgs());
+                Dispatch(eventContext.CurrentEvent, eventContext.Args);
             }
         }
 
@@ -63,10 +57,10 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public override void Send(TEvent eventId, TArgs args)
+        public override void Send(TEvent eventId, TArgs args = default (TArgs))
         {
             AssertMachineIsValid();
-            m_eventDeque.PushBack(new StateMachineEvent(eventId, args));
+            m_eventDeque.PushBack(new EventContext(default(TState), eventId, args));
         }
 
         /// <summary>
@@ -98,46 +92,7 @@ namespace Sanford.StateMachineToolkit
         protected override void SendPriority(TEvent eventId, TArgs args)
         {
             AssertMachineIsValid();
-            m_eventDeque.PushFront(new StateMachineEvent(eventId, args));
-        }
-
-        /// <summary>
-        /// Encapsulates an event that was sent to the state machine.
-        /// </summary>
-        private sealed class StateMachineEvent
-        {
-            private readonly TEvent m_eventId;
-
-            private readonly TArgs m_args;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="StateMachineEvent"/> class.
-            /// </summary>
-            /// <param name="eventId">The event ID.</param>
-            /// <param name="args">The event arguments.</param>
-            public StateMachineEvent(TEvent eventId, TArgs args)
-            {
-                m_eventId = eventId;
-                m_args = args;
-            }
-
-            /// <summary>
-            /// Gets the event arguments.
-            /// </summary>
-            /// <returns>The event arguments.</returns>
-            public TArgs GetArgs()
-            {
-                return m_args;
-            }
-
-            /// <summary>
-            /// Gets the event ID.
-            /// </summary>
-            /// <value>The event ID.</value>
-            public TEvent EventID
-            {
-                get { return m_eventId; }
-            }
+            m_eventDeque.PushFront(new EventContext(default(TState), eventId, args));
         }
     }
 }

@@ -59,13 +59,10 @@ namespace Sanford.StateMachineToolkit
 
         #region .ctor
 
-        public StateMachine(IStateStorage<TState> stateStorage)
+        public StateMachine(IEqualityComparer<TEvent> comparer = null, IStateStorage<TState> stateStorage = null)
         {
-            m_stateStorage = stateStorage;
-        }
-
-        public StateMachine() : this(new InternalStateStorage<TState>())
-        {
+            states = new StateMap(comparer);
+            m_stateStorage = stateStorage ?? new InternalStateStorage<TState>();
         }
 
         #endregion
@@ -77,21 +74,6 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         [ThreadStatic]
         private static StateMachine<TState, TEvent, TArgs> s_currentStateMachine;
-
-        /// <summary>
-        /// The states of the state machine.
-        /// </summary>
-        private readonly StateMap m_states = new StateMap();
-
-        /// <summary>
-        /// The results of the action performed during the last transition.
-        /// </summary>
-        private object m_actionResult;
-
-        /// <summary>
-        /// The current event context.
-        /// </summary>
-        private EventContext m_currentEventContext;
 
 /*
         /// <summary>
@@ -171,20 +153,12 @@ namespace Sanford.StateMachineToolkit
         /// <remarks>
         /// This property should only be set during the execution of an action method.
         /// </remarks>
-        protected object ActionResult
-        {
-            get { return m_actionResult; }
-            set { m_actionResult = value; }
-        }
+        protected object ActionResult { get; set; }
 
         /// <summary>
         /// Gets or sets the current event context.
         /// </summary>
-        protected EventContext CurrentEventContext
-        {
-            get { return m_currentEventContext; }
-            set { m_currentEventContext = value; }
-        }
+        protected EventContext CurrentEventContext { get; set; }
 
         /// <summary>
         /// Gets or sets the current state.
@@ -213,10 +187,7 @@ namespace Sanford.StateMachineToolkit
         /// <summary>
         /// Gets the states of the state machine.
         /// </summary>
-        private StateMap states
-        {
-            get { return m_states; }
-        }
+        private StateMap states { get; set; }
 
         #endregion
 
@@ -257,12 +228,7 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        public abstract void Send(TEvent eventId, TArgs args);
-
-        public void Send(TEvent eventId)
-        {
-            Send(eventId, default(TArgs));
-        }
+        public abstract void Send(TEvent eventId, TArgs args = default (TArgs));
 
         /// <summary>
         /// Setups substates for hierarchical state machine.
@@ -273,12 +239,12 @@ namespace Sanford.StateMachineToolkit
         /// <param name="additionalSubstates">Additional substates.</param>
         public void SetupSubstates(TState superState, HistoryType historyType, TState initialSubstate, params TState[] additionalSubstates)
         {
-            State superstate = states[superState];
-            State initial = states[initialSubstate];
+            var superstate = states[superState];
+            var initial = states[initialSubstate];
 
             superstate.Substates.Clear();
             superstate.Substates.Add(initial);
-            foreach (TState substate in additionalSubstates)
+            foreach (var substate in additionalSubstates)
             {
                 superstate.Substates.Add(states[substate]);
             }
@@ -312,8 +278,8 @@ namespace Sanford.StateMachineToolkit
         {
             // Reset action result.
             ActionResult = null;
-            State currentState = CurrentState;
-            EventContext eventContext = new EventContext(currentState.ID, eventId, args);
+            var currentState = CurrentState;
+            var eventContext = new EventContext(currentState.ID, eventId, args);
             CurrentEventContext = eventContext;
             s_currentStateMachine = this;
             try
@@ -321,7 +287,7 @@ namespace Sanford.StateMachineToolkit
                 OnBeginDispatch(eventContext);
 
                 // Dispatch event to the current state.
-                TransitionResult result = currentState.Dispatch(eventContext);
+                var result = currentState.Dispatch(eventContext);
 
 /*
                 // report errors
@@ -340,7 +306,7 @@ namespace Sanford.StateMachineToolkit
 
                 CurrentStateID = result.NewState;
 
-                TransitionCompletedEventArgs<TState, TEvent, TArgs> eventArgs =
+                var eventArgs =
                     new TransitionCompletedEventArgs<TState, TEvent, TArgs>(
                         result.NewState, eventContext, ActionResult, result.Error);
 
@@ -397,7 +363,7 @@ namespace Sanford.StateMachineToolkit
         /// </param>
         protected void InitializeStateMachine(TState initialStateId)
         {
-            State initialState = states[initialStateId];
+            var initialState = states[initialStateId];
             if (initialState == null)
             {
                 throw new ArgumentException("Machine was not setup with given initial state.", "initialStateId");
@@ -410,8 +376,8 @@ namespace Sanford.StateMachineToolkit
 
             m_initialized = true;
             s_currentStateMachine = this;
-            State superstate = initialState;
-            Stack<State> superstateStack = new Stack<State>();
+            var superstate = initialState;
+            var superstateStack = new Stack<State>();
 
             // If the initial state is a substate, travel up the state 
             // hierarchy in order to descend from the top state to the initial
@@ -555,6 +521,12 @@ namespace Sanford.StateMachineToolkit
             /// Maps state IDs to state objects.
             /// </summary>
             private readonly Dictionary<TState, State> m_map = new Dictionary<TState, State>();
+            private readonly IEqualityComparer<TEvent> m_comparer;
+
+            public StateMap(IEqualityComparer<TEvent> comparer = null)
+            {
+                m_comparer = comparer;
+            }
 
             /// <summary>
             /// Gets the <see cref="Sanford.StateMachineToolkit.StateMachine{TState,TEvent,TArgs}.State"/>
@@ -566,43 +538,23 @@ namespace Sanford.StateMachineToolkit
             {
                 get
                 {
-                    return lookupState(state);
-                }
-            }
+                    // lazy initialization
+                    if (!m_map.ContainsKey(state))
+                    {
+                        m_map.Add(state, new State(state, m_comparer));
+                    }
 
-            private State lookupState(TState state)
-            {
-                // lazy initialization
-                if (!m_map.ContainsKey(state))
-                {
-                    m_map.Add(state, new State(state));
+                    return m_map[state];
                 }
-
-                return m_map[state];
             }
         }
 
         /// <summary>
         /// A context with information about an event is being processed by the state machine.
         /// </summary>
-        [DebuggerDisplay("{m_sourceState},{m_currentEvent},{m_args}")]
-        public class EventContext : EventArgs
+        [DebuggerDisplay("{SourceState},{CurrentEvent},{Args}")]
+        public sealed class EventContext : EventArgs
         {
-            /// <summary>
-            /// The source state ID.
-            /// </summary>
-            private readonly TState m_sourceState;
-
-            /// <summary>
-            /// The current event ID.
-            /// </summary>
-            private readonly TEvent m_currentEvent;
-
-            /// <summary>
-            /// The event arguments.
-            /// </summary>
-            private readonly TArgs m_args;
-
             /// <summary>
             /// Initializes a new instance of the <see cref="EventContext"/> class.
             /// </summary>
@@ -611,40 +563,28 @@ namespace Sanford.StateMachineToolkit
             /// <param name="args">The event arguments.</param>
             public EventContext(TState sourceState, TEvent currentEvent, TArgs args)
             {
-                m_sourceState = sourceState;
-                m_currentEvent = currentEvent;
-                m_args = args;
+                SourceState = sourceState;
+                CurrentEvent = currentEvent;
+                Args = args;
             }
 
             /// <summary>
             /// Gets the source state.
             /// </summary>
             /// <value>The state of the source.</value>
-            public TState SourceState
-            {
-                [DebuggerStepThrough]
-                get { return m_sourceState; }
-            }
+            public TState SourceState { get; private set; }
 
             /// <summary>
             /// Gets the event arguments.
             /// </summary>
             /// <value>The event arguments.</value>
-            public TArgs Args
-            {
-                [DebuggerStepThrough]
-                get { return m_args; }
-            }
+            public TArgs Args { get; private set; }
 
             /// <summary>
             /// Gets the current event.
             /// </summary>
             /// <value>The current event.</value>
-            public TEvent CurrentEvent
-            {
-                [DebuggerStepThrough]
-                get { return m_currentEvent; }
-            }
+            public TEvent CurrentEvent { get; private set; }
         }
     }
 
@@ -662,6 +602,65 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         RaiseExceptionEvent
     }
+
+#if NET40
+    public class RxStateMachine<TState, TEvent, TArgs> : IObservable<TState>, IObserver<TEvent>
+    {
+        private sealed class DisposableAction : IDisposable
+        {
+            private readonly Action m_action;
+
+            public DisposableAction(Action action)
+            {
+                m_action = action;
+            }
+
+            public void Dispose()
+            {
+                m_action();
+            }
+        }
+        private readonly ActiveStateMachine<TState, TEvent, TArgs> m_activeStateMachine;
+
+        public RxStateMachine(ActiveStateMachine<TState, TEvent, TArgs> activeStateMachine)
+        {
+            m_activeStateMachine = activeStateMachine;
+        }
+
+        public IDisposable Subscribe(IObserver<TState> observer)
+        {
+            EventHandler<TransitionCompletedEventArgs<TState, TEvent, TArgs>> handler =
+                (sender, args) => observer.OnNext(args.TargetStateID);
+            m_activeStateMachine.TransitionCompleted += handler;
+            return new DisposableAction(() => m_activeStateMachine.TransitionCompleted -= handler);
+        }
+
+/*
+        public IDisposable Subscribe(IObserver<Exception> observer)
+        {
+            EventHandler<TransitionErrorEventArgs<TState, TEvent, object>> handler = 
+                (sender, args) => observer.OnNext(args.Error);
+            m_activeStateMachine.ExceptionThrown += handler;
+            return new DisposableAction(() => m_activeStateMachine.ExceptionThrown -= handler);
+        }
+*/
+
+        public void OnNext(TEvent value)
+        {
+            m_activeStateMachine.Send(value);
+        }
+
+        public void OnError(Exception error)
+        {
+            m_activeStateMachine.Dispose();
+        }
+
+        public void OnCompleted()
+        {
+            m_activeStateMachine.Dispose();
+        }
+    }
+#endif
 }
 
 // ReSharper restore MemberCanBePrivate.Global

@@ -1,6 +1,10 @@
 using System;
 using Sanford.Threading;
 
+#if NET40
+using System.Threading.Tasks;
+#endif
+
 namespace Sanford.StateMachineToolkit
 {
     /// <summary>
@@ -50,9 +54,8 @@ namespace Sanford.StateMachineToolkit
         /// </summary>
         /// <param name="eventId">The event.</param>
         /// <param name="args">Optional event arguments.</param>
-        void Send(TEvent eventId, TArgs args);
+        void Send(TEvent eventId, TArgs args = default (TArgs));
 
-        void Send(TEvent eventId);
     }
 
     /// <summary>
@@ -121,6 +124,9 @@ namespace Sanford.StateMachineToolkit
         /// </param>
         void SendSynchronously(TEvent eventId, TArgs args);
 
+#if NET40        
+        Task<TState> SendAsync(TEvent eventId, TArgs args);
+#endif
         /// <summary>
         /// Sends an event to the StateMachine, and blocks until it processing ends.
         /// </summary>

@@ -157,7 +157,7 @@ namespace TestExample
 
         protected abstract void SetFooToTrue(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e);
 
-        public override void Send(EventID eventId, EventArgs args)
+        public override void Send(EventID eventId, EventArgs args = null)
 		{
 			base.Send(eventId, args);
 			Execute();
