@@ -22,7 +22,7 @@ namespace LightSwitchDemo
 			Console.ReadLine();
 		}
 
-		private static void HandleTransitionCompleted(object sender, TransitionCompletedEventArgs<StateID, EventID> e)
+        private static void HandleTransitionCompleted(object sender, TransitionCompletedEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.WriteLine("Transition Completed:");
 			Console.WriteLine("\tState ID: {0}", e.TargetStateID);

@@ -1,3 +1,4 @@
+using System;
 using Sanford.StateMachineToolkit;
 
 namespace TestExample
@@ -24,11 +25,11 @@ namespace TestExample
 	    S211
 	}
 
-	public abstract class ExampleBase : PassiveStateMachine<StateID, EventID>
+    public abstract class ExampleBase : PassiveStateMachine<StateID, EventID, EventArgs>
 	{
-		private GuardHandler guardFooIsTrue, guardFooIsFalse;
+        private GuardHandler<StateID, EventID, EventArgs> guardFooIsTrue, guardFooIsFalse;
 
-		private ActionHandler actionSetFooToFalse, actionSetFooToTrue;
+        private EventHandler<TransitionEventArgs<StateID, EventID, EventArgs>> actionSetFooToFalse, actionSetFooToTrue;
 
 		protected ExampleBase()
 		{
@@ -100,63 +101,63 @@ namespace TestExample
             SetupSubstates(StateID.S21, HistoryType.None, StateID.S211);
 		}
 
-		protected virtual void EntryS0()
+		protected virtual void EntryS0(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void EntryS1()
+		protected virtual void EntryS1(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void EntryS11()
+		protected virtual void EntryS11(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void EntryS2()
+		protected virtual void EntryS2(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void EntryS21()
+		protected virtual void EntryS21(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void EntryS211()
+		protected virtual void EntryS211(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS0()
+		protected virtual void ExitS0(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS1()
+		protected virtual void ExitS1(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS11()
+		protected virtual void ExitS11(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS2()
+		protected virtual void ExitS2(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS21()
+		protected virtual void ExitS21(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected virtual void ExitS211()
+		protected virtual void ExitS211(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 		}
 
-		protected abstract bool FooIsTrue(object[] args);
+        protected abstract bool FooIsTrue(object sender, TransitionEventArgs<StateID, EventID, EventArgs> args);
 
-		protected abstract bool FooIsFalse(object[] args);
+        protected abstract bool FooIsFalse(object sender, TransitionEventArgs<StateID, EventID, EventArgs> args);
 
-		protected abstract void SetFooToFalse(object[] args);
+        protected abstract void SetFooToFalse(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e);
 
-		protected abstract void SetFooToTrue(object[] args);
+        protected abstract void SetFooToTrue(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e);
 
-		public override void Send(EventID eventId, params object[] args)
+        public override void Send(EventID eventId, EventArgs args)
 		{
 			base.Send(eventId, args);
 			Execute();

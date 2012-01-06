@@ -3,7 +3,7 @@ using Sanford.StateMachineToolkit;
 
 namespace LightSwitchDemo
 {
-	public class LightSwitch : PassiveStateMachine<StateID, EventID>
+	public class LightSwitch : PassiveStateMachine<StateID, EventID, EventArgs>
 	{
 		public LightSwitch()
 		{
@@ -19,22 +19,22 @@ namespace LightSwitchDemo
 
 		#region Entry/Exit Methods
 
-		private static void EnterOn()
+		private static void EnterOn(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.WriteLine("Entering On state.");
 		}
 
-		private static void ExitOn()
+		private static void ExitOn(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.WriteLine("Exiting On state.");
 		}
 
-		private static void EnterOff()
+		private static void EnterOff(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.WriteLine("Entering Off state.");
 		}
 
-		private static void ExitOff()
+		private static void ExitOff(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.WriteLine("Exiting Off state.");
 		}
@@ -43,14 +43,14 @@ namespace LightSwitchDemo
 
 		#region Action Methods
 
-		private void TurnOn(object[] args)
+        private void TurnOn(object sender, EventArgs args)
 		{
 			Console.WriteLine("Light switch turned on.");
 
 			ActionResult = "Turned on the light switch.";
 		}
 
-		private void TurnOff(object[] args)
+        private void TurnOff(object sender, EventArgs args)
 		{
 			Console.WriteLine("Light switch turned off.");
 

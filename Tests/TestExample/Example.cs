@@ -1,4 +1,5 @@
 using System;
+using Sanford.StateMachineToolkit;
 
 namespace TestExample
 {
@@ -49,83 +50,83 @@ namespace TestExample
 			Send(EventID.H);
 		}
 
-		protected override void EntryS0()
+		protected override void EntryS0(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS0 ");
 		}
 
-		protected override void EntryS1()
+		protected override void EntryS1(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS1 ");
 		}
 
-		protected override void EntryS11()
+		protected override void EntryS11(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS11 ");
 		}
 
-		protected override void EntryS2()
+		protected override void EntryS2(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS2 ");
 		}
 
-		protected override void EntryS21()
+		protected override void EntryS21(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS21 ");
 		}
 
-		protected override void EntryS211()
+		protected override void EntryS211(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("EntryS211 ");
 		}
 
-		protected override void ExitS0()
+		protected override void ExitS0(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS0 ");
 		}
 
-		protected override void ExitS1()
+		protected override void ExitS1(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS1 ");
 		}
 
-		protected override void ExitS11()
+		protected override void ExitS11(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS11 ");
 		}
 
-		protected override void ExitS2()
+		protected override void ExitS2(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS2 ");
 		}
 
-		protected override void ExitS21()
+		protected override void ExitS21(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS21 ");
 		}
 
-		protected override void ExitS211()
+		protected override void ExitS211(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("ExitS211 ");
 		}
 
-		protected override bool FooIsFalse(object[] args)
+        protected override bool FooIsFalse(object sender, TransitionEventArgs<StateID, EventID, EventArgs> args)
 		{
 			return foo == false;
 		}
 
-		protected override bool FooIsTrue(object[] args)
+        protected override bool FooIsTrue(object sender, TransitionEventArgs<StateID, EventID, EventArgs> args)
 		{
 			return foo;
 		}
 
-		protected override void SetFooToFalse(object[] args)
+        protected override void SetFooToFalse(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("Setting foo to false... ");
 			foo = false;
 		}
 
-		protected override void SetFooToTrue(object[] args)
+        protected override void SetFooToTrue(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			Console.Write("Setting foo to true... ");
 			foo = true;

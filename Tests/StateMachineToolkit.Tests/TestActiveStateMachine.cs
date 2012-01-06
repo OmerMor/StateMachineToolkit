@@ -18,6 +18,12 @@ namespace StateMachineToolkit.Tests.Active
 	[TestFixture]
 	public class TestActiveStateMachine
 	{
+        [TearDown]
+        public void TearDown()
+        {
+
+        }
+
         private EventTester m_beginDispatchEvent;
         private EventTester m_beginTransitionEvent;
 		private EventTester m_transitionDeclinedEvent;
@@ -49,8 +55,9 @@ namespace StateMachineToolkit.Tests.Active
 				m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
 		}
 
-        private void registerMachineEvents<TState, TEvent>(IStateMachine<TState, TEvent> machine)
-		{
+        private void registerMachineEvents<TState, TEvent, TArgs>(IStateMachine<TState, TEvent, TArgs> machine) 
+            //where TArgs : EventArgs
+        {
             m_beginDispatchEvent = new EventTester();
             m_beginTransitionEvent = new EventTester();
 			m_transitionDeclinedEvent = new EventTester();
@@ -69,6 +76,37 @@ namespace StateMachineToolkit.Tests.Active
 			                           	};
 		}
 
+	    [Test]
+	    public void SendSynchronously_should_not_hang_when_raising_BeginDispach_event()
+	    {
+	        var finishedEvent = new AutoResetEvent(false);
+	        EventHandler onLoad = ((sender, e) =>
+	                                   {
+	                                       using (var machine = new TestMachine<State, Event, EventArgs>())
+	                                       {
+	                                           machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
+	                                           machine.BeginDispatch += (sender1, e1) => { };
+	                                           machine.Start(State.S1);
+	                                           machine.SendSynchronously(Event.S1_to_S2);
+	                                           finishedEvent.Set();
+	                                       }
+	                                   });
+            Form form = null;
+            ThreadPool.QueueUserWorkItem(
+                state =>
+                    {
+                        // The form must be instantiated in the future ui thread.
+                        // Otherwise, a WindowsFormSynchronizationContext would be installed
+                        // on the test thread (which has no message-pump), and will cause hangups.
+                        form = new Form();
+                        form.Load += onLoad;
+                        Application.Run(form);
+                    });
+            var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
+            Assert.IsTrue(finished);
+            form.Invoke((MethodInvoker)form.Dispose);
+        }
+
         [Test]
         public void SimpleTransitionTest()
         {
@@ -84,7 +122,7 @@ namespace StateMachineToolkit.Tests.Active
         [Test]
         public void Test_machine_with_String_state_and_Int32_event_types()
         {
-            using (var machine = new TestMachine<string,int>())
+            using (var machine = new TestMachine<string,int,EventArgs>())
             {
                 machine.AddTransition("S1", 12, "S2");
                 registerMachineEvents(machine);
@@ -99,7 +137,7 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void SimpleTransitionTest2()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 				registerMachineEvents(machine);
@@ -114,9 +152,9 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void GuardException()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
-				machine.AddTransition(State.S1, Event.S1_to_S2, throwException, State.S2);
+                machine.AddTransition(State.S1, Event.S1_to_S2, guardException, State.S2);
 
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
@@ -131,9 +169,9 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void GuardException_should_not_prevent_machine_from_checking_other_guards()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
-				machine.AddTransition(State.S1, Event.S1_to_S2, throwException, State.S2);
+				machine.AddTransition(State.S1, Event.S1_to_S2, guardException, State.S2);
 				machine.AddTransition(State.S1, Event.S1_to_S2, delegate { return true; }, State.S1_1);
 
 				registerMachineEvents(machine);
@@ -148,8 +186,8 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void EntryExceptionOnInit()
 		{
-			TransitionErrorEventArgs<State, Event> args;
-			using (var machine = new TestMachine<State, Event>())
+            TransitionErrorEventArgs<State, Event, EventArgs> args;
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine[State.S1].EntryHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
@@ -165,11 +203,11 @@ namespace StateMachineToolkit.Tests.Active
 			Assert.IsInstanceOfType(typeof(EntryException), m_lastException);
 		}
 
-		[Test]
+	    [Test]
 		public void EntryExceptionOnSend()
 		{
-			TransitionErrorEventArgs<State, Event> errorEventArgs;
-			using (var machine = new TestMachine<State, Event>())
+            TransitionErrorEventArgs<State, Event, EventArgs> errorEventArgs;
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine[State.S2].EntryHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
@@ -191,7 +229,7 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void ExitException()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
@@ -207,10 +245,17 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void TransitionActions_ThrowsException()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				var count = 0;
-				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, args => { count++; throwException(); });
+                EventHandler<TransitionEventArgs<State, Event, EventArgs>> actionHandler =
+			        (sender, e) =>
+			            {
+			                count++;
+			                throwException(sender, e);
+			            };
+			    machine.AddTransition(State.S1, Event.S1_to_S2, State.S2,
+				                      actionHandler);
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
@@ -224,11 +269,16 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void TransitionActions_ThrowsExceptionTwice()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				var count = 0;
-				ActionHandler actionHandler = args => { count++; throwException(); };
-				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, actionHandler, actionHandler);
+                EventHandler<TransitionEventArgs<State, Event, EventArgs>> actionHandler =
+                    (sender, e) =>
+                    {
+                        count++;
+                        throwException(sender, e);
+                    };
+                machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, actionHandler, actionHandler);
 
 				registerMachineEvents(machine);
 				machine.Start(State.S1);
@@ -244,7 +294,7 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void TransitionDeclined()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
@@ -258,11 +308,11 @@ namespace StateMachineToolkit.Tests.Active
 			}
 		}
 
-		private static void throwException()
+        private static void throwException(object sender, TransitionEventArgs<State, Event, EventArgs> args)
 		{
 			throw new Exception();
 		}
-		private static bool throwException(object[] args)
+        private static bool guardException(object sender, TransitionEventArgs<State, Event, EventArgs> args)
 		{
 			throw new Exception();
 		}
@@ -270,13 +320,13 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void TransitionDeclined_ThrowsError()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine[State.S1].ExitHandler += throwException;
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 				registerMachineEvents(machine);
-				machine.TransitionDeclined += (sender, e) => throwException();
+				machine.TransitionDeclined += throwException;
 				machine.Start(State.S1);
 				machine.Send(Event.S2_to_S1);
 				machine.WaitForPendingEvents();
@@ -287,7 +337,7 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void BeginDispatch()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, int>())
 			{
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 				machine.BeginDispatch += (sender, e) =>
@@ -295,7 +345,7 @@ namespace StateMachineToolkit.Tests.Active
 				                         		Assert.AreEqual(State.S1, machine.CurrentStateID);
 				                         		Assert.AreEqual(Event.S1_to_S2, e.EventID);
 				                         		Assert.AreEqual(State.S1, e.SourceStateID);
-				                         		Assert.AreEqual(123, e.EventArgs[0]);
+				                         		Assert.AreEqual(123, e.EventArgs);
 				                         	};
 
 				registerMachineEvents(machine);
@@ -310,12 +360,12 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void BeginDispatch_ThrowsError()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 				registerMachineEvents(machine);
-				machine.BeginDispatch += (sender, e) => throwException();
+				machine.BeginDispatch += throwException;
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
 				machine.WaitForPendingEvents();
@@ -326,12 +376,12 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void TransitionCompleted_ThrowsError()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 				registerMachineEvents(machine);
-				machine.TransitionCompleted += (sender, e) => throwException();
+				machine.TransitionCompleted += throwException;
 				machine.Start(State.S1);
 				machine.Send(Event.S1_to_S2);
 				machine.WaitForPendingEvents();
@@ -343,14 +393,14 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void Superstate_should_handle_event_when_guard_of_substate_does_not_pass()
 		{
-			using (var machine = new TestMachine<State, Event>())
+            using (var machine = new TestMachine<State, Event, EventArgs>())
 			{
 				machine.SetupSubstates(State.S1, HistoryType.None, State.S1_1, State.S1_2);
 				machine.AddTransition(State.S1_1, Event.E1, State.S1_2);
-				machine.AddTransition(State.S1_2, Event.E1, args => false, State.S1_2);
+				machine.AddTransition(State.S1_2, Event.E1, (sender, args) => false, State.S1_2);
 				machine.AddTransition(State.S1, Event.E1, State.S2);
 
-			    IActiveStateMachine<State, Event> m = machine;
+                IActiveStateMachine<State, Event, EventArgs> m = machine;
                 registerMachineEvents(m);
 				machine.Start(State.S1);
                 m.SendSynchronously(Event.E1);
@@ -367,13 +417,13 @@ namespace StateMachineToolkit.Tests.Active
 		[Test]
 		public void BeginDispach_event_should_raise_in_right_context()
 		{
-			TestMachine<State, Event> machine = null;
+            TestMachine<State, Event, EventArgs> machine = null;
 			var loadedEvent = new EventTester(TimeSpan.FromSeconds(1000));
 			var calledInUiThread = false;
 			EventHandler onLoad =
 				(sender, e) =>
 				{
-					machine = new TestMachine<State, Event>();
+                    machine = new TestMachine<State, Event, EventArgs>();
 					machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 					var uiThreadId = Thread.CurrentThread.ManagedThreadId;
 					machine.BeginDispatch +=
@@ -401,35 +451,6 @@ namespace StateMachineToolkit.Tests.Active
             Assert.IsTrue(calledInUiThread);
 		    form.Invoke((MethodInvoker) (() => form.Close()));
 		}
-
-		[Test]
-		public void SendSynchronously_should_not_hang_when_raising_BeginDispach_event()
-		{
-			var finishedEvent = new AutoResetEvent(false);
-			EventHandler onLoad = ((sender, e) =>
-			{
-				using (var machine = new TestMachine<State, Event>())
-				{
-					machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-					machine.BeginDispatch += (sender1, e1) => { };
-					machine.Start(State.S1);
-					machine.SendSynchronously(Event.S1_to_S2);
-					finishedEvent.Set();
-				}
-			});
-		    using (var form = new Form())
-		    {
-	            ThreadPool.QueueUserWorkItem(
-	                state =>
-	                    {
-	                        form.Load += onLoad;
-	                        Application.Run(form);
-	                    });
-	            var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
-	            Assert.IsTrue(finished);
-		    }
-		}
-
 	}
 
 	public sealed class EventTester
@@ -472,17 +493,18 @@ namespace StateMachineToolkit.Tests.Active
 		}
 	}
 
-	public sealed class TestMachine<TState, TEvent> : ActiveStateMachine<TState, TEvent>
-		//where TEvent : struct, IComparable, IFormattable
+	public sealed class TestMachine<TState, TEvent, TArgs> : ActiveStateMachine<TState, TEvent, TArgs>
+        //where TArgs : EventArgs
+        //where TEvent : struct, IComparable, IFormattable
 		//where TState : struct, IComparable, IFormattable
 	{
-		public void Start(TState initialState)
+	    public void Start(TState initialState)
 		{
 			Initialize(initialState);
 		}
 	}
 	
-	public sealed class TestMachine : ActiveStateMachine<State, Event>
+	public sealed class TestMachine : ActiveStateMachine<State, Event, EventArgs>
 	{
 		public TestMachine()
 		{

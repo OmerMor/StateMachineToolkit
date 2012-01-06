@@ -46,7 +46,7 @@
 				m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
 		}
 
-		private void registerMachineEvents(IStateMachine<State, Event> machine)
+        private void registerMachineEvents<TArgs>(IStateMachine<State, Event, TArgs> machine)
 		{
 			m_beginDispatchEvent = new EventTester();
 			m_transitionDeclinedEvent = new EventTester();
@@ -72,7 +72,7 @@
 		[Test]
 		public void SimpleTransitionTest2()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
 			machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 			registerMachineEvents(machine);
@@ -86,8 +86,8 @@
 		[Test]
 		public void GuardException()
 		{
-			var machine = new TestMachine<State, Event>();
-		    machine.AddTransition(State.S1, Event.S1_to_S2, args => { throw new Exception(); }, State.S2);
+            var machine = new TestMachine<State, Event, EventArgs>();
+		    machine.AddTransition(State.S1, Event.S1_to_S2, guardException, State.S2);
 
 			registerMachineEvents(machine);
             machine.Start(State.S1);
@@ -100,11 +100,11 @@
 		[Test]
 		public void EntryExceptionOnInit()
 		{
-		    var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-            machine[State.S1].EntryHandler += () => { throw new Exception(); };
+            machine[State.S1].EntryHandler += throwException;
             registerMachineEvents(machine);
-			TransitionErrorEventArgs<State, Event> args = null;
+            TransitionErrorEventArgs<State, Event, EventArgs> args = null;
 			machine.ExceptionThrown += (sender, e) => args = e;
             machine.Start(State.S1);
 			assertMachineEvents(false, false, false, true);
@@ -115,10 +115,10 @@
 		[Test]
 		public void EntryExceptionOnSend()
 		{
-			TransitionErrorEventArgs<State, Event> errorEventArgs;
-			var machine = new TestMachine<State, Event>();
+            TransitionErrorEventArgs<State, Event, EventArgs> errorEventArgs;
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-		    machine[State.S2].EntryHandler += () => { throw new Exception(); };
+            machine[State.S2].EntryHandler += throwException;
 			errorEventArgs = null;
 			machine.ExceptionThrown += (sender, args) => errorEventArgs = args;
 			registerMachineEvents(machine);
@@ -135,9 +135,9 @@
 		[Test]
 		public void ExitException()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-            machine[State.S1].ExitHandler += () => { throw new Exception(); };
+            machine[State.S1].ExitHandler += throwException;
 			registerMachineEvents(machine);
             machine.Start(State.S1);
 			machine.Send(Event.S1_to_S2);
@@ -149,14 +149,15 @@
 		[Test]
 		public void TransitionActions_ThrowsException()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
 			var count = 0;
-		    ActionHandler actionHandler = args =>
-		                                      {
-		                                          count++;
-		                                          throw new Exception();
-		                                      };
-		    machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, actionHandler);
+            EventHandler<TransitionEventArgs<State, Event, EventArgs>> actionHandler =
+                (sender, e) =>
+                {
+                    count++;
+                    throwException(sender, e);
+                };
+            machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, actionHandler);
 			registerMachineEvents(machine);
             machine.Start(State.S1);
 			machine.Send(Event.S1_to_S2);
@@ -169,13 +170,14 @@
 		[Test]
 		public void TransitionActions_ThrowsExceptionTwice()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
 			var count = 0;
-			ActionHandler actionHandler = args =>
-			                              	{
-			                              		count++;
-			                              		throw new Exception();
-			                              	};
+            EventHandler<TransitionEventArgs<State, Event, EventArgs>> actionHandler =
+                (sender, e) =>
+                {
+                    count++;
+                    throwException(sender, e);
+                };
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2, actionHandler, actionHandler);
 			registerMachineEvents(machine);
             machine.Start(State.S1);
@@ -189,9 +191,9 @@
 		[Test]
 		public void TransitionDeclined()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-            machine[State.S1].ExitHandler += () => { throw new Exception(); };
+            machine[State.S1].ExitHandler += throwException;
 			registerMachineEvents(machine);
             machine.Start(State.S1);
 			machine.Send(Event.S2_to_S1);
@@ -203,9 +205,9 @@
 		[Test]
 		public void TransitionDeclined_ThrowsError()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-            machine[State.S1].ExitHandler += () => { throw new Exception(); };
+            machine[State.S1].ExitHandler += throwException;
 			registerMachineEvents(machine);
 			machine.TransitionDeclined += (sender, e) => { throw new Exception(); };
             machine.Start(State.S1);
@@ -218,15 +220,15 @@
 		[Test]
 		public void BeginDispatch()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, int>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-		    IPassiveStateMachine<State, Event> m = machine;
+            IPassiveStateMachine<State, Event, int> m = machine;
             m.BeginDispatch += (sender, e) =>
 			                         	{
                                             Assert.AreEqual(State.S1, m.CurrentStateID);
 			                         		Assert.AreEqual(Event.S1_to_S2, e.EventID);
 			                         		Assert.AreEqual(State.S1, e.SourceStateID);
-			                         		Assert.AreEqual(123, e.EventArgs[0]);
+			                         		Assert.AreEqual(123, e.EventArgs);
 			                         	};
 
 			registerMachineEvents(m);
@@ -240,7 +242,7 @@
 		[Test]
 		public void BeginDispatch_ThrowsError()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 			registerMachineEvents(machine);
@@ -255,7 +257,7 @@
 		[Test]
 		public void TransitionCompleted_ThrowsError()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
 
 			registerMachineEvents(machine);
@@ -270,10 +272,10 @@
 		[Test]
 		public void Superstate_should_handle_event_when_guard_of_substate_does_not_pass()
 		{
-			var machine = new TestMachine<State, Event>();
+            var machine = new TestMachine<State, Event, EventArgs>();
             machine.AddTransition(State.S1, Event.E1, State.S2);
             machine.AddTransition(State.S1_1, Event.E1, State.S1_2);
-            machine.AddTransition(State.S1_2, Event.E1, args => false, State.S1_1);
+            machine.AddTransition(State.S1_2, Event.E1, (sender,e) => false, State.S1_1);
             machine.SetupSubstates(State.S1, HistoryType.None, State.S1_1, State.S1_2);
 
 			registerMachineEvents(machine);
@@ -287,6 +289,16 @@
 			Assert.AreEqual(State.S2, machine.CurrentStateID);
 			assertMachineEvents(true, false, true, false);
 		}
+
+        private static void throwException(object sender, TransitionEventArgs<State, Event, EventArgs> args)
+        {
+            throw new Exception();
+        }
+        private static bool guardException(object sender, TransitionEventArgs<State, Event, EventArgs> args)
+        {
+            throw new Exception();
+        }
+
 	}
 
 	public class EventTester
@@ -322,7 +334,7 @@
 		}
 	}
 
-	public class TestMachine<TState, TEvent> : PassiveStateMachine<TState, TEvent>
+	public class TestMachine<TState, TEvent, TArgs> : PassiveStateMachine<TState, TEvent, TArgs>
 		//where TEvent : struct, IComparable, IFormattable
 		//where TState : struct, IComparable, IFormattable
 	{
@@ -332,7 +344,7 @@
 		}
 	}
 
-	public class TestMachine : PassiveStateMachine<State, Event>
+    public class TestMachine : PassiveStateMachine<State, Event, EventArgs>
 	{
 		public TestMachine()
 		{

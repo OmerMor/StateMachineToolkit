@@ -94,60 +94,58 @@ namespace TrafficLightDemo
 			light.Execute();
 		}
 
-		private void HandleTransitionCompleted(object sender, TransitionCompletedEventArgs<StateID, EventID> e)
-		{
-			if (e.Error == null)
-			{
-				switch (e.TargetStateID)
-				{
-					case StateID.Off:
-						currentPictureBox.Hide();
-						offPictureBox.Show();
-						currentPictureBox = offPictureBox;
+        private void HandleTransitionCompleted(object sender, TransitionCompletedEventArgs<StateID, EventID, EventArgs> e)
+        {
+            if (e.Error != null)
+            {
+                MessageBox.Show(e.Error.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                return;
+            }
+            switch (e.TargetStateID)
+            {
+                case StateID.Off:
+                    currentPictureBox.Hide();
+                    offPictureBox.Show();
+                    currentPictureBox = offPictureBox;
 
-						currentUmlPictureBox.Hide();
-						umlOffPictureBox.Show();
-						currentUmlPictureBox = umlOffPictureBox;
-						break;
+                    currentUmlPictureBox.Hide();
+                    umlOffPictureBox.Show();
+                    currentUmlPictureBox = umlOffPictureBox;
+                    break;
 
-					case StateID.Red:
-						currentPictureBox.Hide();
-						redPictureBox.Show();
-						currentPictureBox = redPictureBox;
+                case StateID.Red:
+                    currentPictureBox.Hide();
+                    redPictureBox.Show();
+                    currentPictureBox = redPictureBox;
 
-						currentUmlPictureBox.Hide();
-						umlRedPictureBox.Show();
-						currentUmlPictureBox = umlRedPictureBox;
-						break;
+                    currentUmlPictureBox.Hide();
+                    umlRedPictureBox.Show();
+                    currentUmlPictureBox = umlRedPictureBox;
+                    break;
 
-					case StateID.Yellow:
-						currentPictureBox.Hide();
-						yellowPictureBox.Show();
-						currentPictureBox = yellowPictureBox;
+                case StateID.Yellow:
+                    currentPictureBox.Hide();
+                    yellowPictureBox.Show();
+                    currentPictureBox = yellowPictureBox;
 
-						currentUmlPictureBox.Hide();
-						umlYellowPictureBox.Show();
-						currentUmlPictureBox = umlYellowPictureBox;
-						break;
+                    currentUmlPictureBox.Hide();
+                    umlYellowPictureBox.Show();
+                    currentUmlPictureBox = umlYellowPictureBox;
+                    break;
 
-					case StateID.Green:
-						currentPictureBox.Hide();
-						greenPictureBox.Show();
-						currentPictureBox = greenPictureBox;
+                case StateID.Green:
+                    currentPictureBox.Hide();
+                    greenPictureBox.Show();
+                    currentPictureBox = greenPictureBox;
 
-						currentUmlPictureBox.Hide();
-						umlGreenPictureBox.Show();
-						currentUmlPictureBox = umlGreenPictureBox;
-						break;
-				}
-			}
-			else
-			{
-				MessageBox.Show(e.Error.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-			}
-		}
+                    currentUmlPictureBox.Hide();
+                    umlGreenPictureBox.Show();
+                    currentUmlPictureBox = umlGreenPictureBox;
+                    break;
+            }
+        }
 
-		#region Windows Form Designer generated code
+	    #region Windows Form Designer generated code
 
 		/// <summary>
 		/// Required method for Designer support - do not modify

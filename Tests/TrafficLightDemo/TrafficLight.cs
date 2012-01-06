@@ -5,7 +5,7 @@ using Sanford.Threading;
 
 namespace TrafficLightDemo
 {
-	public class TrafficLight : PassiveStateMachine<StateID, EventID>, IDisposable
+    public class TrafficLight : PassiveStateMachine<StateID, EventID, EventArgs>, IDisposable
 	{
 		private readonly AsyncOperation operation = AsyncOperationManager.CreateOperation(null);
 
@@ -37,33 +37,33 @@ namespace TrafficLightDemo
 
 		#region Entry/Exit Methods
 
-		private void EntryOn()
+		private void EntryOn(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Start();
 		}
 
-		private void EntryOff()
+		private void EntryOff(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Stop();
 			scheduler.Clear();
 		}
 
-		private void EntryRed()
+		private void EntryRed(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Add(1, 5000, new SendTimerDelegate(SendTimerEvent));
 		}
 
-		private void EntryYellow()
+		private void EntryYellow(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Add(1, 2000, new SendTimerDelegate(SendTimerEvent));
 		}
 
-		private void EntryGreen()
+		private void EntryGreen(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Add(1, 5000, new SendTimerDelegate(SendTimerEvent));
 		}
 
-		private void EntryDisposed()
+		private void EntryDisposed(object sender, TransitionEventArgs<StateID, EventID, EventArgs> e)
 		{
 			scheduler.Dispose();
 

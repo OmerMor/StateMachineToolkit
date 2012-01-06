@@ -1,8 +1,8 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.StateMachineToolkit", "StateMachineToolkit\Sanford.StateMachineToolkit.csproj", "{C886A854-9A31-41B1-A481-F9AAA76BD017}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.StateMachineToolkit", "StateMachineToolkit\Sanford.StateMachineToolkit.csproj", "{C886A854-9A31-41B1-A481-F9AAA76BD017}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collections.Tests", "Tests\Collections.Tests\Collections.Tests.csproj", "{BD8738DC-1003-45E0-995C-D51807833F14}"
 EndProject
