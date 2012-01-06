@@ -1,24 +1,32 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.StateMachineToolkit", "StateMachineToolkit\Sanford.StateMachineToolkit.csproj", "{C886A854-9A31-41B1-A481-F9AAA76BD017}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collections.Tests", "tests\Collections.Tests\Collections.Tests.csproj", "{BD8738DC-1003-45E0-995C-D51807833F14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collections.Tests", "Tests\Collections.Tests\Collections.Tests.csproj", "{BD8738DC-1003-45E0-995C-D51807833F14}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightSwitchDemo", "tests\LightSwitchDemo\LightSwitchDemo.csproj", "{3EDD52B7-DFCE-469A-80D1-971C4CD99487}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightSwitchDemo", "Tests\LightSwitchDemo\LightSwitchDemo.csproj", "{3EDD52B7-DFCE-469A-80D1-971C4CD99487}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrafficLightDemo", "tests\TrafficLightDemo\TrafficLightDemo.csproj", "{6D9B1E76-25A6-4040-BE8E-A326220EFE87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrafficLightDemo", "Tests\TrafficLightDemo\TrafficLightDemo.csproj", "{6D9B1E76-25A6-4040-BE8E-A326220EFE87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DelegateSchedulerTest", "tests\DelegateSchedulerTest\DelegateSchedulerTest.csproj", "{C99BD0E2-19BE-4EE0-80E6-6785F539CCBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DelegateSchedulerTest", "Tests\DelegateSchedulerTest\DelegateSchedulerTest.csproj", "{C99BD0E2-19BE-4EE0-80E6-6785F539CCBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkipListDemo", "tests\SkipListDemo\SkipListDemo.csproj", "{6DAD2029-E13B-41AF-BA11-44605EA57614}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkipListDemo", "Tests\SkipListDemo\SkipListDemo.csproj", "{6DAD2029-E13B-41AF-BA11-44605EA57614}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkipListStressTest", "tests\SkipListStressTest\SkipListStressTest.csproj", "{80DB538C-C6E9-4663-8280-9C2072BA4ACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkipListStressTest", "Tests\SkipListStressTest\SkipListStressTest.csproj", "{80DB538C-C6E9-4663-8280-9C2072BA4ACF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestExample", "tests\TestExample\TestExample.csproj", "{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestExample", "Tests\TestExample\TestExample.csproj", "{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateMachineToolkit.Tests", "tests\StateMachineToolkit.Tests\StateMachineToolkit.Tests.csproj", "{19646A31-0F00-4657-92B2-1673A6735ED9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateMachineToolkit.Tests", "Tests\StateMachineToolkit.Tests\StateMachineToolkit.Tests.csproj", "{19646A31-0F00-4657-92B2-1673A6735ED9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.StateMachineToolkit", "src\StateMachineToolkit\Sanford.StateMachineToolkit.csproj", "{C886A854-9A31-41B1-A481-F9AAA76BD017}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{5B233D77-FBAC-4BC7-AA90-2624370C9781}"
+	ProjectSection(SolutionItems) = preProject
+		build\rake.rb = build\rake.rb
+		build\rakefile.rb = build\rakefile.rb
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{90005E59-E3F9-4A9B-BCB4-5D43072531B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,10 +34,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BD8738DC-1003-45E0-995C-D51807833F14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BD8738DC-1003-45E0-995C-D51807833F14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD8738DC-1003-45E0-995C-D51807833F14}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -62,6 +66,10 @@ Global
 		{19646A31-0F00-4657-92B2-1673A6735ED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19646A31-0F00-4657-92B2-1673A6735ED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19646A31-0F00-4657-92B2-1673A6735ED9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C886A854-9A31-41B1-A481-F9AAA76BD017}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,5 +83,6 @@ Global
 		{80DB538C-C6E9-4663-8280-9C2072BA4ACF} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
 		{FA8FEB88-78A8-4109-B2F3-FB78BF5F1E88} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
 		{19646A31-0F00-4657-92B2-1673A6735ED9} = {CFDE69F9-E5A2-4751-B78D-327FD0E8C9A7}
+		{C886A854-9A31-41B1-A481-F9AAA76BD017} = {90005E59-E3F9-4A9B-BCB4-5D43072531B9}
 	EndGlobalSection
 EndGlobal

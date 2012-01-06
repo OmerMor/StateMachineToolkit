@@ -64,7 +64,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
+    <ProjectReference Include="..\..\src\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
       <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
       <Name>Sanford.StateMachineToolkit</Name>
     </ProjectReference>

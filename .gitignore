@@ -1,15 +1,15 @@
 
-/build
+#leftovers from merge
+*.orig
 
 # Standard VS.NET and ReSharper Foo
 Debug/
 Release/
+output/
 *.user
 _ReSharper*
 *resharper*
 *.suo
 *.cache
 * Thumbs.db
-
-#leftovers from merge
-*.orig
+*.bak

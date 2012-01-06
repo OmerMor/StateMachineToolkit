@@ -4,13 +4,13 @@
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{6DAD2029-E13B-41AF-BA11-44605EA57614}</ProjectGuid>
+    <ProjectGuid>{80DB538C-C6E9-4663-8280-9C2072BA4ACF}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ApplicationIcon>App.ico</ApplicationIcon>
     <AssemblyKeyContainerName>
     </AssemblyKeyContainerName>
-    <AssemblyName>SkipListDemo</AssemblyName>
+    <AssemblyName>SkipListStressTest</AssemblyName>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
@@ -18,7 +18,7 @@
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
     <DelaySign>false</DelaySign>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>SkipListDemo</RootNamespace>
+    <RootNamespace>SkipListStressTest</RootNamespace>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
@@ -114,11 +114,28 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DemoForm.cs">
+    <Compile Include="InsertForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <EmbeddedResource Include="DemoForm.resx">
-      <DependentUpon>DemoForm.cs</DependentUpon>
+    <Compile Include="NumericTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Shuffler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="StressTestForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <EmbeddedResource Include="InsertForm.resx">
+      <DependentUpon>InsertForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NumericTextBox.resx">
+      <DependentUpon>NumericTextBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="StressTestForm.resx">
+      <DependentUpon>StressTestForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
@@ -140,7 +157,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
+    <ProjectReference Include="..\..\src\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
       <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
       <Name>Sanford.StateMachineToolkit</Name>
     </ProjectReference>
