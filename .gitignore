@@ -1,12 +1,10 @@
 
 /build
-AssemblyInfo.cs
 
 # Standard VS.NET and ReSharper Foo
-src/*/obj
-src/*/bin
-*.csproj.user
-*ReSharper.user
+Debug/
+Release/
+*.user
 _ReSharper*
 *resharper*
 *.suo
@@ -15,4 +13,3 @@ _ReSharper*
 
 #leftovers from merge
 *.orig
-*.user
