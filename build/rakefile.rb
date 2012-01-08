@@ -4,7 +4,7 @@ require 'rake/clean'
 #    $stderr.puts "Howdy, World"
 
 
-DOT_NET_PATH = "#{ENV["SystemRoot"]}\\Microsoft.NET\\Framework\\v3.5"
+DOT_NET_PATH = "#{ENV["SystemRoot"]}\\Microsoft.NET\\Framework\\v4.0.30319"
 NUNIT_EXE = "../packages/NUnit.2.5.10.11092/tools/nunit-console.exe"
 SOURCE_PATH = ".."
 OUTPUT_PATH = "../output"
