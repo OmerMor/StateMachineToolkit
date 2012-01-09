@@ -7,21 +7,15 @@ using Sanford.StateMachineToolkit;
 
 namespace StateMachineToolkit.Tests.Active
 {
-    /// <summary>
-    /// The error-handling behavior of the SM should be as follows:
-    /// A standard sequence is:
-    ///		Event --> Guard* --> BeginTransition --> State.Exit* --> 
-    ///			Transition.Action* --> State.Enter* --> TransitionCompleted
-    /// Another might be:
-    ///		Event --> Guard* --> TransitionDeclined
-    /// </summary>
+    ///<summary>
+    ///  The error-handling behavior of the SM should be as follows: A standard sequence is: Event --> Guard* --> BeginTransition --> State.Exit* --> Transition.Action* --> State.Enter* --> TransitionCompleted Another might be: Event --> Guard* --> TransitionDeclined
+    ///</summary>
     [TestFixture]
     public class TestActiveStateMachine
     {
         [TearDown]
         public void TearDown()
         {
-
         }
 
         private EventTester m_beginDispatchEvent;
@@ -55,7 +49,7 @@ namespace StateMachineToolkit.Tests.Active
                 m_exceptionThrownEvent.AssertWasNotCalled("ExceptionThrown was called.");
         }
 
-        private void registerMachineEvents<TState, TEvent, TArgs>(IStateMachine<TState, TEvent, TArgs> machine) 
+        private void registerMachineEvents<TState, TEvent, TArgs>(IStateMachine<TState, TEvent, TArgs> machine)
             //where TArgs : EventArgs
         {
             m_beginDispatchEvent = new EventTester();
@@ -69,11 +63,11 @@ namespace StateMachineToolkit.Tests.Active
             machine.TransitionDeclined += (sender, e) => m_transitionDeclinedEvent.Set();
             machine.TransitionCompleted += (sender, e) => m_transitionCompletedEvent.Set();
             machine.ExceptionThrown += (sender, e) =>
-                                        {
-                                            Debug.WriteLine("ExceptionThrown: " + e.Error);
-                                            m_lastException = e.Error;
-                                            m_exceptionThrownEvent.Set();
-                                        };
+            {
+                Debug.WriteLine("ExceptionThrown: " + e.Error);
+                m_lastException = e.Error;
+                m_exceptionThrownEvent.Set();
+            };
         }
 
         [Test]
@@ -81,30 +75,29 @@ namespace StateMachineToolkit.Tests.Active
         {
             var finishedEvent = new AutoResetEvent(false);
             EventHandler onLoad = ((sender, e) =>
-                                       {
-                                           using (var machine = new TestMachine<State, Event, EventArgs>())
-                                           {
-                                               machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
-                                               machine.BeginDispatch += (sender1, e1) => { };
-                                               machine.Start(State.S1);
-                                               machine.SendSynchronously(Event.S1_to_S2);
-                                               finishedEvent.Set();
-                                           }
-                                       });
+            {
+                using (var machine = new TestMachine<State, Event, EventArgs>())
+                {
+                    machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
+                    machine.BeginDispatch += (sender1, e1) => { };
+                    machine.Start(State.S1);
+                    machine.SendSynchronously(Event.S1_to_S2);
+                    finishedEvent.Set();
+                }
+            });
             Form form = null;
-            ThreadPool.QueueUserWorkItem(
-                state =>
-                    {
-                        // The form must be instantiated in the future ui thread.
-                        // Otherwise, a WindowsFormSynchronizationContext would be installed
-                        // on the test thread (which has no message-pump), and will cause hangups.
-                        form = new Form();
-                        form.Load += onLoad;
-                        Application.Run(form);
-                    });
+            ThreadPool.QueueUserWorkItem(state =>
+            {
+                // The form must be instantiated in the future ui thread.
+                // Otherwise, a WindowsFormSynchronizationContext would be installed
+                // on the test thread (which has no message-pump), and will cause hangups.
+                form = new Form();
+                form.Load += onLoad;
+                Application.Run(form);
+            });
             var finished = finishedEvent.WaitOne(TimeSpan.FromSeconds(10));
             Assert.IsTrue(finished);
-            form.Invoke((MethodInvoker)form.Dispose);
+            form.Invoke((MethodInvoker) form.Dispose);
         }
 
         [Test]
@@ -119,10 +112,11 @@ namespace StateMachineToolkit.Tests.Active
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
             }
         }
+
         [Test]
         public void Test_machine_with_String_state_and_Int32_event_types()
         {
-            using (var machine = new TestMachine<string,int,EventArgs>())
+            using (var machine = new TestMachine<string, int, EventArgs>())
             {
                 machine.AddTransition("S1", 12, "S2");
                 registerMachineEvents(machine);
@@ -162,7 +156,7 @@ namespace StateMachineToolkit.Tests.Active
                 machine.WaitForPendingEvents();
                 assertMachineEvents(true, true, false, true);
                 Assert.AreEqual(State.S1, machine.CurrentStateID);
-                Assert.IsInstanceOfType(typeof(GuardException), m_lastException);
+                Assert.IsInstanceOf<GuardException>(m_lastException);
             }
         }
 
@@ -200,7 +194,7 @@ namespace StateMachineToolkit.Tests.Active
                 Assert.AreEqual(State.S1, machine.CurrentStateID);
             }
             Assert.AreEqual(false, args.MachineInitialized);
-            Assert.IsInstanceOfType(typeof(EntryException), m_lastException);
+            Assert.IsInstanceOf<EntryException>(m_lastException);
         }
 
         [Test]
@@ -223,7 +217,7 @@ namespace StateMachineToolkit.Tests.Active
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
             }
             Assert.AreEqual(Event.S1_to_S2, errorEventArgs.EventID);
-            Assert.IsInstanceOfType(typeof(EntryException), m_lastException);
+            Assert.IsInstanceOf<EntryException>(m_lastException);
         }
 
         [Test]
@@ -239,9 +233,10 @@ namespace StateMachineToolkit.Tests.Active
                 machine.WaitForPendingEvents();
                 assertMachineEvents(true, false, true, true);
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
-                Assert.IsInstanceOfType(typeof(ExitException), m_lastException);
+                Assert.IsInstanceOf<ExitException>(m_lastException);
             }
         }
+
         [Test]
         public void TransitionActions_ThrowsException()
         {
@@ -250,10 +245,10 @@ namespace StateMachineToolkit.Tests.Active
                 var count = 0;
                 EventHandler<TransitionEventArgs<State, Event, EventArgs>> actionHandler =
                     (sender, e) =>
-                        {
-                            count++;
-                            throwException(sender, e);
-                        };
+                    {
+                        count++;
+                        throwException(sender, e);
+                    };
                 machine.AddTransition(State.S1, Event.S1_to_S2, State.S2,
                                       actionHandler);
                 registerMachineEvents(machine);
@@ -263,9 +258,10 @@ namespace StateMachineToolkit.Tests.Active
                 assertMachineEvents(true, false, true, true);
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
                 Assert.AreEqual(1, count);
-                Assert.IsInstanceOfType(typeof(ActionException), m_lastException);
+                Assert.IsInstanceOf<ActionException>(m_lastException);
             }
         }
+
         [Test]
         public void TransitionActions_ThrowsExceptionTwice()
         {
@@ -287,7 +283,7 @@ namespace StateMachineToolkit.Tests.Active
                 assertMachineEvents(true, false, true, true);
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
                 Assert.AreEqual(2, count);
-                Assert.IsInstanceOfType(typeof(ActionException), m_lastException);
+                Assert.IsInstanceOf<ActionException>(m_lastException);
             }
         }
 
@@ -312,6 +308,7 @@ namespace StateMachineToolkit.Tests.Active
         {
             throw new Exception();
         }
+
         private static bool guardException(object sender, TransitionEventArgs<State, Event, EventArgs> args)
         {
             throw new Exception();
@@ -334,6 +331,7 @@ namespace StateMachineToolkit.Tests.Active
                 Assert.AreEqual(State.S1, machine.CurrentStateID);
             }
         }
+
         [Test]
         public void BeginDispatch()
         {
@@ -341,12 +339,12 @@ namespace StateMachineToolkit.Tests.Active
             {
                 machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
                 machine.BeginDispatch += (sender, e) =>
-                                            {
-                                                Assert.AreEqual(State.S1, machine.CurrentStateID);
-                                                Assert.AreEqual(Event.S1_to_S2, e.EventID);
-                                                Assert.AreEqual(State.S1, e.SourceStateID);
-                                                Assert.AreEqual(123, e.EventArgs);
-                                            };
+                {
+                    Assert.AreEqual(State.S1, machine.CurrentStateID);
+                    Assert.AreEqual(Event.S1_to_S2, e.EventID);
+                    Assert.AreEqual(State.S1, e.SourceStateID);
+                    Assert.AreEqual(123, e.EventArgs);
+                };
 
                 registerMachineEvents(machine);
                 machine.Start(State.S1);
@@ -373,6 +371,7 @@ namespace StateMachineToolkit.Tests.Active
                 Assert.AreEqual(State.S2, machine.CurrentStateID);
             }
         }
+
         [Test]
         public void TransitionCompleted_ThrowsError()
         {
@@ -413,7 +412,6 @@ namespace StateMachineToolkit.Tests.Active
         }
 
 
-
         [Test]
         public void BeginDispach_event_should_raise_in_right_context()
         {
@@ -427,22 +425,19 @@ namespace StateMachineToolkit.Tests.Active
                     machine.AddTransition(State.S1, Event.S1_to_S2, State.S2);
                     var uiThreadId = Thread.CurrentThread.ManagedThreadId;
                     machine.BeginDispatch +=
-                        (sender1, e1) =>
-                        {
-                            calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId;
-                        };
+                        (sender1, e1) => { calledInUiThread = Thread.CurrentThread.ManagedThreadId == uiThreadId; };
                 };
             Form form = null;
             ThreadPool.QueueUserWorkItem(
                 state =>
+                {
+                    using (form = new Form())
                     {
-                        using (form = new Form())
-                        {
-                            form.Load += onLoad;
-                            form.Load += (sender, e) => loadedEvent.Set();
-                            Application.Run(form);
-                        }
-                    });
+                        form.Load += onLoad;
+                        form.Load += (sender, e) => loadedEvent.Set();
+                        Application.Run(form);
+                    }
+                });
             loadedEvent.AssertWasCalled("Form was not loaded.");
             Assert.IsNotNull(machine);
             machine.Start(State.S1);
@@ -487,6 +482,7 @@ namespace StateMachineToolkit.Tests.Active
         {
             Assert.IsTrue(wasCalled(), message);
         }
+
         public void AssertWasNotCalled(string message)
         {
             Assert.IsFalse(wasCalled(), message);
@@ -498,24 +494,20 @@ namespace StateMachineToolkit.Tests.Active
         //where TEvent : struct, IComparable, IFormattable
         //where TState : struct, IComparable, IFormattable
     {
-        public TestMachine()
-        {
-        }
-
         public void Start(TState initialState)
         {
             Initialize(initialState);
         }
     }
-    
+
     public sealed class TestMachine : ActiveStateMachine<State, Event, EventArgs>
     {
         public TestMachine()
         {
-            AddTransition(Active.State.S1, Event.S1_to_S2, Active.State.S2);
-            AddTransition(Active.State.S2, Event.S2_to_S1, Active.State.S1);
+            AddTransition(State.S1, Event.S1_to_S2, State.S2);
+            AddTransition(State.S2, Event.S2_to_S1, State.S1);
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
-            Initialize(Active.State.S1);
+            Initialize(State.S1);
 // ReSharper restore DoNotCallOverridableMethodsInConstructor
         }
     }

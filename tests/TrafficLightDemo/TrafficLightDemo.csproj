@@ -155,6 +155,12 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DelegateScheduler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DelegateScheduler.Task.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

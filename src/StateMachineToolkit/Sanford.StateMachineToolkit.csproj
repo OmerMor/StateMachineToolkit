@@ -134,100 +134,14 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Collections\Deque.cs">
-      <Link>Collections\Deque.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\Deque.cs">
-      <Link>Collections\Generic\Deque.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\Deque.Enumerator.cs">
-      <Link>Collections\Generic\Deque.Enumerator.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\Deque.Node.cs">
-      <Link>Collections\Generic\Deque.Node.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\Deque.Synchronized.cs">
-      <Link>Collections\Generic\Deque.Synchronized.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\ICommand.cs">
-      <Link>Collections\Generic\ICommand.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\PriorityQueue.cs">
-      <Link>Collections\Generic\PriorityQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\UndoableList.cs">
-      <Link>Collections\Generic\UndoableList.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\Generic\UndoManager.cs">
-      <Link>Collections\Generic\UndoManager.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\Array.cs">
-      <Link>Collections\ImmutableCollections\Array.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\ArrayList.cs">
-      <Link>Collections\ImmutableCollections\ArrayList.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\AvlEnumerator.cs">
-      <Link>Collections\ImmutableCollections\AVL Tree Classes\AvlEnumerator.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\AvlNode.cs">
-      <Link>Collections\ImmutableCollections\AVL Tree Classes\AvlNode.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\IAvlNode.cs">
-      <Link>Collections\ImmutableCollections\AVL Tree Classes\IAvlNode.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\AVL Tree Classes\NullAvlNode.cs">
-      <Link>Collections\ImmutableCollections\AVL Tree Classes\NullAvlNode.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalEnumerator.cs">
-      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalEnumerator.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalTopNode.cs">
-      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalTopNode.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\RAL Helper Classes\RalTreeNode.cs">
-      <Link>Collections\ImmutableCollections\RAL Helper Classes\RalTreeNode.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\RandomAccessList.cs">
-      <Link>Collections\ImmutableCollections\RandomAccessList.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\SortedList.cs">
-      <Link>Collections\ImmutableCollections\SortedList.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\ImmutableCollections\Stack.cs">
-      <Link>Collections\ImmutableCollections\Stack.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\PriorityQueue.cs">
-      <Link>Collections\PriorityQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\Collections\SkipList.cs">
-      <Link>Collections\SkipList.cs</Link>
-    </Compile>
     <Compile Include="..\..\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="..\Threading\AsyncResult.cs">
-      <Link>Threading\AsyncResult.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\DelegateQueue.AsyncResult.cs">
-      <Link>Threading\DelegateQueue.AsyncResult.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\DelegateQueue.cs">
-      <Link>Threading\DelegateQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\DelegateScheduler.cs">
-      <Link>Threading\DelegateScheduler.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\DelegateScheduler.Task.cs">
-      <Link>Threading\DelegateScheduler.Task.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\InvokeCompletedEventArgs.cs">
-      <Link>Threading\InvokeCompletedEventArgs.cs</Link>
-    </Compile>
-    <Compile Include="..\Threading\PostCompletedEventArgs.cs">
-      <Link>Threading\PostCompletedEventArgs.cs</Link>
-    </Compile>
     <Compile Include="ActiveStateMachine.cs" />
+    <Compile Include="Collections\Generic\Deque.cs" />
+    <Compile Include="Collections\Generic\Deque.Enumerator.cs" />
+    <Compile Include="Collections\Generic\Deque.Node.cs" />
+    <Compile Include="Collections\Generic\PriorityQueue.cs" />
     <Compile Include="IStateStorage.cs" />
     <Compile Include="JetBrains.Annotations.cs" />
     <Compile Include="EventArgs.cs" />
@@ -245,6 +159,21 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SubstateCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\AsyncResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\DelegateQueue.AsyncResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\DelegateQueue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\InvokeCompletedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\PostCompletedEventArgs.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Transition.cs">

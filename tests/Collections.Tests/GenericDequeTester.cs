@@ -8,7 +8,16 @@ namespace Collections.Tests
 #pragma warning disable 168
 	internal class GenericDequeTester
 	{
-		private const int ElementCount = 100;
+        [STAThread]
+        private static void Main()
+        {
+
+            TestDeque(new Deque<int>());
+
+            Console.ReadKey();
+        }
+        
+        private const int ElementCount = 100;
 
 		public static void TestDeque(Deque<int> deque)
 		{
