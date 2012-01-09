@@ -7,6 +7,8 @@ Debug/
 Release/
 Debug_NET40/
 Release_NET40/
+Debug_NET20/
+Release_NET20/
 output/
 nuget/
 *.user

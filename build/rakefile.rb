@@ -9,7 +9,7 @@ NUNIT_EXE = "../packages/NUnit.2.5.10.11092/tools/nunit-console.exe"
 NUGET_EXE = "../packages/NuGet.CommandLine.1.6.0/tools/NuGet.exe"
 SOURCE_PATH = ".."
 OUTPUT_PATH = "../output"
-configurations = ["Debug","Debug_NET40"]
+configurations = ["Debug_NET20","Debug_NET40","Release_NET20","Release_NET40"]
  
 CLEAN.include(OUTPUT_PATH)
 
