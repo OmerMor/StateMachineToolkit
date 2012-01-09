@@ -35,6 +35,7 @@ namespace Sanford.StateMachineToolkit
         protected PassiveStateMachine(IEqualityComparer<TEvent> comparer = null, IStateStorage<TState> stateStorage = null)
             : base(comparer, stateStorage)
         {
+            Synchronized = false;
         }
 
         private readonly Deque<EventContext> m_eventDeque = new Deque<EventContext>();
@@ -43,6 +44,21 @@ namespace Sanford.StateMachineToolkit
         /// Executes pending events.
         /// </summary>
         public void Execute()
+        {
+            if (Synchronized)
+            {
+                lock(m_lock)
+                {
+                    execute();
+                }
+            }
+            else
+            {
+                execute();
+            }
+        }
+
+        private void execute()
         {
             while (m_eventDeque.Count > 0)
             {
@@ -94,6 +110,13 @@ namespace Sanford.StateMachineToolkit
             AssertMachineIsValid();
             m_eventDeque.PushFront(new EventContext(default(TState), eventId, args));
         }
+
+        /// <summary>
+        /// If <value>true</value>, the state machine will run synchronized (using a lock).
+        /// Otherwise, synchronization concerns remain the responsibility of the caller.
+        /// </summary>
+        public bool Synchronized { get; set; }
+        private readonly object m_lock = new object();
     }
 }
 

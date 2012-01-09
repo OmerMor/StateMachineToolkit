@@ -67,6 +67,12 @@ namespace Sanford.StateMachineToolkit
         /// Executes pending events.
         /// </summary>
         void Execute();
+
+        /// <summary>
+        /// If <value>true</value>, the state machine will run synchronized (using a lock).
+        /// Otherwise, synchronization concerns remain the responsibility of the caller.
+        /// </summary>
+        bool Synchronized { get; set; }
     }
 
     /// <summary>

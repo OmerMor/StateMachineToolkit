@@ -5,7 +5,10 @@
 # Standard VS.NET and ReSharper Foo
 Debug/
 Release/
+Debug_NET40/
+Release_NET40/
 output/
+nuget/
 *.user
 _ReSharper*
 *resharper*
