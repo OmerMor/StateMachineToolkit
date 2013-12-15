@@ -1,3 +1,3 @@
 cd build
-..\packages\rake\allinoneruby.exe rake.rb %1
+..\packages\rake\allinoneruby.exe rake.rb %*
 cd ..

@@ -7,9 +7,9 @@ using System.Reflection;
 // associated with an assembly.
 //
 
-[assembly : AssemblyTitle("State Machine Toolkit")]
-[assembly : AssemblyDescription("A toolkit for creating state machines.")]
-[assembly : AssemblyProduct("State Machine Toolkit")]
+[assembly: AssemblyTitle("State Machine Toolkit")]
+[assembly: AssemblyDescription("A generic state machine framework.")]
+[assembly: AssemblyProduct("State Machine Toolkit")]
 
 
 //
@@ -38,4 +38,5 @@ using System.Reflection;
 //       documentation for more information on this.
 //
 
-[assembly : CLSCompliant(true)]
+[assembly: CLSCompliant(true)]
+

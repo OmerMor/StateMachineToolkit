@@ -123,9 +123,6 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFrameworkVersion)' == 'v4.0' ">
-    <Reference Include="AsyncCtpLibrary">
-      <HintPath>..\..\packages\AsyncAwaitCTP.1.0\lib\net40\AsyncCtpLibrary.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
@@ -205,7 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Class Diagrams\StateMachine.cd" />
-    <None Include="packages.config" />
+    <None Include="Sanford.StateMachineToolkit.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

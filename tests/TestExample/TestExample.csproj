@@ -103,7 +103,7 @@
       <Name>System.XML</Name>
     </Reference>
     <ProjectReference Include="..\..\src\StateMachineToolkit\Sanford.StateMachineToolkit.csproj">
-      <Name>StateMachineToolkit</Name>
+      <Name>Sanford.StateMachineToolkit</Name>
       <Project>{C886A854-9A31-41B1-A481-F9AAA76BD017}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
